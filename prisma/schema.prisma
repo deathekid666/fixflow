@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String
+  password String
+  role     String  @default("ENGINEER")
+  shopId   String?
+
+  shop          Shop?        @relation(fields: [shopId], references: [id])
+  createdOrders WorkOrder[]  @relation("CreatedBy")
+  assignedOrders WorkOrder[] @relation("AssignedTo")
+  logs          OperationLog[]
+}
+
+model Shop {
+  id         String      @id @default(cuid())
+  name       String
+  users      User[]
+  workOrders WorkOrder[]
+  spareParts SparePart[]
+}
+
+// ─── WORK ORDER ───────────────────────────────────────────
+model WorkOrder {
+  id         String   @id @default(cuid())
+  orderNumber String  @unique @default(cuid())
+
+  // Device info
+  deviceBrand   String
+  deviceModel   String
+  serialNumber  String?
+  imei          String?
+  warrantyStart DateTime?
+  warrantyEnd   DateTime?
+  isUnderWarranty Boolean @default(false)
+
+  // Customer info
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
+  // Fault info
+  faultDescription  String
+  appearance        String?
+  remarks           String?
+
+  // Service
+  serviceType   String  @default("IN_STORE") // IN_STORE, ON_SITE, RETRIEVAL
+  repairType    String? // e.g. Replace Screen, Battery, etc.
+  faultLevel    String  @default("LOW") // LOW, MEDIUM, HIGH
+
+  // Status
+  status        String  @default("RECEIVED") // RECEIVED, DIAGNOSING, REPAIRING, DONE, DELIVERED, CANCELLED
+
+  // Quotation
+  subtotal      Float   @default(0)
+  discount      Float   @default(0)
+  total         Float   @default(0)
+  collected     Float   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shopId     String
+  userId     String
+  assignedTo String?
+
+  shop       Shop           @relation(fields: [shopId], references: [id])
+  creator    User           @relation("CreatedBy", fields: [userId], references: [id])
+  assignee   User?          @relation("AssignedTo", fields: [assignedTo], references: [id])
+  parts      WorkOrderPart[]
+  logs       OperationLog[]
+  attachments WorkOrderAttachment[]
+}
+
+// ─── SPARE PARTS CATALOG ─────────────────────────────────
+model SparePart {
+  id          String  @id @default(cuid())
+  name        String
+  partNumber  String?
+  description String?
+  unitPrice   Float   @default(0)
+  stock       Int     @default(0)
+
+  shopId      String
+  shop        Shop    @relation(fields: [shopId], references: [id])
+
+  usages      WorkOrderPart[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── PARTS USED IN A WORK ORDER ──────────────────────────
+model WorkOrderPart {
+  id          String  @id @default(cuid())
+  quantity    Int     @default(1)
+  unitPrice   Float
+  total       Float
+
+  workOrderId String
+  sparePartId String
+
+  workOrder   WorkOrder  @relation(fields: [workOrderId], references: [id])
+  sparePart   SparePart  @relation(fields: [sparePartId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ─── OPERATION LOG ────────────────────────────────────────
+model OperationLog {
+  id          String   @id @default(cuid())
+  action      String
+  description String?
+
+  createdAt DateTime @default(now())
+
+  workOrderId String
+  userId      String
+
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+// ─── ATTACHMENTS ──────────────────────────────────────────
+model WorkOrderAttachment {
+  id        String   @id @default(cuid())
+  filename  String
+  path      String
+
+  createdAt DateTime @default(now())
+
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+}
