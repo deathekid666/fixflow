@@ -11,8 +11,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [user, loading]);
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-slate-950">
@@ -20,7 +22,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 
-  if (!user) return null;
+  if (!user) return (
+    <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="text-slate-400 text-sm">Loading...</div>
+    </div>
+  );
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
