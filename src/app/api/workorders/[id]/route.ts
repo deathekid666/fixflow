@@ -17,19 +17,32 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           sparePart: { select: { id: true, name: true, partNumber: true } },
         },
       },
+      lineItems: { orderBy: { createdAt: "asc" } },
       logs: {
-        include: {
-          user: { select: { id: true, name: true } },
-        },
+        include: { user: { select: { id: true, name: true } } },
         orderBy: { createdAt: "asc" },
       },
-      attachments: true,
+      attachments: {
+        select: { id: true, filename: true, path: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      },
+      bounces: { orderBy: { createdAt: "asc" } },
     },
   });
 
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
-  return Response.json(order);
+  // Calculate TAT
+  const start = new Date(order.receivedAt);
+  const end = order.deliveredAt
+    ? new Date(order.deliveredAt)
+    : order.doneAt
+    ? new Date(order.doneAt)
+    : new Date();
+  const tatDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  const isOverdue = tatDays > 3 && !["DONE", "DELIVERED", "CANCELLED"].includes(order.status);
+
+  return Response.json({ ...order, tatDays, isOverdue });
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
@@ -39,7 +52,6 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const order = await prisma.workOrder.findFirst({
     where: { id: params.id, shopId: user.shopId ?? undefined },
   });
-
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json();

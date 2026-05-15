@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
   }, []);
 
   if (loading) return <div className="p-6 text-slate-500 text-sm">Loading...</div>;
-  if (!data) return <div className="p-6 text-slate-500 text-sm">Failed to load.</div>;
+  if (!data) return <div className="p-6 text-slate-500 text-sm">Failed to load analytics.</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -25,11 +25,13 @@ export default function AnalyticsPage() {
         <h1 className="text-xl font-semibold text-white">Analytics</h1>
         <p className="text-sm text-slate-500 mt-0.5">Overview of your repair shop performance</p>
       </div>
+
+      {/* Revenue */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Revenue", value: data.revenue.total.toFixed(2), color: "text-white" },
-          { label: "Collected", value: data.revenue.collected.toFixed(2), color: "text-green-400" },
-          { label: "Outstanding", value: data.revenue.outstanding.toFixed(2), color: "text-red-400" },
+          { label: "Total Revenue", value: `${data.revenue.total.toFixed(2)}`, color: "text-white" },
+          { label: "Collected", value: `${data.revenue.collected.toFixed(2)}`, color: "text-green-400" },
+          { label: "Outstanding", value: `${data.revenue.outstanding.toFixed(2)}`, color: "text-red-400" },
         ].map((s) => (
           <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <p className="text-xs text-slate-500">{s.label}</p>
@@ -37,6 +39,8 @@ export default function AnalyticsPage() {
           </div>
         ))}
       </div>
+
+      {/* Order Status Breakdown */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-slate-300 mb-4">Work Orders by Status</h2>
         <div className="grid grid-cols-3 gap-4">
@@ -56,6 +60,8 @@ export default function AnalyticsPage() {
           ))}
         </div>
       </div>
+
+      {/* Top Parts */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-slate-300 mb-4">Top Spare Parts Used</h2>
         {data.topParts.length === 0 ? (

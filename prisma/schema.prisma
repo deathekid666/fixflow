@@ -15,10 +15,11 @@ model User {
   role     String  @default("ENGINEER")
   shopId   String?
 
-  shop          Shop?        @relation(fields: [shopId], references: [id])
-  createdOrders WorkOrder[]  @relation("CreatedBy")
-  assignedOrders WorkOrder[] @relation("AssignedTo")
-  logs          OperationLog[]
+  shop           Shop?         @relation(fields: [shopId], references: [id])
+  createdOrders  WorkOrder[]   @relation("CreatedBy")
+  assignedOrders WorkOrder[]   @relation("AssignedTo")
+  logs           OperationLog[]
+  notifications  Notification[]
 }
 
 model Shop {
@@ -29,43 +30,45 @@ model Shop {
   spareParts SparePart[]
 }
 
-// ─── WORK ORDER ───────────────────────────────────────────
 model WorkOrder {
-  id         String   @id @default(cuid())
-  orderNumber String  @unique @default(cuid())
+  id          String @id @default(cuid())
+  orderNumber String @unique @default(cuid())
 
-  // Device info
-  deviceBrand   String
-  deviceModel   String
-  serialNumber  String?
-  imei          String?
-  warrantyStart DateTime?
-  warrantyEnd   DateTime?
+  deviceBrand     String
+  deviceModel     String
+  serialNumber    String?
+  imei            String?
+  warrantyStart   DateTime?
+  warrantyEnd     DateTime?
   isUnderWarranty Boolean @default(false)
 
-  // Customer info
   customerName  String
   customerPhone String
   customerEmail String?
 
-  // Fault info
-  faultDescription  String
-  appearance        String?
-  remarks           String?
+  faultDescription String
+  appearance       String?
+  remarks          String?
 
-  // Service
-  serviceType   String  @default("IN_STORE") // IN_STORE, ON_SITE, RETRIEVAL
-  repairType    String? // e.g. Replace Screen, Battery, etc.
-  faultLevel    String  @default("LOW") // LOW, MEDIUM, HIGH
+  serviceType String @default("IN_STORE")
+  repairType  String?
+  faultLevel  String @default("LOW")
 
-  // Status
-  status        String  @default("RECEIVED") // RECEIVED, DIAGNOSING, REPAIRING, DONE, DELIVERED, CANCELLED
+  status      String @default("RECEIVED")
 
-  // Quotation
-  subtotal      Float   @default(0)
-  discount      Float   @default(0)
-  total         Float   @default(0)
-  collected     Float   @default(0)
+  receivedAt  DateTime  @default(now())
+  doneAt      DateTime?
+  deliveredAt DateTime?
+
+  bounceCount Int     @default(0)
+  isBounce    Boolean @default(false)
+
+  subtotal         Float  @default(0)
+  quotationItems   Float  @default(0)
+  discount         Float  @default(0)
+  total            Float  @default(0)
+  collected        Float  @default(0)
+  quotationRemarks String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,15 +77,53 @@ model WorkOrder {
   userId     String
   assignedTo String?
 
-  shop       Shop           @relation(fields: [shopId], references: [id])
-  creator    User           @relation("CreatedBy", fields: [userId], references: [id])
-  assignee   User?          @relation("AssignedTo", fields: [assignedTo], references: [id])
-  parts      WorkOrderPart[]
-  logs       OperationLog[]
-  attachments WorkOrderAttachment[]
+  shop          Shop                  @relation(fields: [shopId], references: [id])
+  creator       User                  @relation("CreatedBy", fields: [userId], references: [id])
+  assignee      User?                 @relation("AssignedTo", fields: [assignedTo], references: [id])
+  parts         WorkOrderPart[]
+  lineItems     QuotationLineItem[]
+  logs          OperationLog[]
+  attachments   WorkOrderAttachment[]
+  bounces       BounceRepair[]
+  notifications Notification[]
 }
 
-// ─── SPARE PARTS CATALOG ─────────────────────────────────
+model QuotationLineItem {
+  id          String @id @default(cuid())
+  label       String
+  amount      Float
+
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model BounceRepair {
+  id          String @id @default(cuid())
+  reason      String
+  scenario    String
+  createdAt   DateTime @default(now())
+
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+}
+
+model Notification {
+  id        String  @id @default(cuid())
+  type      String
+  message   String
+  read      Boolean @default(false)
+
+  workOrderId String?
+  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
+
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
 model SparePart {
   id          String  @id @default(cuid())
   name        String
@@ -91,34 +132,31 @@ model SparePart {
   unitPrice   Float   @default(0)
   stock       Int     @default(0)
 
-  shopId      String
-  shop        Shop    @relation(fields: [shopId], references: [id])
-
-  usages      WorkOrderPart[]
+  shopId    String
+  shop      Shop    @relation(fields: [shopId], references: [id])
+  usages    WorkOrderPart[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// ─── PARTS USED IN A WORK ORDER ──────────────────────────
 model WorkOrderPart {
-  id          String  @id @default(cuid())
-  quantity    Int     @default(1)
-  unitPrice   Float
-  total       Float
+  id        String @id @default(cuid())
+  quantity  Int    @default(1)
+  unitPrice Float
+  total     Float
 
   workOrderId String
   sparePartId String
 
-  workOrder   WorkOrder  @relation(fields: [workOrderId], references: [id])
-  sparePart   SparePart  @relation(fields: [sparePartId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  sparePart SparePart @relation(fields: [sparePartId], references: [id])
 
   createdAt DateTime @default(now())
 }
 
-// ─── OPERATION LOG ────────────────────────────────────────
 model OperationLog {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   action      String
   description String?
 
@@ -127,15 +165,14 @@ model OperationLog {
   workOrderId String
   userId      String
 
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
-// ─── ATTACHMENTS ──────────────────────────────────────────
 model WorkOrderAttachment {
-  id        String   @id @default(cuid())
-  filename  String
-  path      String
+  id       String @id @default(cuid())
+  filename String
+  path     String
 
   createdAt DateTime @default(now())
 

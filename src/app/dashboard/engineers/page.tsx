@@ -23,7 +23,10 @@ export default function EngineersPage() {
 
   async function handleCreate() {
     setError("");
-    if (!form.name || !form.email || !form.password) { setError("All fields are required"); return; }
+    if (!form.name || !form.email || !form.password) {
+      setError("All fields are required");
+      return;
+    }
     setSaving(true);
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -51,19 +54,21 @@ export default function EngineersPage() {
           + Add Engineer
         </button>
       </div>
+
       {showForm && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-slate-300">New Engineer</h2>
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "Name", field: "name", placeholder: "Full name", type: "text" },
-              { label: "Email", field: "email", placeholder: "email@example.com", type: "email" },
+              { label: "Name", field: "name", placeholder: "Full name" },
+              { label: "Email", field: "email", placeholder: "email@example.com" },
               { label: "Password", field: "password", placeholder: "Temporary password", type: "password" },
             ].map((f) => (
               <div key={f.field}>
                 <label className="text-xs text-slate-400 mb-1 block">{f.label}</label>
-                <input type={f.type}
+                <input
+                  type={f.type || "text"}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   placeholder={f.placeholder}
                   value={(form as any)[f.field]}
@@ -86,12 +91,14 @@ export default function EngineersPage() {
           </div>
         </div>
       )}
+
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800">
-              <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Name</th>
-              <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Email</th>
+              {["Name", "Email"].map((h) => (
+                <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
