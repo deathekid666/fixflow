@@ -29,7 +29,7 @@ type WorkOrder = {
   collected: number;
   createdAt: string;
   creator: { name: string };
-  assignee: { name: string } | null;
+  assignee: { id: string; name: string } | null;
   parts: {
     id: string;
     quantity: number;
@@ -46,6 +46,9 @@ type WorkOrder = {
   }[];
 };
 
+type Engineer = { id: string; name: string };
+type SparePart = { id: string; name: string; partNumber: string; unitPrice: number; stock: number };
+
 const STATUS_OPTIONS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"];
 const STATUS_COLORS: Record<string, string> = {
   RECEIVED: "bg-blue-500/20 text-blue-400",
@@ -56,30 +59,96 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "bg-red-500/20 text-red-400",
 };
 
+function formatOrderNumber(raw: string, createdAt: string) {
+  const year = new Date(createdAt).getFullYear();
+  return `WO-${year}-${raw.slice(0, 6).toUpperCase()}`;
+}
+
 export default function WorkOrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [engineers, setEngineers] = useState<Engineer[]>([]);
+  const [spareParts, setSpareParts] = useState<SparePart[]>([]);
 
-  useEffect(() => { load(); }, []);
+  // Part form
+  const [showPartForm, setShowPartForm] = useState(false);
+  const [selectedPart, setSelectedPart] = useState("");
+  const [partQty, setPartQty] = useState("1");
+  const [addingPart, setAddingPart] = useState(false);
+
+  // Quotation edit
+  const [editingQuotation, setEditingQuotation] = useState(false);
+  const [discount, setDiscount] = useState("0");
+  const [collected, setCollected] = useState("0");
+  const [savingQuotation, setSavingQuotation] = useState(false);
+
+  useEffect(() => {
+    load();
+    fetch("/api/users").then(r => r.json()).then(setEngineers);
+    fetch("/api/spareparts").then(r => r.json()).then(setSpareParts);
+  }, []);
 
   async function load() {
     const res = await fetch(`/api/workorders/${params.id}`);
     if (!res.ok) { router.push("/dashboard"); return; }
-    setOrder(await res.json());
+    const data = await res.json();
+    setOrder(data);
+    setDiscount(data.discount.toString());
+    setCollected(data.collected.toString());
     setLoading(false);
   }
 
   async function changeStatus(status: string) {
-    setUpdatingStatus(true);
     await fetch(`/api/workorders/${params.id}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
     await load();
-    setUpdatingStatus(false);
+  }
+
+  async function assignEngineer(assignedTo: string) {
+    await fetch(`/api/workorders/${params.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignedTo: assignedTo || null }),
+    });
+    await load();
+  }
+
+  async function addPart() {
+    if (!selectedPart || !partQty) return;
+    setAddingPart(true);
+    await fetch(`/api/workorders/${params.id}/parts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sparePartId: selectedPart, quantity: parseInt(partQty) }),
+    });
+    setSelectedPart("");
+    setPartQty("1");
+    setShowPartForm(false);
+    await load();
+    fetch("/api/spareparts").then(r => r.json()).then(setSpareParts);
+    setAddingPart(false);
+  }
+
+  async function saveQuotation() {
+    setSavingQuotation(true);
+    const d = parseFloat(discount) || 0;
+    const c = parseFloat(collected) || 0;
+    await fetch(`/api/workorders/${params.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        discount: d,
+        collected: c,
+        total: (order?.subtotal ?? 0) - d,
+      }),
+    });
+    setEditingQuotation(false);
+    await load();
+    setSavingQuotation(false);
   }
 
   if (loading) return (
@@ -88,27 +157,26 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
   if (!order) return null;
 
+  const selectedPartData = spareParts.find(p => p.id === selectedPart);
+
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
-          <span className="font-mono text-sm text-slate-400">{order.orderNumber.slice(0, 12).toUpperCase()}</span>
+          <span className="font-mono text-sm text-slate-400">{formatOrderNumber(order.orderNumber, order.createdAt)}</span>
           {order.isUnderWarranty && (
             <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Under Warranty</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status]}`}
-            value={order.status}
-            onChange={(e) => changeStatus(e.target.value)}
-            disabled={updatingStatus}
-          >
-            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
+        <select
+          className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status]}`}
+          value={order.status}
+          onChange={(e) => changeStatus(e.target.value)}
+        >
+          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -160,7 +228,63 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           {/* Parts */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Spare Parts Used</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Spare Parts Used</h2>
+              <button onClick={() => setShowPartForm(!showPartForm)}
+                className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+              >
+                + Add Part
+              </button>
+            </div>
+
+            {showPartForm && (
+              <div className="bg-slate-800 rounded-lg p-4 mb-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Part</label>
+                    <select
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                      value={selectedPart}
+                      onChange={(e) => setSelectedPart(e.target.value)}
+                    >
+                      <option value="">Select part...</option>
+                      {spareParts.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} — {p.unitPrice.toFixed(2)} (stock: {p.stock})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Quantity</label>
+                    <input
+                      type="number" min="1"
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                      value={partQty}
+                      onChange={(e) => setPartQty(e.target.value)}
+                    />
+                  </div>
+                </div>
+                {selectedPartData && (
+                  <p className="text-xs text-slate-400">
+                    Total: <span className="text-white font-medium">{(selectedPartData.unitPrice * parseInt(partQty || "1")).toFixed(2)}</span>
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={addPart} disabled={addingPart || !selectedPart}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
+                  >
+                    {addingPart ? "Adding..." : "Add"}
+                  </button>
+                  <button onClick={() => setShowPartForm(false)}
+                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             {order.parts.length === 0 ? (
               <p className="text-sm text-slate-500">No parts added yet.</p>
             ) : (
@@ -192,33 +316,82 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
         {/* Right column */}
         <div className="space-y-4">
+          {/* Assign Engineer */}
+          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Assigned Engineer</h2>
+            <select
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+              value={order.assignee?.id ?? ""}
+              onChange={(e) => assignEngineer(e.target.value)}
+            >
+              <option value="">Unassigned</option>
+              {engineers.map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+          </section>
+
           {/* Quotation */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Quotation</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-slate-400">
-                <span>Subtotal</span>
-                <span>{order.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Discount</span>
-                <span>-{order.discount.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-white font-semibold border-t border-slate-800 pt-2 mt-2">
-                <span>Total</span>
-                <span>{order.total.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-green-400">
-                <span>Collected</span>
-                <span>{order.collected.toFixed(2)}</span>
-              </div>
-              {order.total - order.collected > 0 && (
-                <div className="flex justify-between text-red-400 text-xs">
-                  <span>Remaining</span>
-                  <span>{(order.total - order.collected).toFixed(2)}</span>
-                </div>
-              )}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quotation</h2>
+              <button onClick={() => setEditingQuotation(!editingQuotation)}
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                {editingQuotation ? "Cancel" : "Edit"}
+              </button>
             </div>
+
+            {editingQuotation ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Discount</label>
+                  <input type="number" min="0"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Collected</label>
+                  <input type="number" min="0"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                    value={collected}
+                    onChange={(e) => setCollected(e.target.value)}
+                  />
+                </div>
+                <button onClick={saveQuotation} disabled={savingQuotation}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
+                >
+                  {savingQuotation ? "Saving..." : "Save"}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-slate-400">
+                  <span>Subtotal</span>
+                  <span>{order.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Discount</span>
+                  <span>-{order.discount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-white font-semibold border-t border-slate-800 pt-2 mt-2">
+                  <span>Total</span>
+                  <span>{order.total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-green-400">
+                  <span>Collected</span>
+                  <span>{order.collected.toFixed(2)}</span>
+                </div>
+                {order.total - order.collected > 0 && (
+                  <div className="flex justify-between text-red-400 text-xs">
+                    <span>Remaining</span>
+                    <span>{(order.total - order.collected).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Operation Log */}
@@ -226,7 +399,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Operation Log</h2>
             <div className="space-y-3">
               {order.logs.map((log) => (
-                <div key={log.id} className="text-xs">
+                <div key={log.id} className="text-xs border-b border-slate-800/50 pb-2">
                   <div className="flex items-center justify-between">
                     <span className="text-blue-400 font-medium">{log.action}</span>
                     <span className="text-slate-600">{new Date(log.createdAt).toLocaleDateString()}</span>
@@ -241,7 +414,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Meta */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-xs space-y-2">
             <Info label="Created by" value={order.creator.name} />
-            <Info label="Assigned to" value={order.assignee?.name ?? "Unassigned"} />
             <Info label="Created" value={new Date(order.createdAt).toLocaleString()} />
           </section>
         </div>
