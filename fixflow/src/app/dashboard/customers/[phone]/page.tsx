@@ -7,6 +7,9 @@ import Link from "next/link";
 type WorkOrder = {
   id: string;
   orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
   deviceBrand: string;
   deviceModel: string;
   serialNumber: string;
@@ -51,7 +54,7 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
         <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
-        <h1 className="text-xl font-semibold text-white">{loading ? "Loading..." : orders[0]?.customerName ?? phone}</h1>
+        <h1 className="text-xl font-semibold text-white">{loading ? "Loading..." : customer?.customerName ?? phone}</h1>
         {orders.length > 1 && <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Repeat Customer</span>}
       </div>
 
