@@ -84,31 +84,26 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [engineers, setEngineers] = useState<Engineer[]>([]);
   const [spareParts, setSpareParts] = useState<SparePart[]>([]);
 
-  // Parts
   const [showPartForm, setShowPartForm] = useState(false);
   const [selectedPart, setSelectedPart] = useState("");
   const [partQty, setPartQty] = useState("1");
   const [addingPart, setAddingPart] = useState(false);
 
-  // Line items
   const [newItemLabel, setNewItemLabel] = useState("");
   const [newItemAmount, setNewItemAmount] = useState("");
   const [addingItem, setAddingItem] = useState(false);
 
-  // Quotation
   const [editingQuotation, setEditingQuotation] = useState(false);
   const [discount, setDiscount] = useState("0");
   const [collected, setCollected] = useState("0");
   const [quotationRemarks, setQuotationRemarks] = useState("");
   const [savingQuotation, setSavingQuotation] = useState(false);
 
-  // Bounce
   const [showBounceForm, setShowBounceForm] = useState(false);
   const [bounceReason, setBounceReason] = useState("");
   const [bounceScenario, setBounceScenario] = useState("");
   const [submittingBounce, setSubmittingBounce] = useState(false);
 
-  // Attachments
   const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
@@ -234,7 +229,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-wrap">
           <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
@@ -265,41 +259,31 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
       </div>
 
-      {/* Bounce Form */}
       {showBounceForm && (
         <div className="bg-red-950/30 border border-red-800/50 rounded-xl p-5 space-y-3">
           <h2 className="text-sm font-semibold text-red-400">Report Bounce Repair</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Scenario</label>
-              <select
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
-                value={bounceScenario}
-                onChange={(e) => setBounceScenario(e.target.value)}
-              >
+              <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                value={bounceScenario} onChange={(e) => setBounceScenario(e.target.value)}>
                 <option value="">Select scenario...</option>
                 {BOUNCE_SCENARIOS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Reason</label>
-              <input
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
-                placeholder="Describe the issue..."
-                value={bounceReason}
-                onChange={(e) => setBounceReason(e.target.value)}
-              />
+              <input className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+                placeholder="Describe the issue..." value={bounceReason} onChange={(e) => setBounceReason(e.target.value)} />
             </div>
           </div>
           <div className="flex gap-2">
             <button onClick={submitBounce} disabled={submittingBounce || !bounceReason || !bounceScenario}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
-            >
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
               {submittingBounce ? "Submitting..." : "Submit Bounce"}
             </button>
             <button onClick={() => setShowBounceForm(false)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors"
-            >
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">
               Cancel
             </button>
           </div>
@@ -307,9 +291,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        {/* Left column */}
         <div className="col-span-2 space-y-4">
-          {/* Device */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Device Information</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -322,7 +304,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Customer */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Customer Information</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -332,7 +313,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Fault */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Fault & Service</h2>
             <div className="grid grid-cols-2 gap-3 text-sm mb-3">
@@ -353,13 +333,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             )}
           </section>
 
-          {/* Parts */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Spare Parts</h2>
               <button onClick={() => setShowPartForm(!showPartForm)}
-                className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
-              >
+                className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
                 + Add Part
               </button>
             </div>
@@ -422,14 +400,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             )}
           </section>
 
-          {/* Attachments */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Attachments</h2>
-              <button onClick={() => fileRef.current?.click()}
-                disabled={uploadingFile}
-                className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
-              >
+              <button onClick={() => fileRef.current?.click()} disabled={uploadingFile}
+                className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">
                 {uploadingFile ? "Uploading..." : "Upload File"}
               </button>
               <input ref={fileRef} type="file" className="hidden" accept="image/*,.pdf,.txt" onChange={uploadFile} />
@@ -452,7 +427,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             )}
           </section>
 
-          {/* Bounce History */}
           {order.bounces.length > 0 && (
             <section className="bg-red-950/20 border border-red-800/30 rounded-xl p-5">
               <h2 className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-4">Bounce History ({order.bounces.length})</h2>
@@ -471,9 +445,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           )}
         </div>
 
-        {/* Right column */}
         <div className="space-y-4">
-          {/* TAT */}
           <section className={`border rounded-xl p-5 ${order.isOverdue ? "bg-orange-950/20 border-orange-800/30" : "bg-slate-900 border-slate-800"}`}>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Turnaround Time</h2>
             <div className="space-y-2 text-xs">
@@ -500,31 +472,24 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Assign */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Assigned Engineer</h2>
-            <select
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-              value={order.assignee?.id ?? ""}
-              onChange={(e) => assignEngineer(e.target.value)}
-            >
+            <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+              value={order.assignee?.id ?? ""} onChange={(e) => assignEngineer(e.target.value)}>
               <option value="">Unassigned</option>
               {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </section>
 
-          {/* Quotation */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quotation</h2>
               <button onClick={() => setEditingQuotation(!editingQuotation)}
-                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-              >
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
                 {editingQuotation ? "Cancel" : "Edit"}
               </button>
             </div>
 
-            {/* Line items */}
             <div className="space-y-1 mb-3">
               {order.lineItems.map(item => (
                 <div key={item.id} className="flex items-center justify-between text-xs">
@@ -537,29 +502,53 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               ))}
             </div>
 
-            {/* Add line item */}
             <div className="flex gap-2 mb-3">
-              <input
-                className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                placeholder="e.g. Labor fee"
-                value={newItemLabel}
-                onChange={(e) => setNewItemLabel(e.target.value)}
-              />
-              <input
-                className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                placeholder="0.00"
-                type="number"
-                value={newItemAmount}
-                onChange={(e) => setNewItemAmount(e.target.value)}
-              />
+              <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                placeholder="e.g. Labor fee" value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} />
+              <input className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                placeholder="0.00" type="number" value={newItemAmount} onChange={(e) => setNewItemAmount(e.target.value)} />
               <button onClick={addLineItem} disabled={addingItem || !newItemLabel || !newItemAmount}
-                className="px-2 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded transition-colors"
-              >
-                +
-              </button>
+                className="px-2 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded transition-colors">+</button>
             </div>
 
-            {editingQuotation ? (
+            <div className="space-y-2 text-sm mb-3">
+              {order.subtotal > 0 && (
+                <div className="flex justify-between text-slate-400"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>
+              )}
+              {order.quotationItems > 0 && (
+                <div className="flex justify-between text-slate-400"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>
+              )}
+              {order.discount > 0 && (
+                <div className="flex justify-between text-slate-400"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>
+              )}
+              <div className="flex justify-between text-white font-semibold border-t border-slate-800 pt-2 mt-2">
+                <span>Total</span><span>{grandTotal.toFixed(2)}</span>
+              </div>
+              {order.quotationRemarks && (
+                <p className="text-xs text-slate-500 mt-1">{order.quotationRemarks}</p>
+              )}
+            </div>
+
+            <div className="bg-slate-800 rounded-lg p-3 space-y-2 mb-3">
+              <label className="text-xs text-slate-400 block">Collect Payment</label>
+              <div className="flex gap-2 items-center">
+                <input type="number" min="0"
+                  className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500"
+                  value={collected} onChange={(e) => setCollected(e.target.value)} />
+                <button onClick={saveQuotation} disabled={savingQuotation}
+                  className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors font-medium">
+                  {savingQuotation ? "..." : "Save"}
+                </button>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-green-400">Collected: {order.collected.toFixed(2)}</span>
+                {grandTotal - order.collected > 0 && (
+                  <span className="text-red-400">Remaining: {(grandTotal - order.collected).toFixed(2)}</span>
+                )}
+              </div>
+            </div>
+
+            {editingQuotation && (
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Discount</label>
@@ -568,54 +557,19 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     value={discount} onChange={(e) => setDiscount(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Collected</label>
-                  <input type="number" min="0"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-                    value={collected} onChange={(e) => setCollected(e.target.value)} />
-                </div>
-                <div>
                   <label className="text-xs text-slate-400 mb-1 block">Quotation Remarks</label>
                   <textarea rows={2}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
-                    placeholder="Optional remarks..."
-                    value={quotationRemarks} onChange={(e) => setQuotationRemarks(e.target.value)} />
+                    placeholder="Optional remarks..." value={quotationRemarks} onChange={(e) => setQuotationRemarks(e.target.value)} />
                 </div>
                 <button onClick={saveQuotation} disabled={savingQuotation}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
-                >
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
                   {savingQuotation ? "Saving..." : "Save"}
                 </button>
-              </div>
-            ) : (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-slate-400">
-                  <span>Parts</span><span>{order.subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Services</span><span>{order.quotationItems.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Discount</span><span>-{order.discount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-white font-semibold border-t border-slate-800 pt-2 mt-2">
-                  <span>Total</span><span>{grandTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-green-400">
-                  <span>Collected</span><span>{order.collected.toFixed(2)}</span>
-                </div>
-                {grandTotal - order.collected > 0 && (
-                  <div className="flex justify-between text-red-400 text-xs">
-                    <span>Remaining</span><span>{(grandTotal - order.collected).toFixed(2)}</span>
-                  </div>
-                )}
-                {order.quotationRemarks && (
-                  <p className="text-xs text-slate-500 mt-2 border-t border-slate-800 pt-2">{order.quotationRemarks}</p>
-                )}
               </div>
             )}
           </section>
 
-          {/* Operation Log */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Operation Log</h2>
             <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -632,7 +586,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Meta */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-xs space-y-2">
             <Info label="Created by" value={order.creator.name} />
             <Info label="Created" value={new Date(order.createdAt).toLocaleString()} />

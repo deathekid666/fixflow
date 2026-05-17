@@ -19,25 +19,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const order = await prisma.workOrder.findFirst({
     where: { id: params.id, shopId: user.shopId ?? undefined },
   });
-
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
   const { reason, scenario } = await req.json();
+  if (!reason || !scenario) return Response.json({ error: "reason and scenario are required" }, { status: 400 });
+  if (!BOUNCE_SCENARIOS.includes(scenario)) return Response.json({ error: "Invalid scenario" }, { status: 400 });
 
-  if (!reason || !scenario) {
-    return Response.json({ error: "reason and scenario are required" }, { status: 400 });
-  }
-
-  if (!BOUNCE_SCENARIOS.includes(scenario)) {
-    return Response.json({ error: "Invalid scenario" }, { status: 400 });
-  }
-
-  // Create bounce record
   const bounce = await prisma.bounceRepair.create({
     data: { reason, scenario, workOrderId: params.id },
   });
 
-  // Update work order
   await prisma.workOrder.update({
     where: { id: params.id },
     data: {
@@ -50,7 +41,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     },
   });
 
-  // Log it
   await prisma.operationLog.create({
     data: {
       action: "BOUNCE",
@@ -60,21 +50,23 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     },
   });
 
-  // Notify all admins in the shop
-  const admins = await prisma.user.findMany({
-    where: { shopId: user.shopId ?? undefined, role: "ADMIN" },
+  const shopUsers = await prisma.user.findMany({
+    where: { shopId: user.shopId ?? undefined },
   });
 
-  await Promise.all(admins.map(admin =>
-    prisma.notification.create({
-      data: {
-        type: "BOUNCE",
-        message: `⚠️ Bounce repair on ${order.deviceBrand} ${order.deviceModel} (SN: ${order.serialNumber || "N/A"}) — ${scenario.replace(/_/g, " ")}`,
-        workOrderId: params.id,
-        userId: admin.id,
-      },
-    })
-  ));
+  await Promise.all(shopUsers
+    .filter(u => u.id !== user.id)
+    .map(u =>
+      prisma.notification.create({
+        data: {
+          type: "BOUNCE",
+          message: `⚠️ Bounce repair reported — ${order.deviceBrand} ${order.deviceModel} (SN: ${order.serialNumber || "N/A"}) | Customer: ${order.customerName} | Scenario: ${scenario.replace(/_/g, " ")} | Reason: ${reason}`,
+          workOrderId: params.id,
+          userId: u.id,
+        },
+      })
+    )
+  );
 
   return Response.json(bounce, { status: 201 });
 }
