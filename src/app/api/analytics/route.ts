@@ -42,6 +42,47 @@ export async function GET(req: Request) {
     })
   );
 
+  // Engineer performance
+  const engineers = await prisma.user.findMany({
+    where: { shopId: user.shopId ?? undefined, role: "ENGINEER" },
+    select: { id: true, name: true },
+  });
+
+  const engineerStats = await Promise.all(
+    engineers.map(async (eng) => {
+      const completed = await prisma.workOrder.count({
+        where: { ...shopFilter, assignedTo: eng.id, status: { in: ["DONE", "DELIVERED"] } },
+      });
+      const total = await prisma.workOrder.count({
+        where: { ...shopFilter, assignedTo: eng.id },
+      });
+      const bounces = await prisma.bounceRepair.count({
+        where: { workOrder: { ...shopFilter, assignedTo: eng.id } },
+      });
+
+      // Average TAT for completed orders
+      const completedOrders = await prisma.workOrder.findMany({
+        where: { ...shopFilter, assignedTo: eng.id, doneAt: { not: null } },
+        select: { receivedAt: true, doneAt: true },
+      });
+      const avgTat = completedOrders.length > 0
+        ? completedOrders.reduce((sum, o) => {
+            const days = (new Date(o.doneAt!).getTime() - new Date(o.receivedAt).getTime()) / (1000 * 60 * 60 * 24);
+            return sum + days;
+          }, 0) / completedOrders.length
+        : 0;
+
+      return { ...eng, completed, total, bounces, avgTat: Math.round(avgTat * 10) / 10 };
+    })
+  );
+
+  // Low stock parts
+  const lowStock = await prisma.sparePart.findMany({
+    where: { shopId: user.shopId ?? undefined, stock: { lte: 5 } },
+    select: { id: true, name: true, partNumber: true, stock: true, unitPrice: true },
+    orderBy: { stock: "asc" },
+  });
+
   return Response.json({
     orders: { total, received, diagnosing, repairing, done, delivered, cancelled },
     revenue: {
@@ -50,5 +91,7 @@ export async function GET(req: Request) {
       outstanding: (revenue._sum.total ?? 0) - (revenue._sum.collected ?? 0),
     },
     topParts: topPartsWithNames,
+    engineerStats,
+    lowStock,
   });
 }

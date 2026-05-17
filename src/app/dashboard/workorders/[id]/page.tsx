@@ -245,6 +245,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           <span className="text-xs text-slate-500">TAT: {order.tatDays} day{order.tatDays !== 1 ? "s" : ""}</span>
         </div>
         <div className="flex items-center gap-2">
+          <a href={`/dashboard/workorders/${params.id}/print`} target="_blank"
+            className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
+          >
+            🖨️ Print
+          </a>
           <button onClick={() => setShowBounceForm(!showBounceForm)}
             className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-400 rounded-lg transition-colors"
           >
