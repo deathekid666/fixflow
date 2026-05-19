@@ -18,8 +18,10 @@ model User {
   shop           Shop?         @relation(fields: [shopId], references: [id])
   createdOrders  WorkOrder[]   @relation("CreatedBy")
   assignedOrders WorkOrder[]   @relation("AssignedTo")
-  logs           OperationLog[]
-  notifications  Notification[]
+  logs             OperationLog[]
+  notifications    Notification[]
+  notes            InternalNote[]
+  stockAdjustments StockAdjustment[]
 }
 
 model Shop {
@@ -86,6 +88,7 @@ model WorkOrder {
   attachments   WorkOrderAttachment[]
   bounces       BounceRepair[]
   notifications Notification[]
+  notes         InternalNote[]
 }
 
 model QuotationLineItem {
@@ -134,7 +137,8 @@ model SparePart {
 
   shopId    String
   shop      Shop    @relation(fields: [shopId], references: [id])
-  usages    WorkOrderPart[]
+  usages      WorkOrderPart[]
+  adjustments StockAdjustment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -178,4 +182,32 @@ model WorkOrderAttachment {
 
   workOrderId String
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+}
+
+model InternalNote {
+  id        String @id @default(cuid())
+  message   String
+
+  createdAt DateTime @default(now())
+
+  workOrderId String
+  userId      String
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model StockAdjustment {
+  id          String @id @default(cuid())
+  quantity    Int
+  type        String // ADD, REMOVE, CORRECTION
+  reason      String?
+
+  createdAt DateTime @default(now())
+
+  sparePartId String
+  userId      String
+
+  sparePart SparePart @relation(fields: [sparePartId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }

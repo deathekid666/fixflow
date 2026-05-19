@@ -27,6 +27,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         orderBy: { createdAt: "desc" },
       },
       bounces: { orderBy: { createdAt: "asc" } },
+      notes: {
+        include: { user: { select: { id: true, name: true, role: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 

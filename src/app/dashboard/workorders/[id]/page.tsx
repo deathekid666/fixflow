@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 type LineItem = { id: string; label: string; amount: number };
+type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
 type Attachment = { id: string; filename: string; path: string; createdAt: string };
 type Bounce = { id: string; reason: string; scenario: string; createdAt: string };
 
@@ -48,6 +49,9 @@ type WorkOrder = {
   logs: { id: string; action: string; description: string; createdAt: string; user: { name: string } }[];
   attachments: Attachment[];
   bounces: Bounce[];
+  notes: Note[];
+  tatDays: number;
+  isOverdue: boolean;
 };
 
 type Engineer = { id: string; name: string };
@@ -194,6 +198,19 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setEditingQuotation(false);
     await load();
     setSavingQuotation(false);
+  }
+
+  async function addNote() {
+    if (!newNote.trim()) return;
+    setAddingNote(true);
+    await fetch(`/api/workorders/${params.id}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: newNote }),
+    });
+    setNewNote("");
+    await load();
+    setAddingNote(false);
   }
 
   async function submitBounce() {
@@ -568,6 +585,55 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </button>
               </div>
             )}
+          </section>
+
+          {/* QR Code */}
+          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Tracking</h2>
+            <p className="text-xs text-slate-400 mb-3">Share this link with the customer to track repair status:</p>
+            <div className="bg-slate-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+              <span className="text-xs text-blue-400 font-mono truncate">
+                {typeof window !== "undefined" ? `${window.location.origin}/track/${order.orderNumber.slice(0, 6)}` : ""}
+              </span>
+              <button
+                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/track/${order.orderNumber.slice(0, 6)}`)}
+                className="text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0"
+              >
+                Copy
+              </button>
+            </div>
+          </section>
+
+          {/* Internal Notes */}
+          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Internal Notes</h2>
+            <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
+              {(!order.notes || order.notes.length === 0) && (
+                <p className="text-xs text-slate-500">No notes yet.</p>
+              )}
+              {order.notes?.map(note => (
+                <div key={note.id} className="bg-slate-800 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-blue-400 font-medium">{note.user.name}</span>
+                    <span className="text-xs text-slate-600">{new Date(note.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-xs text-slate-300">{note.message}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                placeholder="Add an internal note..."
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addNote(); }}
+              />
+              <button onClick={addNote} disabled={addingNote || !newNote.trim()}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                {addingNote ? "..." : "Add"}
+              </button>
+            </div>
           </section>
 
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">

@@ -70,6 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ...(user.role === "ADMIN" ? [
       { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
       { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },
+      { href: "/dashboard/reports", label: "Reports", icon: "📈" },
     ] : []),
   ];
 
