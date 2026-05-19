@@ -50,8 +50,6 @@ type WorkOrder = {
   attachments: Attachment[];
   bounces: Bounce[];
   notes: Note[];
-  tatDays: number;
-  isOverdue: boolean;
 };
 
 type Engineer = { id: string; name: string };
@@ -109,6 +107,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [submittingBounce, setSubmittingBounce] = useState(false);
 
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     load();
@@ -257,20 +257,16 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
         <div className="flex items-center gap-2">
           <a href={`/print/${params.id}`} target="_blank"
-            className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
-          >
+            className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
             🖨️ Print
           </a>
           <button onClick={() => setShowBounceForm(!showBounceForm)}
-            className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-400 rounded-lg transition-colors"
-          >
+            className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-400 rounded-lg transition-colors">
             Report Bounce
           </button>
           <select
             className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status]}`}
-            value={order.status}
-            onChange={(e) => changeStatus(e.target.value)}
-          >
+            value={order.status} onChange={(e) => changeStatus(e.target.value)}>
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
@@ -587,24 +583,21 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             )}
           </section>
 
-          {/* QR Code */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Tracking</h2>
-            <p className="text-xs text-slate-400 mb-3">Share this link with the customer to track repair status:</p>
+            <p className="text-xs text-slate-400 mb-3">Share this link with the customer:</p>
             <div className="bg-slate-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
               <span className="text-xs text-blue-400 font-mono truncate">
                 {typeof window !== "undefined" ? `${window.location.origin}/track/${order.orderNumber.slice(0, 6)}` : ""}
               </span>
               <button
                 onClick={() => navigator.clipboard.writeText(`${window.location.origin}/track/${order.orderNumber.slice(0, 6)}`)}
-                className="text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0"
-              >
+                className="text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0">
                 Copy
               </button>
             </div>
           </section>
 
-          {/* Internal Notes */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Internal Notes</h2>
             <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
