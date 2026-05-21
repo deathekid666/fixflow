@@ -1,5 +1,4 @@
 // src/app/api/workorders/[id]/edit/route.ts
-// Admin: full edit. Engineers: limited fields only.
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
@@ -15,14 +14,12 @@ export async function PATCH(
   const order = await prisma.workOrder.findUnique({ where: { id: params.id } });
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
-  // Shop scope for non-admins
   if (user.role !== "ADMIN" && order.shopId !== user.shopId) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
 
-  // Fields any authenticated user can update
   const sharedFields: Record<string, unknown> = {};
   const allowed = [
     "faultDescription", "appearance", "remarks", "repairType",
@@ -34,7 +31,6 @@ export async function PATCH(
     if (body[key] !== undefined) sharedFields[key] = body[key];
   }
 
-  // Admin-only fields
   if (user.role === "ADMIN") {
     const adminOnly = [
       "deviceBrand", "deviceModel", "serialNumber", "imei",
@@ -46,7 +42,6 @@ export async function PATCH(
     }
   }
 
-  // Parse date fields
   if (sharedFields.warrantyStart)
     sharedFields.warrantyStart = new Date(sharedFields.warrantyStart as string);
   if (sharedFields.warrantyEnd)
@@ -69,7 +64,7 @@ export async function PATCH(
   return Response.json(updated);
 }
 
-// DELETE — admin only
+// DELETE — admin only, cascades all related records first
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
@@ -83,7 +78,19 @@ export async function DELETE(
   const order = await prisma.workOrder.findUnique({ where: { id: params.id } });
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
-  await prisma.workOrder.delete({ where: { id: params.id } });
+  // Delete all related records first to avoid FK constraint errors
+  await prisma.$transaction([
+    prisma.workOrderPart.deleteMany({      where: { workOrderId: params.id } }),
+    prisma.quotationLineItem.deleteMany({  where: { workOrderId: params.id } }),
+    prisma.operationLog.deleteMany({       where: { workOrderId: params.id } }),
+    prisma.workOrderAttachment.deleteMany({ where: { workOrderId: params.id } }),
+    prisma.bounceRepair.deleteMany({       where: { workOrderId: params.id } }),
+    prisma.internalNote.deleteMany({       where: { workOrderId: params.id } }),
+    prisma.notification.deleteMany({       where: { workOrderId: params.id } }),
+    prisma.satisfactionRating.deleteMany({ where: { workOrderId: params.id } }),
+    prisma.smsNotification.deleteMany({    where: { workOrderId: params.id } }),
+    prisma.workOrder.delete({              where: { id: params.id } }),
+  ]);
 
   return Response.json({ message: "Work order deleted" });
 }
