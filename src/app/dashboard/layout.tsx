@@ -69,7 +69,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/customers", label: "Customers", icon: "👤" },
     ...(user.role === "ADMIN" ? [
       { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
+      { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },const nav = [
+    { href: "/dashboard", label: "Work Orders", icon: "📋" },
+    { href: "/dashboard/spareparts", label: "Spare Parts", icon: "🔧" },
+    { href: "/dashboard/customers", label: "Customers", icon: "👤" },
+    { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
+    { href: "/dashboard/ratings", label: "Satisfaction", icon: "⭐" },
+    { href: "/dashboard/csv", label: "CSV Import", icon: "📂" },
+    ...(user.role === "ADMIN" ? [
+      { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
       { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },
+      { href: "/dashboard/reports", label: "Reports", icon: "📈" },
+      { href: "/dashboard/shops", label: "Shops", icon: "🏪" },
+      { href: "/dashboard/warranties", label: "Warranties", icon: "🛡" },
+    ] : []),
+  ];
       { href: "/dashboard/reports", label: "Reports", icon: "📈" },
     ] : []),
   ];
