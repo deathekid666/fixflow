@@ -8,14 +8,13 @@ export const dynamic = "force-dynamic";
 const VALID_STATUSES = [
   "RECEIVED",
   "DIAGNOSING",
-  "WAITING_PARTS",
-  "IN_REPAIR",
-  "READY",
+  "REPAIRING",
+  "DONE",
   "DELIVERED",
   "CANCELLED",
 ];
 
-export async function PATCH(
+export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
@@ -31,30 +30,29 @@ export async function PATCH(
     );
   }
 
-  const order = await prisma.workOrder.findUnique({
-    where: { id: params.id },
+  const order = await prisma.workOrder.findFirst({
+    where: {
+      id: params.id,
+      shopId: user.role !== "ADMIN" ? (user.shopId ?? undefined) : undefined,
+    },
   });
 
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
-  // Shop scope — non-admins can only update their own shop's orders
-  if (user.role !== "ADMIN" && order.shopId !== user.shopId) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const wasDelivered = order.status === "DELIVERED";
   const isNowDelivered = status === "DELIVERED";
+  const isNowDone = status === "DONE";
 
   const updated = await prisma.workOrder.update({
     where: { id: params.id },
     data: {
       status,
+      updatedAt: new Date(),
       ...(isNowDelivered && !wasDelivered ? { deliveredAt: new Date() } : {}),
-      ...(status === "READY" && !order.doneAt ? { doneAt: new Date() } : {}),
+      ...(isNowDone && !order.doneAt ? { doneAt: new Date() } : {}),
     },
   });
 
-  // Log the status change
   await prisma.operationLog.create({
     data: {
       action: "STATUS_CHANGED",
@@ -64,9 +62,7 @@ export async function PATCH(
     },
   });
 
-  // ── DELIVERED trigger ────────────────────────────────────────────────────
   if (isNowDelivered && !wasDelivered) {
-    // 1. Send SMS if customer has a phone number
     if (order.customerPhone) {
       const message = smsService.buildDeliveryMessage(
         order.customerName,
@@ -74,7 +70,6 @@ export async function PATCH(
         order.deviceModel
       );
       const result = await smsService.send(order.customerPhone, message);
-
       await prisma.smsNotification.create({
         data: {
           workOrderId: order.id,
@@ -87,7 +82,6 @@ export async function PATCH(
       });
     }
 
-    // 2. Create in-app notification for the assignee/creator
     await prisma.notification.create({
       data: {
         type: "DELIVERED",
@@ -96,7 +90,6 @@ export async function PATCH(
         userId: order.assignedTo ?? order.userId,
       },
     });
-    // Rating is collected via frontend — see RatingModal component
   }
 
   return Response.json(updated);
