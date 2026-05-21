@@ -173,7 +173,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       credentials: "include",
     });
     if (res.ok) {
-      router.push("/dashboard/workorders");
+    router.push("/dashboard");
     } else {
       setDeletingOrder(false);
       setShowDeleteConfirm(false);
