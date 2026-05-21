@@ -1,10 +1,11 @@
 "use client";
 // src/app/dashboard/workorders/[id]/page.tsx
 
-import { useEffect, useState, useRef, useContext } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { AuthContext } from "@/context/AuthContext";
+
 import RatingModal from "@/components/RatingModal";
+import { useAuth } from "@/context/AuthContext";
 
 type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
@@ -80,8 +81,8 @@ const BOUNCE_SCENARIOS = [
 
 export default function WorkOrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const auth = useContext(AuthContext);
-  const isAdmin = auth?.user?.role === "ADMIN";
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [order, setOrder] = useState<WorkOrder | null>(null);
