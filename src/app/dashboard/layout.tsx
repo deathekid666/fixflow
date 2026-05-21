@@ -67,12 +67,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", label: "Work Orders", icon: "📋" },
     { href: "/dashboard/spareparts", label: "Spare Parts", icon: "🔧" },
     { href: "/dashboard/customers", label: "Customers", icon: "👤" },
-    ...(user.role === "ADMIN" ? [
-      { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
-      { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },const nav = [
-    { href: "/dashboard", label: "Work Orders", icon: "📋" },
-    { href: "/dashboard/spareparts", label: "Spare Parts", icon: "🔧" },
-    { href: "/dashboard/customers", label: "Customers", icon: "👤" },
     { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
     { href: "/dashboard/ratings", label: "Satisfaction", icon: "⭐" },
     { href: "/dashboard/csv", label: "CSV Import", icon: "📂" },
@@ -82,9 +76,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { href: "/dashboard/reports", label: "Reports", icon: "📈" },
       { href: "/dashboard/shops", label: "Shops", icon: "🏪" },
       { href: "/dashboard/warranties", label: "Warranties", icon: "🛡" },
-    ] : []),
-  ];
-      { href: "/dashboard/reports", label: "Reports", icon: "📈" },
     ] : []),
   ];
 
@@ -116,7 +107,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
         <div className="p-3 border-t border-slate-800 space-y-1">
-          {/* Notification bell */}
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -139,7 +129,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main */}
       <main className="flex-1 overflow-auto relative">
-        {/* Notification panel */}
         {showNotifications && (
           <div className="absolute top-0 right-0 w-96 h-full bg-slate-900 border-l border-slate-800 z-50 flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
