@@ -15,21 +15,25 @@ model User {
   role     String  @default("ENGINEER")
   shopId   String?
 
-  shop           Shop?         @relation(fields: [shopId], references: [id])
-  createdOrders  WorkOrder[]   @relation("CreatedBy")
-  assignedOrders WorkOrder[]   @relation("AssignedTo")
+  shop             Shop?             @relation(fields: [shopId], references: [id])
+  createdOrders    WorkOrder[]       @relation("CreatedBy")
+  assignedOrders   WorkOrder[]       @relation("AssignedTo")
   logs             OperationLog[]
   notifications    Notification[]
   notes            InternalNote[]
   stockAdjustments StockAdjustment[]
+  shifts           Shift[]
 }
 
 model Shop {
   id         String      @id @default(cuid())
   name       String
+  address    String?
+  phone      String?
   users      User[]
   workOrders WorkOrder[]
   spareParts SparePart[]
+  shifts     Shift[]
 }
 
 model WorkOrder {
@@ -89,12 +93,14 @@ model WorkOrder {
   bounces       BounceRepair[]
   notifications Notification[]
   notes         InternalNote[]
+  rating        SatisfactionRating?
+  smsLogs       SmsNotification[]
 }
 
 model QuotationLineItem {
-  id          String @id @default(cuid())
-  label       String
-  amount      Float
+  id     String @id @default(cuid())
+  label  String
+  amount Float
 
   workOrderId String
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
@@ -103,26 +109,26 @@ model QuotationLineItem {
 }
 
 model BounceRepair {
-  id          String @id @default(cuid())
-  reason      String
-  scenario    String
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  reason    String
+  scenario  String
+  createdAt DateTime @default(now())
 
   workOrderId String
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
 }
 
 model Notification {
-  id        String  @id @default(cuid())
-  type      String
-  message   String
-  read      Boolean @default(false)
+  id      String  @id @default(cuid())
+  type    String
+  message String
+  read    Boolean @default(false)
 
   workOrderId String?
   workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
 
-  userId    String
-  user      User   @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -135,8 +141,8 @@ model SparePart {
   unitPrice   Float   @default(0)
   stock       Int     @default(0)
 
-  shopId    String
-  shop      Shop    @relation(fields: [shopId], references: [id])
+  shopId      String
+  shop        Shop              @relation(fields: [shopId], references: [id])
   usages      WorkOrderPart[]
   adjustments StockAdjustment[]
 
@@ -185,8 +191,8 @@ model WorkOrderAttachment {
 }
 
 model InternalNote {
-  id        String @id @default(cuid())
-  message   String
+  id      String @id @default(cuid())
+  message String
 
   createdAt DateTime @default(now())
 
@@ -198,10 +204,10 @@ model InternalNote {
 }
 
 model StockAdjustment {
-  id          String @id @default(cuid())
-  quantity    Int
-  type        String // ADD, REMOVE, CORRECTION
-  reason      String?
+  id       String  @id @default(cuid())
+  quantity Int
+  type     String  // ADD, REMOVE, CORRECTION
+  reason   String?
 
   createdAt DateTime @default(now())
 
@@ -210,4 +216,47 @@ model StockAdjustment {
 
   sparePart SparePart @relation(fields: [sparePartId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
+}
+
+// ─── NEW MODELS ───────────────────────────────────────────────────────────────
+
+model SatisfactionRating {
+  id          String  @id @default(cuid())
+  workOrderId String  @unique
+  rating      Int     // 1–5
+  comment     String?
+
+  createdAt DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+}
+
+model SmsNotification {
+  id          String    @id @default(cuid())
+  workOrderId String
+  phone       String
+  message     String
+  status      String    @default("pending") // pending | sent | failed
+  provider    String    @default("mock")
+  sentAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+}
+
+model Shift {
+  id        String    @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime?
+  notes     String?
+
+  userId String
+  shopId String?
+
+  user User  @relation(fields: [userId], references: [id])
+  shop Shop? @relation(fields: [shopId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
