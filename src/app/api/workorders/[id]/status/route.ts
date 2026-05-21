@@ -1,4 +1,3 @@
-// src/app/api/workorders/[id]/status/route.ts
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { smsService } from "@/lib/smsService";
