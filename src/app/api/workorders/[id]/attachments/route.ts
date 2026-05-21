@@ -1,11 +1,25 @@
+// src/app/api/workorders/[id]/attachments/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain"];
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const user = requireAuth(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const attachments = await prisma.workOrderAttachment.findMany({
+    where: { workOrderId: params.id },
+    select: { id: true, filename: true, path: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(attachments);
+}
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
@@ -46,19 +60,34 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({
     id: attachment.id,
     filename: attachment.filename,
+    path: attachment.path,
     createdAt: attachment.createdAt,
   }, { status: 201 });
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+// NEW: Delete a specific attachment
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const attachments = await prisma.workOrderAttachment.findMany({
-    where: { workOrderId: params.id },
-    select: { id: true, filename: true, path: true, createdAt: true },
-    orderBy: { createdAt: "desc" },
+  const { attachmentId } = await req.json();
+  if (!attachmentId) return NextResponse.json({ error: "attachmentId required" }, { status: 400 });
+
+  const attachment = await prisma.workOrderAttachment.findFirst({
+    where: { id: attachmentId, workOrderId: params.id },
+  });
+  if (!attachment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.workOrderAttachment.delete({ where: { id: attachmentId } });
+
+  await prisma.operationLog.create({
+    data: {
+      action: "ATTACHMENT_DELETED",
+      description: `File deleted: ${attachment.filename}`,
+      workOrderId: params.id,
+      userId: user.id,
+    },
   });
 
-  return NextResponse.json(attachments);
+  return NextResponse.json({ message: "Deleted" });
 }

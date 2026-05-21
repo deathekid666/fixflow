@@ -1,83 +1,99 @@
+// src/app/api/workorders/[id]/status/route.ts
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { smsService } from "@/lib/smsService";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+// Matches the exact status values used in your existing page.tsx
+const VALID_STATUSES = [
+  "RECEIVED",
+  "DIAGNOSING",
+  "REPAIRING",
+  "DONE",
+  "DELIVERED",
+  "CANCELLED",
+];
+
+// Your existing page calls this with POST — keeping POST
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { status } = await req.json();
+
+  if (!status || !VALID_STATUSES.includes(status)) {
+    return Response.json(
+      { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   const order = await prisma.workOrder.findFirst({
-    where: { id: params.id, shopId: user.shopId ?? undefined },
-    include: {
-      creator: { select: { id: true, name: true, email: true } },
-      assignee: { select: { id: true, name: true, email: true } },
-      parts: {
-        include: {
-          sparePart: { select: { id: true, name: true, partNumber: true } },
-        },
-      },
-      lineItems: { orderBy: { createdAt: "asc" } },
-      logs: {
-        include: { user: { select: { id: true, name: true } } },
-        orderBy: { createdAt: "asc" },
-      },
-      attachments: {
-        select: { id: true, filename: true, path: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-      },
-      bounces: { orderBy: { createdAt: "asc" } },
-      notes: {
-        include: { user: { select: { id: true, name: true, role: true } } },
-        orderBy: { createdAt: "asc" },
-      },
+    where: {
+      id: params.id,
+      shopId: user.role !== "ADMIN" ? (user.shopId ?? undefined) : undefined,
     },
   });
 
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
-  // Calculate TAT
-  const start = new Date(order.receivedAt);
-  const end = order.deliveredAt
-    ? new Date(order.deliveredAt)
-    : order.doneAt
-    ? new Date(order.doneAt)
-    : new Date();
-  const tatDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  const isOverdue = tatDays > 3 && !["DONE", "DELIVERED", "CANCELLED"].includes(order.status);
-
-  return Response.json({ ...order, tatDays, isOverdue });
-}
-
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const user = requireAuth(req);
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  const order = await prisma.workOrder.findFirst({
-    where: { id: params.id, shopId: user.shopId ?? undefined },
-  });
-  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
-
-  const body = await req.json();
+  const wasDelivered = order.status === "DELIVERED";
+  const isNowDelivered = status === "DELIVERED";
+  const isNowDone = status === "DONE";
 
   const updated = await prisma.workOrder.update({
     where: { id: params.id },
     data: {
-      ...body,
-      warrantyStart: body.warrantyStart ? new Date(body.warrantyStart) : undefined,
-      warrantyEnd: body.warrantyEnd ? new Date(body.warrantyEnd) : undefined,
+      status,
       updatedAt: new Date(),
+      ...(isNowDelivered && !wasDelivered ? { deliveredAt: new Date() } : {}),
+      ...(isNowDone && !order.doneAt ? { doneAt: new Date() } : {}),
     },
   });
 
   await prisma.operationLog.create({
     data: {
-      action: "UPDATED",
-      description: "Work order updated",
-      workOrderId: params.id,
+      action: "STATUS_CHANGED",
+      description: `Status changed from ${order.status} to ${status}`,
+      workOrderId: order.id,
       userId: user.id,
     },
   });
+
+  // DELIVERED trigger
+  if (isNowDelivered && !wasDelivered) {
+    if (order.customerPhone) {
+      const message = smsService.buildDeliveryMessage(
+        order.customerName,
+        order.orderNumber,
+        order.deviceModel
+      );
+      const result = await smsService.send(order.customerPhone, message);
+      await prisma.smsNotification.create({
+        data: {
+          workOrderId: order.id,
+          phone: order.customerPhone,
+          message,
+          status: result.success ? "sent" : "failed",
+          provider: "mock",
+          sentAt: result.success ? new Date() : null,
+        },
+      });
+    }
+
+    await prisma.notification.create({
+      data: {
+        type: "DELIVERED",
+        message: `Work order #${order.orderNumber} marked as delivered.`,
+        workOrderId: order.id,
+        userId: order.assignedTo ?? order.userId,
+      },
+    });
+  }
 
   return Response.json(updated);
 }
