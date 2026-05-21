@@ -28,8 +28,8 @@ export default function LoginPage() {
 
     // cookie is now httpOnly — nothing to store manually
 
-    router.push("/dashboard");
-  }
+router.refresh();
+router.push("/dashboard");  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
