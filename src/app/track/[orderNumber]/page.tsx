@@ -14,17 +14,38 @@ type TrackData = {
   faultDescription: string;
   repairType: string | null;
   assignee: { name: string } | null;
+  shop: { name: string; phone: string | null; address: string | null } | null;
   logs: { action: string; description: string; createdAt: string }[];
+  rating: { rating: number; comment: string | null } | null;
 };
 
 const STATUS_STEPS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED"];
-const STATUS_LABELS: Record<string, string> = {
-  RECEIVED: "Received",
-  DIAGNOSING: "Diagnosing",
-  REPAIRING: "Repairing",
-  DONE: "Ready for pickup",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
+
+const STATUS_CONFIG: Record<string, { label: string; icon: string; color: string; bg: string; message: string }> = {
+  RECEIVED: {
+    label: "Received", icon: "📥", color: "#2563eb", bg: "#dbeafe",
+    message: "We've received your device and will begin diagnosis shortly.",
+  },
+  DIAGNOSING: {
+    label: "Diagnosing", icon: "🔍", color: "#d97706", bg: "#fef3c7",
+    message: "Our technician is diagnosing your device to identify the issue.",
+  },
+  REPAIRING: {
+    label: "In Repair", icon: "🔧", color: "#ea580c", bg: "#ffedd5",
+    message: "Your device is currently being repaired by our technician.",
+  },
+  DONE: {
+    label: "Ready for Pickup", icon: "✅", color: "#16a34a", bg: "#dcfce7",
+    message: "Great news! Your device is ready. Please come pick it up.",
+  },
+  DELIVERED: {
+    label: "Delivered", icon: "🎉", color: "#475569", bg: "#f1f5f9",
+    message: "Your device has been delivered. Thank you for choosing us!",
+  },
+  CANCELLED: {
+    label: "Cancelled", icon: "❌", color: "#dc2626", bg: "#fee2e2",
+    message: "This repair order has been cancelled. Please contact us for more information.",
+  },
 };
 
 export default function TrackPage({ params }: { params: { orderNumber: string } }) {
@@ -43,89 +64,163 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   }, []);
 
   const currentStep = data ? STATUS_STEPS.indexOf(data.status) : -1;
+  const config = data ? (STATUS_CONFIG[data.status] ?? STATUS_CONFIG.RECEIVED) : null;
+  const progressPct = data?.status === "CANCELLED" ? 0 : Math.max(0, Math.min(100, ((currentStep + 1) / STATUS_STEPS.length) * 100));
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "Arial, sans-serif" }}>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 20px" }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: "bold", color: "#1e293b", margin: 0 }}>FixFlow</h1>
-          <p style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>Repair Status Tracker</p>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", fontFamily: "'Segoe UI', Arial, sans-serif", padding: "20px 16px 40px" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", borderRadius: 99, padding: "8px 20px", marginBottom: 12 }}>
+            <span style={{ fontSize: 18 }}>🔧</span>
+            <span style={{ color: "white", fontWeight: 700, fontSize: 18 }}>
+              {data?.shop?.name ?? "FixFlow"}
+            </span>
+          </div>
+          <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>Repair Status Tracker</p>
         </div>
 
-        {loading && <p style={{ textAlign: "center", color: "#64748b" }}>Loading...</p>}
-
-        {error && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: 20, textAlign: "center" }}>
-            <p style={{ color: "#dc2626", fontWeight: 500 }}>Order not found</p>
-            <p style={{ color: "#64748b", fontSize: 13, marginTop: 4 }}>Please check your order number and try again.</p>
+        {loading && (
+          <div style={{ textAlign: "center", padding: 60 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+            <p style={{ color: "#94a3b8", fontSize: 14 }}>Loading your repair status...</p>
           </div>
         )}
 
-        {data && (
-          <>
-            {/* Order info */}
-            <div style={{ background: "white", borderRadius: 12, padding: 20, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        {error && (
+          <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 16, padding: 32, textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+            <p style={{ color: "#f87171", fontWeight: 600, fontSize: 16, margin: "0 0 8px" }}>Order Not Found</p>
+            <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>Please check your order number and try again.</p>
+            {data?.shop?.phone && (
+              <a href={`tel:${data.shop.phone}`} style={{ display: "inline-block", marginTop: 16, color: "#60a5fa", fontSize: 13 }}>
+                📞 Call us: {data.shop.phone}
+              </a>
+            )}
+          </div>
+        )}
+
+        {data && config && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* Status banner */}
+            <div style={{ background: config.bg, borderRadius: 16, padding: 20, border: `1px solid ${config.color}30` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                <span style={{ fontSize: 32 }}>{config.icon}</span>
                 <div>
-                  <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>Order Number</p>
-                  <p style={{ fontWeight: "bold", fontFamily: "monospace", color: "#1e293b", margin: "2px 0 0" }}>
-                    WO-{new Date(data.receivedAt).getFullYear()}-{data.orderNumber.slice(0, 6).toUpperCase()}
-                  </p>
+                  <p style={{ margin: 0, fontSize: 11, color: config.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Current Status</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 800, color: config.color }}>{config.label}</p>
                 </div>
-                <span style={{
-                  background: data.status === "DONE" ? "#dcfce7" : data.status === "DELIVERED" ? "#f1f5f9" : data.status === "CANCELLED" ? "#fee2e2" : "#dbeafe",
-                  color: data.status === "DONE" ? "#16a34a" : data.status === "DELIVERED" ? "#475569" : data.status === "CANCELLED" ? "#dc2626" : "#2563eb",
-                  padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 500,
-                }}>
-                  {STATUS_LABELS[data.status] ?? data.status}
-                </span>
               </div>
-              <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div>
-                  <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Device</p>
-                  <p style={{ fontSize: 13, color: "#1e293b", margin: "2px 0 0", fontWeight: 500 }}>{data.deviceBrand} {data.deviceModel}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Technician</p>
-                  <p style={{ fontSize: 13, color: "#1e293b", margin: "2px 0 0", fontWeight: 500 }}>{data.assignee?.name ?? "Being assigned"}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Received</p>
-                  <p style={{ fontSize: 13, color: "#1e293b", margin: "2px 0 0" }}>{new Date(data.receivedAt).toLocaleDateString()}</p>
-                </div>
-                {data.doneAt && (
-                  <div>
-                    <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Completed</p>
-                    <p style={{ fontSize: 13, color: "#1e293b", margin: "2px 0 0" }}>{new Date(data.doneAt).toLocaleDateString()}</p>
+              <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{config.message}</p>
+
+              {/* Progress bar */}
+              {data.status !== "CANCELLED" && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#64748b" }}>Progress</span>
+                    <span style={{ fontSize: 11, color: config.color, fontWeight: 600 }}>{Math.round(progressPct)}%</span>
                   </div>
-                )}
-              </div>
+                  <div style={{ background: "#e2e8f0", borderRadius: 99, height: 6, overflow: "hidden" }}>
+                    <div style={{ background: config.color, height: "100%", width: `${progressPct}%`, borderRadius: 99, transition: "width 0.6s ease" }} />
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Progress */}
+            {/* Order details */}
+            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
+              <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Order Details</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  { label: "Order #", value: `WO-${new Date(data.receivedAt).getFullYear()}-${data.orderNumber.slice(0, 6).toUpperCase()}` },
+                  { label: "Customer", value: data.customerName },
+                  { label: "Device", value: `${data.deviceBrand} ${data.deviceModel}` },
+                  { label: "Technician", value: data.assignee?.name ?? "Being assigned" },
+                  { label: "Received", value: new Date(data.receivedAt).toLocaleDateString() },
+                  { label: "Completed", value: data.doneAt ? new Date(data.doneAt).toLocaleDateString() : "In progress" },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p style={{ margin: 0, fontSize: 11, color: "#64748b" }}>{label}</p>
+                    <p style={{ margin: "3px 0 0", fontSize: 13, color: "white", fontWeight: 500 }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+              {data.faultDescription && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 11, color: "#64748b" }}>Issue Reported</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 }}>{data.faultDescription}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Step tracker */}
             {data.status !== "CANCELLED" && (
-              <div style={{ background: "white", borderRadius: 12, padding: 20, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-                <p style={{ fontSize: 12, fontWeight: "bold", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 16px" }}>Progress</p>
-                <div style={{ position: "relative" }}>
-                  {STATUS_STEPS.map((step, i) => (
-                    <div key={step} style={{ display: "flex", alignItems: "center", marginBottom: i < STATUS_STEPS.length - 1 ? 16 : 0 }}>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                        background: i <= currentStep ? "#2563eb" : "#e2e8f0",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: i <= currentStep ? "white" : "#94a3b8", fontSize: 12, fontWeight: "bold",
-                      }}>
-                        {i < currentStep ? "✓" : i + 1}
-                      </div>
-                      {i < STATUS_STEPS.length - 1 && (
+              <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
+                <p style={{ margin: "0 0 16px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Repair Journey</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {STATUS_STEPS.map((step, i) => {
+                    const stepConfig = STATUS_CONFIG[step];
+                    const done = i < currentStep;
+                    const active = i === currentStep;
+                    const pending = i > currentStep;
+                    return (
+                      <div key={step} style={{ display: "flex", gap: 14, position: "relative" }}>
+                        {/* Line */}
+                        {i < STATUS_STEPS.length - 1 && (
+                          <div style={{
+                            position: "absolute", left: 15, top: 30, width: 2, height: 28,
+                            background: done ? stepConfig.color : "rgba(255,255,255,0.1)",
+                            transition: "background 0.3s",
+                          }} />
+                        )}
+                        {/* Circle */}
                         <div style={{
-                          position: "absolute", left: 13, top: `${i * 44 + 28}px`, width: 2, height: 16,
-                          background: i < currentStep ? "#2563eb" : "#e2e8f0",
-                        }} />
-                      )}
-                      <div style={{ marginLeft: 12 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: i === currentStep ? 600 : 400, color: i <= currentStep ? "#1e293b" : "#94a3b8" }}>
-                          {STATUS_LABELS[step]}
+                          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                          background: done ? stepConfig.color : active ? stepConfig.color : "rgba(255,255,255,0.1)",
+                          border: active ? `2px solid ${stepConfig.color}` : "2px solid transparent",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: done ? 14 : 16,
+                          boxShadow: active ? `0 0 12px ${stepConfig.color}60` : "none",
+                          transition: "all 0.3s",
+                        }}>
+                          {done ? "✓" : stepConfig.icon}
+                        </div>
+                        {/* Label */}
+                        <div style={{ paddingBottom: i < STATUS_STEPS.length - 1 ? 20 : 0, paddingTop: 4 }}>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: active ? 700 : 400, color: pending ? "#475569" : "white" }}>
+                            {stepConfig.label}
+                          </p>
+                          {active && (
+                            <p style={{ margin: "2px 0 0", fontSize: 11, color: stepConfig.color }}>← Current step</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Timeline */}
+            {data.logs && data.logs.length > 0 && (
+              <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
+                <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Timeline</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {data.logs.map((log, i) => (
+                    <div key={i} style={{ display: "flex", gap: 12 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6", marginTop: 5, flexShrink: 0 }} />
+                      <div>
+                        <p style={{ margin: 0, fontSize: 13, color: "white", fontWeight: 500 }}>
+                          {log.action.replace(/_/g, " ")}
+                        </p>
+                        {log.description && (
+                          <p style={{ margin: "2px 0 0", fontSize: 12, color: "#94a3b8" }}>{log.description}</p>
+                        )}
+                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#475569" }}>
+                          {new Date(log.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -134,23 +229,47 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
               </div>
             )}
 
-            {/* History */}
-            <div style={{ background: "white", borderRadius: 12, padding: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-              <p style={{ fontSize: 12, fontWeight: "bold", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 12px" }}>Timeline</p>
-              <div>
-                {data.logs.map((log, i) => (
-                  <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563eb", marginTop: 5, flexShrink: 0 }} />
-                    <div>
-                      <p style={{ margin: 0, fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{log.action.replace(/_/g, " ")}</p>
-                      {log.description && <p style={{ margin: "2px 0 0", fontSize: 12, color: "#64748b" }}>{log.description}</p>}
-                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#94a3b8" }}>{new Date(log.createdAt).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
+            {/* Rating — shown if delivered and no rating yet */}
+            {data.status === "DELIVERED" && !data.rating && (
+              <div style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 16, padding: 20, textAlign: "center" }}>
+                <p style={{ fontSize: 24, margin: "0 0 8px" }}>⭐</p>
+                <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "white" }}>How was your experience?</p>
+                <p style={{ margin: "0 0 12px", fontSize: 13, color: "#94a3b8" }}>Your feedback helps us improve our service.</p>
+                <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <span key={star} style={{ fontSize: 28, cursor: "pointer", opacity: 0.6 }}>⭐</span>
+                  ))}
+                </div>
+                <p style={{ margin: "8px 0 0", fontSize: 11, color: "#64748b" }}>Tap a star to rate</p>
               </div>
-            </div>
-          </>
+            )}
+
+            {/* Already rated */}
+            {data.status === "DELIVERED" && data.rating && (
+              <div style={{ background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", borderRadius: 16, padding: 20, textAlign: "center" }}>
+                <p style={{ fontSize: 24, margin: "0 0 4px" }}>{"★".repeat(data.rating.rating)}</p>
+                <p style={{ margin: 0, fontSize: 13, color: "#86efac" }}>Thank you for your rating!</p>
+                {data.rating.comment && (
+                  <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>"{data.rating.comment}"</p>
+                )}
+              </div>
+            )}
+
+            {/* Contact shop */}
+            {data.shop?.phone && (
+              <div style={{ textAlign: "center" }}>
+                <a href={`tel:${data.shop.phone}`}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(37,99,235,0.2)", border: "1px solid rgba(37,99,235,0.4)", borderRadius: 99, padding: "10px 24px", color: "#60a5fa", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
+                  📞 Call {data.shop.name ?? "us"}: {data.shop.phone}
+                </a>
+              </div>
+            )}
+
+            {/* Footer */}
+            <p style={{ textAlign: "center", fontSize: 11, color: "#334155", margin: 0 }}>
+              Powered by <strong style={{ color: "#475569" }}>FixFlow</strong>
+            </p>
+          </div>
         )}
       </div>
     </div>
