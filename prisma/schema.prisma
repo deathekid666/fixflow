@@ -265,11 +265,25 @@ model Payment {
   id          String   @id @default(cuid())
   workOrderId String
   amount      Float
-  method      String   @default("CASH") // CASH, CARD, BANK_TRANSFER, OTHER
+  method      String   @default("CASH")
   note        String?
   collectedBy String
   createdAt   DateTime @default(now())
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   collector User      @relation(fields: [collectedBy], references: [id])
+}
+
+model WorkOrderTemplate {
+  id               String   @id @default(cuid())
+  name             String
+  deviceBrand      String   @default("")
+  deviceModel      String   @default("")
+  faultDescription String
+  repairType       String   @default("")
+  faultLevel       String   @default("LOW")
+  serviceType      String   @default("IN_STORE")
+  defaultPrice     Float    @default(0)
+  shopId           String
+  createdAt        DateTime @default(now())
 }

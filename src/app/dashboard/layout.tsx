@@ -32,7 +32,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearInterval(interval);
   }, [user]);
 
-  // Close sidebar on route change
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   async function loadNotifications() {
@@ -72,12 +71,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
       { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },
       { href: "/dashboard/reports", label: "Reports", icon: "📈" },
+      { href: "/dashboard/templates", label: "Templates", icon: "🗂️" },
       { href: "/dashboard/shops", label: "Shops", icon: "🏪" },
       { href: "/dashboard/warranties", label: "Warranties", icon: "🛡" },
     ] : []),
   ];
 
-  // Bottom nav items for mobile (most used)
   const bottomNav = [
     { href: "/dashboard", label: "Orders", icon: "📋" },
     { href: "/dashboard/spareparts", label: "Parts", icon: "🔧" },
@@ -93,10 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
@@ -111,12 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="text-lg font-semibold text-white tracking-tight">FixFlow</div>
             <div className="text-xs text-slate-500 mt-0.5">{user.name}</div>
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white text-xl leading-none"
-          >
-            ✕
-          </button>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white text-xl leading-none">✕</button>
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {nav.map((item) => {
@@ -125,8 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link key={item.href} href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   active ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white hover:bg-slate-800"
-                }`}
-              >
+                }`}>
                 <span>{item.icon}</span>
                 {item.label}
               </Link>
@@ -134,21 +124,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
         <div className="p-3 border-t border-slate-800 space-y-1">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span>🔔</span>
-              Notifications
-            </div>
-            {unread > 0 && (
-              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>
-            )}
+          <button onClick={() => setShowNotifications(!showNotifications)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            <div className="flex items-center gap-3"><span>🔔</span>Notifications</div>
+            {unread > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>}
           </button>
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
             <span>🚪</span> Logout
           </button>
         </div>
@@ -156,62 +138,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-
         {/* Mobile top bar */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-30">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-slate-400 hover:text-white p-1"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-white p-1">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
           <span className="text-white font-semibold text-sm">FixFlow</span>
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="text-slate-400 hover:text-white relative p-1"
-          >
+          <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-400 hover:text-white relative p-1">
             <span className="text-lg">🔔</span>
             {unread > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                {unread}
-              </span>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unread}</span>
             )}
           </button>
         </header>
 
         {/* Page content */}
         <main className="flex-1 overflow-auto relative pb-16 lg:pb-0">
-          {/* Notifications panel */}
           {showNotifications && (
             <div className="absolute top-0 right-0 w-full sm:w-96 h-full bg-slate-900 border-l border-slate-800 z-50 flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-slate-800">
                 <h2 className="text-sm font-semibold text-white">Notifications</h2>
                 <div className="flex items-center gap-3">
-                  {unread > 0 && (
-                    <button onClick={markAllRead} className="text-xs text-blue-400 hover:text-blue-300">Mark all read</button>
-                  )}
+                  {unread > 0 && <button onClick={markAllRead} className="text-xs text-blue-400 hover:text-blue-300">Mark all read</button>}
                   <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-white">✕</button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {notifications.length === 0 && (
-                  <p className="text-sm text-slate-500 text-center mt-8">No notifications</p>
-                )}
+                {notifications.length === 0 && <p className="text-sm text-slate-500 text-center mt-8">No notifications</p>}
                 {notifications.map(n => (
                   <div key={n.id}
-                    className={`p-3 rounded-lg text-xs cursor-pointer transition-colors ${
-                      n.read ? "bg-slate-800/50 text-slate-400" : "bg-slate-800 text-white border border-slate-700"
-                    }`}
-                    onClick={() => {
-                      markRead(n.id);
-                      if (n.workOrder) {
-                        setShowNotifications(false);
-                        router.push(`/dashboard/workorders/${n.workOrder.id}`);
-                      }
-                    }}
-                  >
+                    className={`p-3 rounded-lg text-xs cursor-pointer transition-colors ${n.read ? "bg-slate-800/50 text-slate-400" : "bg-slate-800 text-white border border-slate-700"}`}
+                    onClick={() => { markRead(n.id); if (n.workOrder) { setShowNotifications(false); router.push(`/dashboard/workorders/${n.workOrder.id}`); } }}>
                     <p className="leading-relaxed">{n.message}</p>
                     <p className="text-slate-600 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
                   </div>
@@ -228,19 +187,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
-                className={`flex-1 flex flex-col items-center justify-center py-2 text-xs transition-colors ${
-                  active ? "text-blue-400" : "text-slate-500 hover:text-slate-300"
-                }`}
-              >
+                className={`flex-1 flex flex-col items-center justify-center py-2 text-xs transition-colors ${active ? "text-blue-400" : "text-slate-500 hover:text-slate-300"}`}>
                 <span className="text-lg mb-0.5">{item.icon}</span>
                 <span>{item.label}</span>
               </Link>
             );
           })}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex-1 flex flex-col items-center justify-center py-2 text-xs text-slate-500 hover:text-slate-300"
-          >
+          <button onClick={() => setSidebarOpen(true)}
+            className="flex-1 flex flex-col items-center justify-center py-2 text-xs text-slate-500 hover:text-slate-300">
             <span className="text-lg mb-0.5">☰</span>
             <span>More</span>
           </button>
