@@ -12,16 +12,17 @@ type SparePart = {
   stock: number;
 };
 
+const LOW_STOCK_THRESHOLD = 5;
+
 export default function SparePartsPage() {
   const { user } = useAuth();
   const [parts, setParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", partNumber: "", description: "", unitPrice: "", stock: "" });
   const [saving, setSaving] = useState(false);
-
-  // Stock adjustment
   const [adjustingPart, setAdjustingPart] = useState<SparePart | null>(null);
   const [adjQuantity, setAdjQuantity] = useState("");
   const [adjType, setAdjType] = useState("ADD");
@@ -34,21 +35,24 @@ export default function SparePartsPage() {
     setLoading(true);
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    const res = await fetch(`/api/spareparts?${params}`);
-    setParts(await res.json());
+    const res = await fetch(`/api/spareparts?${params}`, { credentials: "include" });
+    const data = await res.json();
+    setParts(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
   async function handleCreate() {
+    if (!form.name || !form.unitPrice) return;
     setSaving(true);
     const res = await fetch("/api/spareparts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         name: form.name, partNumber: form.partNumber,
         description: form.description,
         unitPrice: parseFloat(form.unitPrice),
-        stock: parseInt(form.stock),
+        stock: parseInt(form.stock) || 0,
       }),
     });
     if (res.ok) {
@@ -65,6 +69,7 @@ export default function SparePartsPage() {
     await fetch("/api/spareparts/adjustments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         sparePartId: adjustingPart.id,
         quantity: parseInt(adjQuantity),
@@ -73,15 +78,22 @@ export default function SparePartsPage() {
       }),
     });
     setAdjustingPart(null);
-    setAdjQuantity("");
-    setAdjType("ADD");
-    setAdjReason("");
+    setAdjQuantity(""); setAdjType("ADD"); setAdjReason("");
     await load();
     setSavingAdj(false);
   }
 
+  const outOfStock = parts.filter(p => p.stock === 0);
+  const lowStock = parts.filter(p => p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD);
+
+  const filtered = parts.filter(p => {
+    if (stockFilter === "out") return p.stock === 0;
+    if (stockFilter === "low") return p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD;
+    return true;
+  });
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Spare Parts</h1>
@@ -95,6 +107,41 @@ export default function SparePartsPage() {
         )}
       </div>
 
+      {/* Low stock alert banner */}
+      {(outOfStock.length > 0 || lowStock.length > 0) && (
+        <div className="bg-orange-950/30 border border-orange-800/50 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-orange-400 text-lg">⚠️</span>
+            <h2 className="text-sm font-semibold text-orange-400">Stock Alerts</h2>
+          </div>
+          {outOfStock.length > 0 && (
+            <div>
+              <p className="text-xs text-red-400 font-semibold mb-1">Out of Stock ({outOfStock.length})</p>
+              <div className="flex flex-wrap gap-2">
+                {outOfStock.map(p => (
+                  <span key={p.id} className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-lg">
+                    {p.name} {p.partNumber ? `(${p.partNumber})` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {lowStock.length > 0 && (
+            <div>
+              <p className="text-xs text-yellow-400 font-semibold mb-1">Low Stock — less than {LOW_STOCK_THRESHOLD} units ({lowStock.length})</p>
+              <div className="flex flex-wrap gap-2">
+                {lowStock.map(p => (
+                  <span key={p.id} className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">
+                    {p.name} ({p.stock} left)
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add part form */}
       {showForm && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-slate-300">New Spare Part</h2>
@@ -144,7 +191,7 @@ export default function SparePartsPage() {
                 value={adjType} onChange={e => setAdjType(e.target.value)}>
                 <option value="ADD">Add Stock</option>
                 <option value="REMOVE">Remove Stock</option>
-                <option value="CORRECTION">Set to exact qty</option>
+                <option value="CORRECTION">Set exact qty</option>
               </select>
             </div>
             <div>
@@ -172,9 +219,30 @@ export default function SparePartsPage() {
         </div>
       )}
 
-      <input className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-        placeholder="Search parts..." value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Search + filter */}
+      <div className="flex gap-3 flex-wrap">
+        <input className="flex-1 min-w-[200px] bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          placeholder="Search parts..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="flex gap-2">
+          {[
+            { key: "all", label: `All (${parts.length})` },
+            { key: "low", label: `Low Stock (${lowStock.length})`, color: lowStock.length > 0 ? "text-yellow-400" : "" },
+            { key: "out", label: `Out of Stock (${outOfStock.length})`, color: outOfStock.length > 0 ? "text-red-400" : "" },
+          ].map(f => (
+            <button key={f.key}
+              onClick={() => setStockFilter(f.key as any)}
+              className={`px-3 py-2 text-xs rounded-lg border font-medium transition-colors ${
+                stockFilter === f.key
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : `bg-slate-900 border-slate-800 hover:border-slate-600 ${f.color || "text-slate-400"}`
+              }`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
+      {/* Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
@@ -186,28 +254,36 @@ export default function SparePartsPage() {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
-            {!loading && parts.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
-            {parts.map(p => (
-              <tr key={p.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                <td className="px-4 py-3 text-white font-medium">{p.name}</td>
+            {!loading && filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
+            {filtered.map(p => (
+              <tr key={p.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-950/10" : ""}`}>
+                <td className="px-4 py-3 text-white font-medium">
+                  {p.name}
+                  {p.stock === 0 && <span className="ml-2 text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">⚠ Out</span>}
+                  {p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">Low</span>}
+                </td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-400">{p.partNumber || "—"}</td>
-                <td className="px-4 py-3 text-slate-400 text-xs">{p.description || "—"}</td>
+                <td className="px-4 py-3 text-slate-400 text-xs max-w-[180px] truncate">{p.description || "—"}</td>
                 <td className="px-4 py-3 text-white">{p.unitPrice.toFixed(2)}</td>
-                <td className="px-4 py-3 text-white font-medium">{p.stock}</td>
+                <td className="px-4 py-3">
+                  <span className={`font-bold text-base ${p.stock === 0 ? "text-red-400" : p.stock < LOW_STOCK_THRESHOLD ? "text-yellow-400" : "text-white"}`}>
+                    {p.stock}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                     p.stock === 0 ? "bg-red-500/20 text-red-400" :
-                    p.stock < 5 ? "bg-yellow-500/20 text-yellow-400" :
+                    p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-500/20 text-yellow-400" :
                     "bg-green-500/20 text-green-400"
                   }`}>
-                    {p.stock === 0 ? "Out of Stock" : p.stock < 5 ? "Low Stock" : "In Stock"}
+                    {p.stock === 0 ? "Out of Stock" : p.stock < LOW_STOCK_THRESHOLD ? "Low Stock" : "In Stock"}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   {user?.role === "ADMIN" && (
                     <button onClick={() => setAdjustingPart(p)}
                       className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                      Adjust Stock
+                      Adjust
                     </button>
                   )}
                 </td>
