@@ -20,6 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -31,35 +32,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearInterval(interval);
   }, [user]);
 
+  // Close sidebar on route change
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
+
   async function loadNotifications() {
-    const res = await fetch("/api/notifications");
+    const res = await fetch("/api/notifications", { credentials: "include" });
     if (res.ok) setNotifications(await res.json());
   }
 
   async function markAllRead() {
-    await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({}) });
     await loadNotifications();
   }
 
   async function markRead(id: string) {
-    await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notificationId: id }) });
+    await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ notificationId: id }) });
     await loadNotifications();
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-950">
-      <div className="text-slate-400 text-sm">Loading...</div>
-    </div>
-  );
-
-  if (!user) return (
+  if (loading || !user) return (
     <div className="flex items-center justify-center min-h-screen bg-slate-950">
       <div className="text-slate-400 text-sm">Loading...</div>
     </div>
   );
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/login");
   }
 
@@ -79,19 +77,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ] : []),
   ];
 
+  // Bottom nav items for mobile (most used)
+  const bottomNav = [
+    { href: "/dashboard", label: "Orders", icon: "📋" },
+    { href: "/dashboard/spareparts", label: "Parts", icon: "🔧" },
+    { href: "/dashboard/customers", label: "Customers", icon: "👤" },
+    { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
+  ];
+
   const unread = notifications.filter(n => !n.read).length;
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div className="p-5 border-b border-slate-800">
-          <div className="text-lg font-semibold text-white tracking-tight">FixFlow</div>
-          <div className="text-xs text-slate-500 mt-0.5">{user.name}</div>
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-56 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col
+        transform transition-transform duration-200 ease-in-out
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}>
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <div className="text-lg font-semibold text-white tracking-tight">FixFlow</div>
+            <div className="text-xs text-slate-500 mt-0.5">{user.name}</div>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-slate-400 hover:text-white text-xl leading-none"
+          >
+            ✕
+          </button>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {nav.map((item) => {
             const active = pathname === item.href;
             return (
@@ -127,46 +154,98 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto relative">
-        {showNotifications && (
-          <div className="absolute top-0 right-0 w-96 h-full bg-slate-900 border-l border-slate-800 z-50 flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-slate-800">
-              <h2 className="text-sm font-semibold text-white">Notifications</h2>
-              <div className="flex items-center gap-3">
-                {unread > 0 && (
-                  <button onClick={markAllRead} className="text-xs text-blue-400 hover:text-blue-300">Mark all read</button>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Mobile top bar */}
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-30">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-slate-400 hover:text-white p-1"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="text-white font-semibold text-sm">FixFlow</span>
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="text-slate-400 hover:text-white relative p-1"
+          >
+            <span className="text-lg">🔔</span>
+            {unread > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                {unread}
+              </span>
+            )}
+          </button>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto relative pb-16 lg:pb-0">
+          {/* Notifications panel */}
+          {showNotifications && (
+            <div className="absolute top-0 right-0 w-full sm:w-96 h-full bg-slate-900 border-l border-slate-800 z-50 flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-slate-800">
+                <h2 className="text-sm font-semibold text-white">Notifications</h2>
+                <div className="flex items-center gap-3">
+                  {unread > 0 && (
+                    <button onClick={markAllRead} className="text-xs text-blue-400 hover:text-blue-300">Mark all read</button>
+                  )}
+                  <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {notifications.length === 0 && (
+                  <p className="text-sm text-slate-500 text-center mt-8">No notifications</p>
                 )}
-                <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-white">✕</button>
+                {notifications.map(n => (
+                  <div key={n.id}
+                    className={`p-3 rounded-lg text-xs cursor-pointer transition-colors ${
+                      n.read ? "bg-slate-800/50 text-slate-400" : "bg-slate-800 text-white border border-slate-700"
+                    }`}
+                    onClick={() => {
+                      markRead(n.id);
+                      if (n.workOrder) {
+                        setShowNotifications(false);
+                        router.push(`/dashboard/workorders/${n.workOrder.id}`);
+                      }
+                    }}
+                  >
+                    <p className="leading-relaxed">{n.message}</p>
+                    <p className="text-slate-600 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {notifications.length === 0 && (
-                <p className="text-sm text-slate-500 text-center mt-8">No notifications</p>
-              )}
-              {notifications.map(n => (
-                <div
-                  key={n.id}
-                  className={`p-3 rounded-lg text-xs cursor-pointer transition-colors ${
-                    n.read ? "bg-slate-800/50 text-slate-400" : "bg-slate-800 text-white border border-slate-700"
-                  }`}
-                  onClick={() => {
-                    markRead(n.id);
-                    if (n.workOrder) {
-                      setShowNotifications(false);
-                      router.push(`/dashboard/workorders/${n.workOrder.id}`);
-                    }
-                  }}
-                >
-                  <p className="leading-relaxed">{n.message}</p>
-                  <p className="text-slate-600 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {children}
-      </main>
+          )}
+          {children}
+        </main>
+
+        {/* Mobile bottom nav */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-30 flex">
+          {bottomNav.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={`flex-1 flex flex-col items-center justify-center py-2 text-xs transition-colors ${
+                  active ? "text-blue-400" : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                <span className="text-lg mb-0.5">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex-1 flex flex-col items-center justify-center py-2 text-xs text-slate-500 hover:text-slate-300"
+          >
+            <span className="text-lg mb-0.5">☰</span>
+            <span>More</span>
+          </button>
+        </nav>
+      </div>
     </div>
   );
 }
