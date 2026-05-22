@@ -13,6 +13,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     include: {
       creator: { select: { id: true, name: true, email: true } },
       assignee: { select: { id: true, name: true, email: true } },
+      shop: { select: { id: true, name: true, phone: true, address: true } },
       parts: {
         include: {
           sparePart: { select: { id: true, name: true, partNumber: true } },
@@ -33,6 +34,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         orderBy: { createdAt: "asc" },
       },
       rating: true,
+      payments: {
+        include: { collector: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 

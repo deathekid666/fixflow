@@ -8,6 +8,8 @@ type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
 type Attachment = { id: string; filename: string; path: string; createdAt: string };
 type Bounce = { id: string; reason: string; scenario: string; createdAt: string };
+type Payment = { id: string; amount: number; method: string; note: string | null; createdAt: string; collector: { name: string } };
+
 type WorkOrder = {
   id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
   serialNumber: string; imei: string; warrantyStart: string; warrantyEnd: string;
@@ -22,7 +24,9 @@ type WorkOrder = {
   lineItems: LineItem[]; logs: { id: string; action: string; description: string; createdAt: string; user: { name: string } }[];
   attachments: Attachment[]; bounces: Bounce[]; notes: Note[];
   tatDays: number; isOverdue: boolean; rating?: { rating: number; comment: string | null } | null;
+  payments: Payment[];
 };
+
 type Engineer = { id: string; name: string };
 type SparePart = { id: string; name: string; partNumber: string; unitPrice: number; stock: number };
 
@@ -40,6 +44,9 @@ const BOUNCE_SCENARIOS = [
   { value: "INCOMPLETE_REPAIR", label: "Incomplete repair" },
   { value: "OTHER", label: "Other" },
 ];
+const METHOD_ICONS: Record<string, string> = {
+  CASH: "💵", CARD: "💳", BANK_TRANSFER: "🏦", OTHER: "💰",
+};
 
 export default function WorkOrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -60,6 +67,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [editingQuotation, setEditingQuotation] = useState(false);
   const [discount, setDiscount] = useState("0");
   const [collected, setCollected] = useState("0");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [quotationRemarks, setQuotationRemarks] = useState("");
   const [savingQuotation, setSavingQuotation] = useState(false);
   const [showBounceForm, setShowBounceForm] = useState(false);
@@ -87,7 +95,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     const data = await res.json();
     setOrder(data);
     setDiscount(data.discount.toString());
-    setCollected(data.collected.toString());
+    setCollected("0");
     setQuotationRemarks(data.quotationRemarks || "");
     setLoading(false);
   }
@@ -153,12 +161,31 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   async function saveQuotation() {
     setSavingQuotation(true);
     const d = parseFloat(discount) || 0;
-    const c = parseFloat(collected) || 0;
     await fetch(`/api/workorders/${params.id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include",
-      body: JSON.stringify({ discount: d, collected: c, quotationRemarks, total: (order?.subtotal ?? 0) + (order?.quotationItems ?? 0) - d }),
+      body: JSON.stringify({ discount: d, quotationRemarks, total: (order?.subtotal ?? 0) + (order?.quotationItems ?? 0) - d }),
     });
     setEditingQuotation(false); await load(); setSavingQuotation(false);
+  }
+
+  async function collectPayment() {
+    const amt = parseFloat(collected);
+    if (!amt || amt <= 0) return;
+    setSavingQuotation(true);
+    await fetch(`/api/workorders/${params.id}/payments`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ amount: amt, method: paymentMethod }),
+    });
+    setCollected("0"); await load(); setSavingQuotation(false);
+  }
+
+  async function deletePayment(paymentId: string) {
+    if (!confirm("Delete this payment?")) return;
+    await fetch(`/api/workorders/${params.id}/payments`, {
+      method: "DELETE", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ paymentId }),
+    });
+    await load();
   }
 
   async function addNote() {
@@ -213,6 +240,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
   const selectedPartData = spareParts.find(p => p.id === selectedPart);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
+  const remaining = grandTotal - order.collected;
 
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
@@ -483,22 +511,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               {order.subtotal > 0 && <div className="flex justify-between text-slate-400"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>}
               {order.quotationItems > 0 && <div className="flex justify-between text-slate-400"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>}
               {order.discount > 0 && <div className="flex justify-between text-slate-400"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
-              <div className="flex justify-between text-white font-semibold border-t border-slate-800 pt-2 mt-2"><span>Total</span><span>{grandTotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-white font-semibold border-t border-slate-800 pt-2 mt-2"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
               {order.quotationRemarks && <p className="text-xs text-slate-500 mt-1">{order.quotationRemarks}</p>}
             </div>
-            <div className="bg-slate-800 rounded-lg p-3 space-y-2 mb-3">
-              <label className="text-xs text-slate-400 block">Collect Payment</label>
-              <div className="flex gap-2 items-center">
-                <input type="number" min="0" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500" value={collected} onChange={(e) => setCollected(e.target.value)} />
-                <button onClick={saveQuotation} disabled={savingQuotation} className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors font-medium">{savingQuotation ? "..." : "Save"}</button>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-green-400">Collected: {order.collected.toFixed(2)}</span>
-                {grandTotal - order.collected > 0 && <span className="text-red-400">Remaining: {(grandTotal - order.collected).toFixed(2)}</span>}
-              </div>
-            </div>
+
             {editingQuotation && (
-              <div className="space-y-3">
+              <div className="space-y-3 mb-3">
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Discount</label>
                   <input type="number" min="0" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" value={discount} onChange={(e) => setDiscount(e.target.value)} />
@@ -510,6 +528,60 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 <button onClick={saveQuotation} disabled={savingQuotation} className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">{savingQuotation ? "Saving..." : "Save"}</button>
               </div>
             )}
+
+            {/* Payment collection */}
+            <div className="bg-slate-800 rounded-lg p-3 space-y-3">
+              <label className="text-xs text-slate-400 block font-medium">Collect Payment</label>
+              <div className="flex gap-2">
+                <input type="number" min="0" placeholder="Amount"
+                  className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500"
+                  value={collected} onChange={(e) => setCollected(e.target.value)} />
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="bg-slate-700 border border-slate-600 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
+                  <option value="CASH">💵 Cash</option>
+                  <option value="CARD">💳 Card</option>
+                  <option value="BANK_TRANSFER">🏦 Bank</option>
+                  <option value="OTHER">💰 Other</option>
+                </select>
+                <button onClick={collectPayment} disabled={savingQuotation}
+                  className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors font-medium">
+                  {savingQuotation ? "..." : "Add"}
+                </button>
+              </div>
+
+              {/* Summary */}
+              <div className="flex justify-between text-xs pt-1 border-t border-slate-700">
+                <span className="text-green-400 font-medium">Collected: {order.collected.toFixed(2)} MAD</span>
+                {remaining > 0.01 ? (
+                  <span className="text-red-400 font-medium">Due: {remaining.toFixed(2)} MAD</span>
+                ) : order.collected > 0 ? (
+                  <span className="text-green-400 font-medium">✓ Fully paid</span>
+                ) : null}
+              </div>
+
+              {/* Payment history */}
+              {order.payments && order.payments.length > 0 && (
+                <div className="space-y-1 pt-2 border-t border-slate-700">
+                  <p className="text-xs text-slate-500 font-medium">Payment history</p>
+                  {order.payments.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{METHOD_ICONS[p.method] ?? "💰"}</span>
+                        <span className="text-slate-300 font-medium">{p.amount.toFixed(2)} MAD</span>
+                        <span className="text-slate-500">{p.method}</span>
+                        <span className="text-slate-600">· {p.collector.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600">{new Date(p.createdAt).toLocaleDateString()}</span>
+                        {isAdmin && (
+                          <button onClick={() => deletePayment(p.id)} className="text-red-400 hover:text-red-300">×</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Customer tracking */}

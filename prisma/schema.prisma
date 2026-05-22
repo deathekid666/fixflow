@@ -23,6 +23,7 @@ model User {
   notes            InternalNote[]
   stockAdjustments StockAdjustment[]
   shifts           Shift[]
+  payments         Payment[]
 }
 
 model Shop {
@@ -95,6 +96,7 @@ model WorkOrder {
   notes         InternalNote[]
   rating        SatisfactionRating?
   smsLogs       SmsNotification[]
+  payments      Payment[]
 }
 
 model QuotationLineItem {
@@ -206,7 +208,7 @@ model InternalNote {
 model StockAdjustment {
   id       String  @id @default(cuid())
   quantity Int
-  type     String  // ADD, REMOVE, CORRECTION
+  type     String
   reason   String?
 
   createdAt DateTime @default(now())
@@ -218,12 +220,10 @@ model StockAdjustment {
   user      User      @relation(fields: [userId], references: [id])
 }
 
-// ─── NEW MODELS ───────────────────────────────────────────────────────────────
-
 model SatisfactionRating {
   id          String  @id @default(cuid())
   workOrderId String  @unique
-  rating      Int     // 1–5
+  rating      Int
   comment     String?
 
   createdAt DateTime @default(now())
@@ -236,7 +236,7 @@ model SmsNotification {
   workOrderId String
   phone       String
   message     String
-  status      String    @default("pending") // pending | sent | failed
+  status      String    @default("pending")
   provider    String    @default("mock")
   sentAt      DateTime?
 
@@ -259,4 +259,17 @@ model Shift {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  workOrderId String
+  amount      Float
+  method      String   @default("CASH") // CASH, CARD, BANK_TRANSFER, OTHER
+  note        String?
+  collectedBy String
+  createdAt   DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  collector User      @relation(fields: [collectedBy], references: [id])
 }
