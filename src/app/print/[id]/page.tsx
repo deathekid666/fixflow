@@ -35,31 +35,23 @@ type WorkOrder = {
   createdAt: string;
   creator: { name: string };
   assignee: { name: string } | null;
+  shop: { name: string; address?: string; phone?: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
 };
-
-function formatWO(raw: string, date: string) {
-  return `WO-${new Date(date).getFullYear()}-${raw.slice(0, 6).toUpperCase()}`;
-}
 
 export default function PrintPage({ params }: { params: { id: string } }) {
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/workorders/${params.id}`)
+    fetch(`/api/workorders/${params.id}`, { credentials: "include" })
       .then(r => r.json())
-      .then(data => {
-        setOrder(data);
-        setLoading(false);
-      });
+      .then(data => { setOrder(data); setLoading(false); });
   }, []);
 
   useEffect(() => {
-    if (!loading && order) {
-      setTimeout(() => window.print(), 300);
-    }
+    if (!loading && order) setTimeout(() => window.print(), 300);
   }, [loading, order]);
 
   if (loading) return (
@@ -67,125 +59,147 @@ export default function PrintPage({ params }: { params: { id: string } }) {
       Preparing receipt...
     </div>
   );
-
   if (!order) return null;
 
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
+  const remaining = grandTotal - order.collected;
+  const woNumber = `WO-${new Date(order.createdAt).getFullYear()}-${order.orderNumber.slice(0, 6).toUpperCase()}`;
 
   return (
     <>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: white; color: black; }
-        .no-print { display: block; }
+        body { font-family: Arial, sans-serif; background: #f1f5f9; color: black; }
+        .no-print { display: flex; gap: 12px; padding: 16px 24px; background: #1e293b; }
+        .no-print button { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+        .btn-back { background: #475569; color: white; }
+        .btn-print { background: #2563eb; color: white; }
         @media print {
           .no-print { display: none !important; }
-          @page { margin: 15mm; }
+          body { background: white; }
+          @page { margin: 12mm; size: A4; }
         }
-        .receipt { max-width: 680px; margin: 0 auto; padding: 30px; background: white; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid black; padding-bottom: 16px; margin-bottom: 20px; }
-        .company-name { font-size: 24px; font-weight: bold; }
-        .company-sub { font-size: 12px; color: #666; margin-top: 2px; }
-        .order-number { font-size: 16px; font-weight: bold; text-align: right; }
-        .order-date { font-size: 12px; color: #666; text-align: right; }
-        .status-badge { display: inline-block; margin-top: 4px; font-size: 11px; padding: 2px 8px; border: 1px solid #999; border-radius: 4px; }
-        .section { margin-bottom: 16px; }
-        .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 6px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .field-label { font-size: 10px; color: #888; }
-        .field-value { font-size: 13px; font-weight: 500; margin-top: 1px; }
-        .fault-box { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; font-size: 13px; }
-        .fault-meta { display: flex; gap: 20px; margin-top: 8px; font-size: 11px; color: #666; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { text-align: left; font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding: 4px 0; }
-        td { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+        .receipt { max-width: 720px; margin: 24px auto; padding: 36px; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        @media print { .receipt { margin: 0; box-shadow: none; border-radius: 0; padding: 0; } }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 3px solid #1e293b; }
+        .shop-name { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+        .shop-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .shop-contact { font-size: 11px; color: #64748b; margin-top: 4px; }
+        .wo-block { text-align: right; }
+        .wo-number { font-size: 18px; font-weight: 700; color: #0f172a; }
+        .wo-date { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .status-pill { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; }
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
+        .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 8px; }
+        .field { margin-bottom: 6px; }
+        .field-label { font-size: 10px; color: #94a3b8; }
+        .field-value { font-size: 13px; font-weight: 500; color: #0f172a; margin-top: 1px; }
+        .badge-warranty { display: inline-block; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
+
+        .fault-card { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+        .fault-text { font-size: 13px; color: #1e293b; line-height: 1.5; }
+        .fault-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; }
+        .fault-meta span { font-size: 11px; color: #78716c; background: #fef3c7; padding: 2px 8px; border-radius: 4px; }
+        .remarks-text { font-size: 12px; color: #64748b; margin-top: 8px; padding-top: 8px; border-top: 1px solid #fde68a; }
+
+        .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+        th { text-align: left; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
         .text-right { text-align: right; }
-        .totals { margin-top: 12px; }
-        .total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
-        .total-row.final { font-weight: bold; font-size: 15px; border-top: 2px solid black; padding-top: 6px; margin-top: 4px; }
-        .total-row.collected { color: #1a7a1a; }
-        .total-row.remaining { color: #c00; }
-        .tat-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #666; }
-        .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e0e0e0; text-align: center; font-size: 11px; color: #999; }
-        .warranty-badge { display: inline-block; background: #d4edda; color: #155724; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
-        .print-btn { position: fixed; top: 20px; right: 20px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
-        .print-btn:hover { background: #1d4ed8; }
-        .back-btn { position: fixed; top: 20px; left: 20px; background: #475569; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+
+        .totals-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; max-width: 280px; margin-left: auto; }
+        .total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #475569; }
+        .total-row.grand { font-weight: 700; font-size: 16px; color: #0f172a; border-top: 2px solid #1e293b; padding-top: 8px; margin-top: 6px; }
+        .total-row.collected { color: #16a34a; font-weight: 600; }
+        .total-row.remaining { color: #dc2626; font-weight: 600; }
+
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .sig-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
+        .sig-label { font-size: 10px; color: #94a3b8; margin-bottom: 40px; }
+        .sig-line { border-top: 1px solid #cbd5e1; padding-top: 4px; font-size: 11px; color: #94a3b8; }
+        .tat-box { font-size: 12px; color: #475569; space-y: 4px; }
+        .tat-row { display: flex; justify-content: space-between; padding: 3px 0; }
+        .tat-row span:first-child { color: #94a3b8; }
+
+        .footer { text-align: center; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; line-height: 1.8; }
+        .footer strong { color: #475569; }
       `}</style>
 
       <div className="no-print">
-        <button className="back-btn" onClick={() => window.history.back()}>← Back</button>
-        <button className="print-btn" onClick={() => window.print()}>🖨️ Print / Save PDF</button>
+        <button className="btn-back" onClick={() => window.history.back()}>← Back</button>
+        <button className="btn-print" onClick={() => window.print()}>🖨️ Print / Save PDF</button>
       </div>
 
       <div className="receipt">
         {/* Header */}
         <div className="header">
           <div>
-            <div className="company-name">FixFlow</div>
-            <div className="company-sub">Repair Work Order</div>
+            <div className="shop-name">{order.shop?.name ?? "FixFlow"}</div>
+            <div className="shop-sub">Repair Work Order Receipt</div>
+            {order.shop?.address && <div className="shop-contact">📍 {order.shop.address}</div>}
+            {order.shop?.phone && <div className="shop-contact">📞 {order.shop.phone}</div>}
           </div>
-          <div>
-            <div className="order-number">{formatWO(order.orderNumber, order.createdAt)}</div>
-            <div className="order-date">{new Date(order.createdAt).toLocaleDateString()}</div>
-            <span className="status-badge">{order.status}</span>
+          <div className="wo-block">
+            <div className="wo-number">{woNumber}</div>
+            <div className="wo-date">Date: {new Date(order.createdAt).toLocaleDateString()}</div>
+            <div className="wo-date">Received: {new Date(order.receivedAt).toLocaleDateString()}</div>
+            <span className="status-pill">{order.status}</span>
           </div>
         </div>
 
         {/* Customer + Device */}
-        <div className="grid-2 section">
-          <div>
-            <div className="section-title">Customer</div>
-            <div className="field-value">{order.customerName}</div>
-            <div style={{ fontSize: 13, marginTop: 2 }}>{order.customerPhone}</div>
-            {order.customerEmail && <div style={{ fontSize: 12, color: "#666" }}>{order.customerEmail}</div>}
+        <div className="two-col">
+          <div className="card">
+            <div className="card-title">Customer Information</div>
+            <div className="field"><div className="field-label">Name</div><div className="field-value">{order.customerName}</div></div>
+            <div className="field"><div className="field-label">Phone</div><div className="field-value">{order.customerPhone}</div></div>
+            {order.customerEmail && <div className="field"><div className="field-label">Email</div><div className="field-value">{order.customerEmail}</div></div>}
           </div>
-          <div>
-            <div className="section-title">Device</div>
-            <div className="field-value">{order.deviceBrand} {order.deviceModel}</div>
-            {order.serialNumber && <div style={{ fontSize: 12, color: "#666" }}>SN: {order.serialNumber}</div>}
-            {order.imei && <div style={{ fontSize: 12, color: "#666" }}>IMEI: {order.imei}</div>}
-            {order.isUnderWarranty && <span className="warranty-badge">✓ Under Warranty</span>}
+          <div className="card">
+            <div className="card-title">Device Information</div>
+            <div className="field"><div className="field-label">Device</div><div className="field-value">{order.deviceBrand} {order.deviceModel}</div></div>
+            {order.serialNumber && <div className="field"><div className="field-label">Serial Number</div><div className="field-value">{order.serialNumber}</div></div>}
+            {order.imei && <div className="field"><div className="field-label">IMEI</div><div className="field-value">{order.imei}</div></div>}
+            {order.isUnderWarranty && <span className="badge-warranty">✓ Under Warranty</span>}
           </div>
         </div>
 
         {/* Fault */}
-        <div className="section">
-          <div className="section-title">Fault Description</div>
-          <div className="fault-box">
-            {order.faultDescription}
-            <div className="fault-meta">
-              <span>Service: {order.serviceType}</span>
-              <span>Level: {order.faultLevel}</span>
-              {order.repairType && <span>Repair: {order.repairType}</span>}
-              {order.appearance && <span>Appearance: {order.appearance}</span>}
-            </div>
+        <div className="fault-card">
+          <div className="card-title">Fault Description</div>
+          <div className="fault-text">{order.faultDescription}</div>
+          <div className="fault-meta">
+            <span>Service: {order.serviceType}</span>
+            <span>Level: {order.faultLevel}</span>
+            {order.repairType && <span>Repair: {order.repairType}</span>}
+            {order.appearance && <span>Appearance: {order.appearance}</span>}
           </div>
-          {order.remarks && <div style={{ fontSize: 12, color: "#666", marginTop: 6 }}>Remarks: {order.remarks}</div>}
+          {order.remarks && <div className="remarks-text">Remarks: {order.remarks}</div>}
         </div>
 
         {/* Parts */}
         {order.parts.length > 0 && (
-          <div className="section">
-            <div className="section-title">Spare Parts</div>
+          <div>
+            <div className="section-title">Spare Parts Used</div>
             <table>
-              <thead>
-                <tr>
-                  <th>Part</th>
-                  <th>Part #</th>
-                  <th className="text-right">Qty</th>
-                  <th className="text-right">Unit Price</th>
-                  <th className="text-right">Total</th>
-                </tr>
-              </thead>
+              <thead><tr>
+                <th>Part Name</th><th>Part #</th>
+                <th className="text-right">Qty</th>
+                <th className="text-right">Unit Price</th>
+                <th className="text-right">Total</th>
+              </tr></thead>
               <tbody>
                 {order.parts.map(p => (
                   <tr key={p.id}>
                     <td>{p.sparePart.name}</td>
-                    <td style={{ color: "#888", fontSize: 11 }}>{p.sparePart.partNumber || "—"}</td>
+                    <td style={{ color: "#94a3b8", fontSize: 11 }}>{p.sparePart.partNumber || "—"}</td>
                     <td className="text-right">{p.quantity}</td>
                     <td className="text-right">{p.unitPrice.toFixed(2)}</td>
-                    <td className="text-right" style={{ fontWeight: 500 }}>{p.total.toFixed(2)}</td>
+                    <td className="text-right" style={{ fontWeight: 600 }}>{p.total.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -193,17 +207,12 @@ export default function PrintPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* Services/Line items */}
+        {/* Services */}
         {order.lineItems.length > 0 && (
-          <div className="section">
+          <div>
             <div className="section-title">Services</div>
             <table>
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th className="text-right">Amount</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Description</th><th className="text-right">Amount</th></tr></thead>
               <tbody>
                 {order.lineItems.map(item => (
                   <tr key={item.id}>
@@ -217,28 +226,30 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         )}
 
         {/* Totals */}
-        <div className="totals">
-          {order.subtotal > 0 && (
-            <div className="total-row"><span>Parts subtotal</span><span>{order.subtotal.toFixed(2)}</span></div>
-          )}
-          {order.quotationItems > 0 && (
-            <div className="total-row"><span>Services subtotal</span><span>{order.quotationItems.toFixed(2)}</span></div>
-          )}
-          {order.discount > 0 && (
-            <div className="total-row"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>
-          )}
-          <div className="total-row final"><span>Total</span><span>{grandTotal.toFixed(2)}</span></div>
-          <div className="total-row collected"><span>Collected</span><span>{order.collected.toFixed(2)}</span></div>
-          {grandTotal - order.collected > 0 && (
-            <div className="total-row remaining"><span>Remaining</span><span>{(grandTotal - order.collected).toFixed(2)}</span></div>
-          )}
-          {order.quotationRemarks && (
-            <div style={{ fontSize: 11, color: "#666", marginTop: 8, borderTop: "1px solid #eee", paddingTop: 8 }}>{order.quotationRemarks}</div>
-          )}
+        <div className="totals-block">
+          {order.subtotal > 0 && <div className="total-row"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>}
+          {order.quotationItems > 0 && <div className="total-row"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>}
+          {order.discount > 0 && <div className="total-row"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
+          <div className="total-row grand"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
+          <div className="total-row collected"><span>Collected</span><span>{order.collected.toFixed(2)} MAD</span></div>
+          {remaining > 0 && <div className="total-row remaining"><span>Remaining</span><span>{remaining.toFixed(2)} MAD</span></div>}
+          {order.quotationRemarks && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8, paddingTop: 8, borderTop: "1px solid #e2e8f0" }}>{order.quotationRemarks}</div>}
         </div>
 
-        {/* TAT + Technician */}
-        <div className="tat-section">
+        {/* TAT + Signatures */}
+        <div className="bottom-grid">
+          <div className="sig-box">
+            <div className="sig-label">Customer Signature</div>
+            <div className="sig-line">Name: {order.customerName}</div>
+          </div>
+          <div className="sig-box">
+            <div className="sig-label">Technician Signature</div>
+            <div className="sig-line">Name: {order.assignee?.name ?? order.creator.name}</div>
+          </div>
+        </div>
+
+        {/* TAT info */}
+        <div style={{ fontSize: 12, color: "#64748b", display: "flex", justifyContent: "space-between", marginBottom: 20, padding: "12px 0", borderTop: "1px solid #e2e8f0" }}>
           <div>
             <div>Received: {new Date(order.receivedAt).toLocaleDateString()}</div>
             {order.doneAt && <div>Completed: {new Date(order.doneAt).toLocaleDateString()}</div>}
@@ -248,11 +259,15 @@ export default function PrintPage({ params }: { params: { id: string } }) {
           <div style={{ textAlign: "right" }}>
             <div>Technician: {order.assignee?.name ?? "—"}</div>
             <div>Created by: {order.creator.name}</div>
+            <div>Order #: {woNumber}</div>
           </div>
         </div>
 
+        {/* Footer */}
         <div className="footer">
-          <p>Thank you for choosing our service</p>
+          <p><strong>Thank you for choosing {order.shop?.name ?? "FixFlow"}!</strong></p>
+          <p>This receipt is proof of repair service. Please keep it for warranty claims.</p>
+          {order.shop?.phone && <p>Contact: {order.shop.phone}</p>}
         </div>
       </div>
     </>
