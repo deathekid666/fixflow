@@ -43,8 +43,10 @@ type WorkOrder = {
 export default function PrintPage({ params }: { params: { id: string } }) {
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
+    setOrigin(window.location.origin);
     fetch(`/api/workorders/${params.id}`, { credentials: "include" })
       .then(r => r.json())
       .then(data => { setOrder(data); setLoading(false); });
@@ -64,6 +66,8 @@ export default function PrintPage({ params }: { params: { id: string } }) {
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
   const woNumber = `WO-${new Date(order.createdAt).getFullYear()}-${order.orderNumber.slice(0, 6).toUpperCase()}`;
+  const trackUrl = `${origin}/track/${order.orderNumber.slice(0, 6)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(trackUrl)}`;
 
   return (
     <>
@@ -81,7 +85,6 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         }
         .receipt { max-width: 720px; margin: 24px auto; padding: 36px; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         @media print { .receipt { margin: 0; box-shadow: none; border-radius: 0; padding: 0; } }
-
         .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 3px solid #1e293b; }
         .shop-name { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         .shop-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
@@ -90,7 +93,6 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         .wo-number { font-size: 18px; font-weight: 700; color: #0f172a; }
         .wo-date { font-size: 12px; color: #64748b; margin-top: 2px; }
         .status-pill { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; }
-
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
         .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 8px; }
@@ -98,35 +100,30 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         .field-label { font-size: 10px; color: #94a3b8; }
         .field-value { font-size: 13px; font-weight: 500; color: #0f172a; margin-top: 1px; }
         .badge-warranty { display: inline-block; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
-
         .fault-card { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
         .fault-text { font-size: 13px; color: #1e293b; line-height: 1.5; }
         .fault-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; }
         .fault-meta span { font-size: 11px; color: #78716c; background: #fef3c7; padding: 2px 8px; border-radius: 4px; }
         .remarks-text { font-size: 12px; color: #64748b; margin-top: 8px; padding-top: 8px; border-top: 1px solid #fde68a; }
-
         .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 8px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
         th { text-align: left; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid #e2e8f0; }
         td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
         .text-right { text-align: right; }
-
         .totals-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; max-width: 280px; margin-left: auto; }
         .total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #475569; }
         .total-row.grand { font-weight: 700; font-size: 16px; color: #0f172a; border-top: 2px solid #1e293b; padding-top: 8px; margin-top: 6px; }
         .total-row.collected { color: #16a34a; font-weight: 600; }
         .total-row.remaining { color: #dc2626; font-weight: 600; }
-
         .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
         .sig-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
         .sig-label { font-size: 10px; color: #94a3b8; margin-bottom: 40px; }
         .sig-line { border-top: 1px solid #cbd5e1; padding-top: 4px; font-size: 11px; color: #94a3b8; }
-        .tat-box { font-size: 12px; color: #475569; space-y: 4px; }
-        .tat-row { display: flex; justify-content: space-between; padding: 3px 0; }
-        .tat-row span:first-child { color: #94a3b8; }
-
-        .footer { text-align: center; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; line-height: 1.8; }
-        .footer strong { color: #475569; }
+        .footer-row { display: flex; justify-content: space-between; align-items: flex-end; padding-top: 16px; border-top: 1px solid #e2e8f0; gap: 20px; }
+        .footer-text { font-size: 11px; color: #94a3b8; line-height: 1.8; flex: 1; }
+        .footer-text strong { color: #475569; }
+        .qr-block { text-align: center; flex-shrink: 0; }
+        .qr-label { font-size: 9px; color: #94a3b8; margin-top: 4px; }
       `}</style>
 
       <div className="no-print">
@@ -236,7 +233,7 @@ export default function PrintPage({ params }: { params: { id: string } }) {
           {order.quotationRemarks && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8, paddingTop: 8, borderTop: "1px solid #e2e8f0" }}>{order.quotationRemarks}</div>}
         </div>
 
-        {/* TAT + Signatures */}
+        {/* Signatures */}
         <div className="bottom-grid">
           <div className="sig-box">
             <div className="sig-label">Customer Signature</div>
@@ -263,11 +260,18 @@ export default function PrintPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="footer">
-          <p><strong>Thank you for choosing {order.shop?.name ?? "FixFlow"}!</strong></p>
-          <p>This receipt is proof of repair service. Please keep it for warranty claims.</p>
-          {order.shop?.phone && <p>Contact: {order.shop.phone}</p>}
+        {/* Footer + QR */}
+        <div className="footer-row">
+          <div className="footer-text">
+            <p><strong>Thank you for choosing {order.shop?.name ?? "FixFlow"}!</strong></p>
+            <p>This receipt is proof of repair service. Please keep it for warranty claims.</p>
+            {order.shop?.phone && <p>Contact: {order.shop.phone}</p>}
+            {order.shop?.address && <p>{order.shop.address}</p>}
+          </div>
+          <div className="qr-block">
+            <img src={qrUrl} alt="Track QR Code" style={{ width: 100, height: 100, display: "block" }} />
+            <div className="qr-label">Scan to track repair</div>
+          </div>
         </div>
       </div>
     </>
