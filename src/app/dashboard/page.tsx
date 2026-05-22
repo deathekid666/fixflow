@@ -15,6 +15,10 @@ type WorkOrder = {
   isUnderWarranty: boolean;
   createdAt: string;
   assignee: { name: string } | null;
+  total: number;
+  collected: number;
+  tatDays: number;
+  isOverdue: boolean;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,27 +42,34 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  useEffect(() => {
-    load();
-  }, [search, statusFilter]);
+  useEffect(() => { load(); }, [search, statusFilter]);
 
   async function load() {
     setLoading(true);
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
-    const res = await fetch(`/api/workorders?${params}`);
+    const res = await fetch(`/api/workorders?${params}`, { credentials: "include" });
     const data = await res.json();
     setOrders(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
-  const counts = {
-    total: orders.length,
-    received: orders.filter(o => o.status === "RECEIVED").length,
-    repairing: orders.filter(o => o.status === "REPAIRING").length,
-    done: orders.filter(o => o.status === "DONE").length,
-  };
+  // ── Stats ────────────────────────────────────────────────────────────────
+  const allOrders = orders;
+  const active = allOrders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status));
+  const totalRevenue = allOrders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + o.total, 0);
+  const pendingPayment = allOrders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + (o.total - o.collected), 0);
+  const overdue = allOrders.filter(o => o.isOverdue).length;
+
+  const stats = [
+    { label: "Total Orders", value: allOrders.length, sub: `${active.length} active`, color: "text-white", icon: "📋" },
+    { label: "Received", value: allOrders.filter(o => o.status === "RECEIVED").length, sub: "awaiting diagnosis", color: "text-blue-400", icon: "📥" },
+    { label: "In Progress", value: allOrders.filter(o => ["DIAGNOSING", "REPAIRING"].includes(o.status)).length, sub: `${overdue} overdue`, color: overdue > 0 ? "text-orange-400" : "text-yellow-400", icon: "🔧" },
+    { label: "Ready", value: allOrders.filter(o => o.status === "DONE").length, sub: "awaiting pickup", color: "text-green-400", icon: "✅" },
+    { label: "Revenue", value: `${totalRevenue.toFixed(0)} MAD`, sub: `${pendingPayment.toFixed(0)} pending`, color: "text-emerald-400", icon: "💰" },
+    { label: "Delivered", value: allOrders.filter(o => o.status === "DELIVERED").length, sub: "this period", color: "text-slate-400", icon: "📦" },
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -69,48 +80,46 @@ export default function DashboardPage() {
           <p className="text-sm text-slate-500 mt-0.5">Manage repair work orders</p>
         </div>
         <Link href="/dashboard/workorders/new"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium"
-        >
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
           + New Work Order
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: "Total", value: counts.total, color: "text-white" },
-          { label: "Received", value: counts.received, color: "text-blue-400" },
-          { label: "Repairing", value: counts.repairing, color: "text-orange-400" },
-          { label: "Done", value: counts.done, color: "text-green-400" },
-        ].map((s) => (
-          <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <p className="text-xs text-slate-500">{s.label}</p>
-            <p className={`text-2xl font-semibold mt-1 ${s.color}`}>{s.value}</p>
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500">{s.label}</p>
+              <span className="text-base">{s.icon}</span>
+            </div>
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-slate-600">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <input
-          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          className="flex-1 min-w-[200px] bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
           placeholder="Search by customer, phone, device, order number..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <select
-          className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">All Status</option>
-          <option value="RECEIVED">Received</option>
-          <option value="DIAGNOSING">Diagnosing</option>
-          <option value="REPAIRING">Repairing</option>
-          <option value="DONE">Done</option>
-          <option value="DELIVERED">Delivered</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
+        <div className="flex gap-2 flex-wrap">
+          {["", "RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"].map((s) => (
+            <button key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-2 text-xs rounded-lg border font-medium transition-colors ${
+                statusFilter === s
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600"
+              }`}>
+              {s || "All"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table */}
@@ -118,23 +127,20 @@ export default function DashboardPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800">
-              {["Order #", "Customer", "Device", "Fault Level", "Status", "Assigned To", "Date", ""].map((h) => (
+              {["Order #", "Customer", "Device", "Fault", "Status", "Assigned To", "Total", "Date", ""].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>
-            )}
-            {!loading && orders.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">No work orders found.</td></tr>
-            )}
+            {loading && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
+            {!loading && orders.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">No work orders found.</td></tr>}
             {orders.map((o) => (
               <tr key={o.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-slate-400">{o.orderNumber.slice(0, 8).toUpperCase()}</span>
                   {o.isUnderWarranty && <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">W</span>}
+                  {o.isOverdue && <span className="ml-1 text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
                 </td>
                 <td className="px-4 py-3">
                   <div className="text-white font-medium">{o.customerName}</div>
@@ -151,13 +157,15 @@ export default function DashboardPage() {
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[o.status]}`}>{o.status}</span>
                 </td>
                 <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-300 text-xs font-medium">
+                  {o.total > 0 ? `${o.total.toFixed(0)}` : "—"}
+                  {o.total > o.collected && o.status === "DELIVERED" && (
+                    <span className="text-red-400 ml-1 text-xs">({(o.total - o.collected).toFixed(0)} due)</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/dashboard/workorders/${o.id}`}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    View →
-                  </Link>
+                  <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View →</Link>
                 </td>
               </tr>
             ))}
