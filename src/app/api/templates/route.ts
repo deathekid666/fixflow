@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
   const templates = await prisma.workOrderTemplate.findMany({
     where: { shopId: user.shopId ?? undefined },
-    orderBy: { name: "asc" },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
   });
 
   return Response.json(templates);
@@ -21,7 +21,11 @@ export async function POST(req: Request) {
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { name, deviceBrand, deviceModel, faultDescription, repairType, faultLevel, serviceType, defaultPrice } = body;
+  const {
+    name, category, deviceBrand, deviceModel, faultDescription,
+    repairType, faultLevel, serviceType, defaultPrice,
+    estimatedDuration, defaultParts, defaultLineItems,
+  } = body;
 
   if (!name || !faultDescription) {
     return Response.json({ error: "name and faultDescription are required" }, { status: 400 });
@@ -30,6 +34,7 @@ export async function POST(req: Request) {
   const template = await prisma.workOrderTemplate.create({
     data: {
       name,
+      category: category ?? "",
       deviceBrand: deviceBrand ?? "",
       deviceModel: deviceModel ?? "",
       faultDescription,
@@ -37,6 +42,9 @@ export async function POST(req: Request) {
       faultLevel: faultLevel ?? "LOW",
       serviceType: serviceType ?? "IN_STORE",
       defaultPrice: defaultPrice ? parseFloat(defaultPrice) : 0,
+      estimatedDuration: estimatedDuration ? parseInt(estimatedDuration) : 0,
+      defaultParts: defaultParts ?? [],
+      defaultLineItems: defaultLineItems ?? [],
       shopId: user.shopId ?? "",
     },
   });

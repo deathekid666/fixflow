@@ -8,10 +8,17 @@ type CustomerHistory = {
   totalOrders: number; lastVisit: string; statuses: string[];
 };
 
+type DefaultPart = { sparePartId: string; quantity: number };
+type DefaultLineItem = { label: string; amount: number };
+
 type Template = {
-  id: string; name: string; deviceBrand: string; deviceModel: string;
-  faultDescription: string; repairType: string; faultLevel: string;
-  serviceType: string; defaultPrice: number;
+  id: string; name: string; category: string;
+  deviceBrand: string; deviceModel: string;
+  faultDescription: string; repairType: string;
+  faultLevel: string; serviceType: string;
+  defaultPrice: number; estimatedDuration: number;
+  defaultParts: DefaultPart[];
+  defaultLineItems: DefaultLineItem[];
 };
 
 export default function NewWorkOrderPage() {
@@ -20,9 +27,11 @@ export default function NewWorkOrderPage() {
   const [error, setError] = useState("");
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [customerHistory, setCustomerHistory] = useState<CustomerHistory | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const phoneTimer = useRef<NodeJS.Timeout | null>(null);
+  const [filterCategory, setFilterCategory] = useState("");
 
   const [form, setForm] = useState({
     deviceBrand: "", deviceModel: "", serialNumber: "", imei: "",
@@ -51,6 +60,7 @@ export default function NewWorkOrderPage() {
       faultLevel: t.faultLevel || prev.faultLevel,
       serviceType: t.serviceType || prev.serviceType,
     }));
+    setSelectedTemplate(t);
     setShowTemplates(false);
   }
 
@@ -88,42 +98,102 @@ export default function NewWorkOrderPage() {
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Failed to create work order"); setLoading(false); return; }
+
+    // Apply default parts and line items from template
+    if (selectedTemplate) {
+      const parts = Array.isArray(selectedTemplate.defaultParts) ? selectedTemplate.defaultParts : [];
+      const items = Array.isArray(selectedTemplate.defaultLineItems) ? selectedTemplate.defaultLineItems : [];
+
+      await Promise.all([
+        ...parts.map((p: DefaultPart) =>
+          fetch(`/api/workorders/${data.id}/parts`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ sparePartId: p.sparePartId, quantity: p.quantity }),
+          })
+        ),
+        ...items.map((li: DefaultLineItem) =>
+          fetch(`/api/workorders/${data.id}/lineitems`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ label: li.label, amount: li.amount }),
+          })
+        ),
+      ]);
+    }
+
     router.push(`/dashboard/workorders/${data.id}`);
+  }
+
+  const categories = [...new Set(templates.map(t => t.category).filter(Boolean))];
+  const filteredTemplates = filterCategory ? templates.filter(t => t.category === filterCategory) : templates;
+
+  function formatDuration(mins: number) {
+    if (!mins) return null;
+    if (mins < 60) return `${mins}min`;
+    return `${Math.floor(mins / 60)}h${mins % 60 > 0 ? ` ${mins % 60}min` : ""}`;
   }
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
           <h1 className="text-xl font-semibold text-white">New Work Order</h1>
         </div>
-        {/* Template selector button */}
         <button onClick={() => setShowTemplates(!showTemplates)}
           className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors flex items-center gap-2">
-          <span>📋</span> {showTemplates ? "Hide Templates" : "Use Template"}
+          <span>🗂️</span>
+          {showTemplates ? "Hide Templates" : "Use Template"}
           {templates.length > 0 && <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">{templates.length}</span>}
         </button>
       </div>
+
+      {/* Applied template banner */}
+      {selectedTemplate && (
+        <div className="bg-blue-950/30 border border-blue-800/50 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-blue-400 font-medium">Template applied: {selectedTemplate.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {Array.isArray(selectedTemplate.defaultParts) && selectedTemplate.defaultParts.length > 0 && `${selectedTemplate.defaultParts.length} parts · `}
+              {Array.isArray(selectedTemplate.defaultLineItems) && selectedTemplate.defaultLineItems.length > 0 && `${selectedTemplate.defaultLineItems.length} services · `}
+              {selectedTemplate.estimatedDuration > 0 && `Est. ${formatDuration(selectedTemplate.estimatedDuration)}`}
+            </p>
+          </div>
+          <button onClick={() => setSelectedTemplate(null)} className="text-xs text-slate-500 hover:text-slate-300">✕ Clear</button>
+        </div>
+      )}
 
       {/* Template picker */}
       {showTemplates && (
         <div className="bg-slate-900 border border-blue-800/50 rounded-xl p-4 space-y-3">
           <p className="text-xs text-slate-400 font-medium">Select a template to auto-fill the form:</p>
-          {templates.length === 0 ? (
+
+          {/* Category filter */}
+          {categories.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setFilterCategory("")} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${!filterCategory ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>All</button>
+              {categories.map(c => (
+                <button key={c} onClick={() => setFilterCategory(c)} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${filterCategory === c ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>{c}</button>
+              ))}
+            </div>
+          )}
+
+          {filteredTemplates.length === 0 ? (
             <p className="text-xs text-slate-500">No templates yet. Admins can create them in the Templates page.</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              {templates.map(t => (
+              {filteredTemplates.map(t => (
                 <button key={t.id} onClick={() => applyTemplate(t)}
-                  className="text-left bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500 rounded-lg p-3 transition-colors">
+                  className="text-left bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500 rounded-lg p-3 transition-colors space-y-1">
                   <p className="text-sm font-medium text-white">{t.name}</p>
-                  {(t.deviceBrand || t.deviceModel) && (
-                    <p className="text-xs text-slate-400 mt-0.5">{t.deviceBrand} {t.deviceModel}</p>
-                  )}
-                  {t.defaultPrice > 0 && (
-                    <p className="text-xs text-emerald-400 mt-1">{t.defaultPrice} MAD</p>
-                  )}
+                  {(t.deviceBrand || t.deviceModel) && <p className="text-xs text-slate-400">{t.deviceBrand} {t.deviceModel}</p>}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {t.defaultPrice > 0 && <span className="text-xs text-emerald-400">{t.defaultPrice} MAD</span>}
+                    {t.estimatedDuration > 0 && <span className="text-xs text-blue-400">⏱ {formatDuration(t.estimatedDuration)}</span>}
+                    {Array.isArray(t.defaultParts) && t.defaultParts.length > 0 && <span className="text-xs text-slate-500">🔧 {t.defaultParts.length} parts</span>}
+                    {Array.isArray(t.defaultLineItems) && t.defaultLineItems.length > 0 && <span className="text-xs text-slate-500">💰 {t.defaultLineItems.length} services</span>}
+                  </div>
                 </button>
               ))}
             </div>

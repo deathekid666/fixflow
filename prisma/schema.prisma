@@ -275,15 +275,19 @@ model Payment {
 }
 
 model WorkOrderTemplate {
-  id               String   @id @default(cuid())
-  name             String
-  deviceBrand      String   @default("")
-  deviceModel      String   @default("")
-  faultDescription String
-  repairType       String   @default("")
-  faultLevel       String   @default("LOW")
-  serviceType      String   @default("IN_STORE")
-  defaultPrice     Float    @default(0)
-  shopId           String
-  createdAt        DateTime @default(now())
+  id                String   @id @default(cuid())
+  name              String
+  category          String   @default("")
+  deviceBrand       String   @default("")
+  deviceModel       String   @default("")
+  faultDescription  String
+  repairType        String   @default("")
+  faultLevel        String   @default("LOW")
+  serviceType       String   @default("IN_STORE")
+  defaultPrice      Float    @default(0)
+  estimatedDuration Int      @default(0) // in minutes
+  defaultParts      Json     @default("[]") // [{ sparePartId, quantity }]
+  defaultLineItems  Json     @default("[]") // [{ label, amount }]
+  shopId            String
+  createdAt         DateTime @default(now())
 }
