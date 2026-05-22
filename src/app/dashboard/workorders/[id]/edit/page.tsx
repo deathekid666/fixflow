@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 type WorkOrder = {
   id: string;
@@ -25,13 +26,15 @@ type WorkOrder = {
 
 export default function EditWorkOrderPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [form, setForm] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`/api/workorders/${params.id}`)
+    fetch(`/api/workorders/${params.id}`, { credentials: "include" })
       .then(r => r.json())
       .then(data => { setForm(data); setLoading(false); });
   }, []);
@@ -45,8 +48,9 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
     setSaving(true);
     setError("");
     const res = await fetch(`/api/workorders/${params.id}/edit`, {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(form),
     });
     if (res.ok) {
@@ -70,33 +74,39 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
 
       {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
 
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Device Information</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} />
-          <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} />
-          <Field label="Serial Number" value={form.serialNumber} onChange={v => set("serialNumber", v)} />
-          <Field label="IMEI" value={form.imei} onChange={v => set("imei", v)} />
-          <Field label="Warranty Start" type="date" value={form.warrantyStart ? form.warrantyStart.slice(0, 10) : ""} onChange={v => set("warrantyStart", v)} />
-          <Field label="Warranty End" type="date" value={form.warrantyEnd ? form.warrantyEnd.slice(0, 10) : ""} onChange={v => set("warrantyEnd", v)} />
-        </div>
-        <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
-          <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded" />
-          Under warranty
-        </label>
-      </section>
+      {/* Admin-only: Device & Customer info */}
+      {isAdmin && (
+        <>
+          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Device Information <span className="text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} />
+              <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} />
+              <Field label="Serial Number" value={form.serialNumber} onChange={v => set("serialNumber", v)} />
+              <Field label="IMEI" value={form.imei} onChange={v => set("imei", v)} />
+              <Field label="Warranty Start" type="date" value={form.warrantyStart ? form.warrantyStart.slice(0, 10) : ""} onChange={v => set("warrantyStart", v)} />
+              <Field label="Warranty End" type="date" value={form.warrantyEnd ? form.warrantyEnd.slice(0, 10) : ""} onChange={v => set("warrantyEnd", v)} />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+              <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded" />
+              Under warranty
+            </label>
+          </section>
 
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Customer Information</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Name *" value={form.customerName} onChange={v => set("customerName", v)} />
-          <Field label="Phone *" value={form.customerPhone} onChange={v => set("customerPhone", v)} />
-          <div className="col-span-2">
-            <Field label="Email" value={form.customerEmail} onChange={v => set("customerEmail", v)} />
-          </div>
-        </div>
-      </section>
+          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Customer Information <span className="text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Name *" value={form.customerName} onChange={v => set("customerName", v)} />
+              <Field label="Phone *" value={form.customerPhone} onChange={v => set("customerPhone", v)} />
+              <div className="col-span-2">
+                <Field label="Email" value={form.customerEmail} onChange={v => set("customerEmail", v)} />
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
+      {/* Everyone can edit fault & service */}
       <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Fault & Service</h2>
         <div>
@@ -151,7 +161,7 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
       <label className="text-xs text-slate-400 mb-1 block">{label}</label>
       <input type={type}
         className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-        value={value} onChange={e => onChange(e.target.value)} />
+        value={value ?? ""} onChange={e => onChange(e.target.value)} />
     </div>
   );
 }
