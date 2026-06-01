@@ -1,4 +1,3 @@
-// src/app/api/workorders/[id]/route.ts
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
@@ -15,9 +14,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       assignee: { select: { id: true, name: true, email: true } },
       shop: { select: { id: true, name: true, phone: true, address: true } },
       parts: {
-        include: {
-          sparePart: { select: { id: true, name: true, partNumber: true } },
-        },
+        include: { sparePart: { select: { id: true, name: true, partNumber: true } } },
       },
       lineItems: { orderBy: { createdAt: "asc" } },
       logs: {
@@ -38,17 +35,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         include: { collector: { select: { id: true, name: true } } },
         orderBy: { createdAt: "desc" },
       },
+      checklist: { orderBy: { createdAt: "asc" } },
     },
   });
 
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
   const start = new Date(order.receivedAt);
-  const end = order.deliveredAt
-    ? new Date(order.deliveredAt)
-    : order.doneAt
-    ? new Date(order.doneAt)
-    : new Date();
+  const end = order.deliveredAt ? new Date(order.deliveredAt) : order.doneAt ? new Date(order.doneAt) : new Date();
   const tatDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   const isOverdue = tatDays > 3 && !["DONE", "DELIVERED", "CANCELLED"].includes(order.status);
 
