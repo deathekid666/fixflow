@@ -97,6 +97,7 @@ model WorkOrder {
   rating        SatisfactionRating?
   smsLogs       SmsNotification[]
   payments      Payment[]
+  checklist     DiagnosisCheck[]
 }
 
 model QuotationLineItem {
@@ -285,9 +286,22 @@ model WorkOrderTemplate {
   faultLevel        String   @default("LOW")
   serviceType       String   @default("IN_STORE")
   defaultPrice      Float    @default(0)
-  estimatedDuration Int      @default(0) // in minutes
-  defaultParts      Json     @default("[]") // [{ sparePartId, quantity }]
-  defaultLineItems  Json     @default("[]") // [{ label, amount }]
+  estimatedDuration Int      @default(0)
+  defaultParts      Json     @default("[]")
+  defaultLineItems  Json     @default("[]")
   shopId            String
   createdAt         DateTime @default(now())
+}
+
+model DiagnosisCheck {
+  id          String   @id @default(cuid())
+  workOrderId String
+  item        String
+  status      String   @default("PENDING")
+  note        String?
+  checkedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
