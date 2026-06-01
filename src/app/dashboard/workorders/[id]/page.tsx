@@ -8,7 +8,8 @@ type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
 type Attachment = { id: string; filename: string; path: string; createdAt: string };
 type Bounce = { id: string; reason: string; scenario: string; createdAt: string };
-type Payment = { id: string; amount: number; method: string; note: string | null; createdAt: string; collector: { name: string }; meta?: string | null };
+type Payment = { id: string; amount: number; method: string; note: string | null; createdAt: string; collector: { name: string } };
+type CheckItem = { id: string; item: string; status: string; note: string | null };
 
 type WorkOrder = {
   id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
@@ -21,10 +22,13 @@ type WorkOrder = {
   collected: number; quotationRemarks: string | null; createdAt: string;
   creator: { name: string }; assignee: { id: string; name: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
-  lineItems: LineItem[]; logs: { id: string; action: string; description: string; createdAt: string; user: { name: string } }[];
+  lineItems: LineItem[];
+  logs: { id: string; action: string; description: string; createdAt: string; user: { name: string } }[];
   attachments: Attachment[]; bounces: Bounce[]; notes: Note[];
-  tatDays: number; isOverdue: boolean; rating?: { rating: number; comment: string | null } | null;
+  tatDays: number; isOverdue: boolean;
+  rating?: { rating: number; comment: string | null } | null;
   payments: Payment[];
+  checklist: CheckItem[];
 };
 
 type Engineer = { id: string; name: string };
@@ -80,8 +84,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState(false);
   const [showRating, setShowRating] = useState(false);
-
-  // Payment state
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [paymentNote, setPaymentNote] = useState("");
@@ -91,6 +93,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [otherDesc, setOtherDesc] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [newCheckItem, setNewCheckItem] = useState("");
+  const [addingCheck, setAddingCheck] = useState(false);
 
   useEffect(() => {
     load();
@@ -106,6 +110,37 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setDiscount(data.discount.toString());
     setQuotationRemarks(data.quotationRemarks || "");
     setLoading(false);
+  }
+
+  async function loadChecklist() {
+    await fetch(`/api/workorders/${params.id}/checklist`, { credentials: "include" });
+    await load();
+  }
+
+  async function updateCheck(checkId: string, status: string) {
+    await fetch(`/api/workorders/${params.id}/checklist`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ checkId, status }),
+    });
+    await load();
+  }
+
+  async function addCheckItem() {
+    if (!newCheckItem.trim()) return;
+    setAddingCheck(true);
+    await fetch(`/api/workorders/${params.id}/checklist`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ item: newCheckItem }),
+    });
+    setNewCheckItem(""); await load(); setAddingCheck(false);
+  }
+
+  async function deleteCheckItem(checkId: string) {
+    await fetch(`/api/workorders/${params.id}/checklist`, {
+      method: "DELETE", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ checkId }),
+    });
+    await load();
   }
 
   async function changeStatus(status: string) {
@@ -179,8 +214,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   async function collectPayment() {
     const amt = parseFloat(paymentAmount);
     if (!amt || amt <= 0) return;
-
-    // Build meta based on method
     let note = paymentNote;
     if (paymentMethod === "CARD" && cardLast4) note = `Card ending ${cardLast4}${paymentNote ? " · " + paymentNote : ""}`;
     if (paymentMethod === "BANK_TRANSFER") {
@@ -188,15 +221,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       note = parts.join(" · ");
     }
     if (paymentMethod === "OTHER") note = otherDesc + (paymentNote ? " · " + paymentNote : "");
-
     setSavingPayment(true);
     await fetch(`/api/workorders/${params.id}/payments`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       credentials: "include", body: JSON.stringify({ amount: amt, method: paymentMethod, note }),
     });
     setPaymentAmount(""); setPaymentNote(""); setCardLast4(""); setBankRef(""); setBankName(""); setOtherDesc("");
-    setShowPaymentForm(false);
-    await load(); setSavingPayment(false);
+    setShowPaymentForm(false); await load(); setSavingPayment(false);
   }
 
   async function deletePayment(paymentId: string) {
@@ -262,6 +293,10 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
   const isFullyPaid = remaining <= 0.01 && order.collected > 0;
+  const checkOK = order.checklist.filter(c => c.status === "OK").length;
+  const checkIssue = order.checklist.filter(c => c.status === "ISSUE").length;
+  const checkNA = order.checklist.filter(c => c.status === "NA").length;
+  const checkPending = order.checklist.filter(c => c.status === "PENDING").length;
 
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
@@ -282,7 +317,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {isAdmin && showDeleteConfirm && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-red-400">Delete?</span>
-              <button onClick={deleteOrder} disabled={deletingOrder} className="text-xs px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors disabled:opacity-50">{deletingOrder ? "..." : "Yes"}</button>
+              <button onClick={deleteOrder} disabled={deletingOrder} className="text-xs px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg disabled:opacity-50">{deletingOrder ? "..." : "Yes"}</button>
               <button onClick={() => setShowDeleteConfirm(false)} className="text-xs px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg">No</button>
             </div>
           )}
@@ -319,6 +354,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2 space-y-4">
+
           {/* Device info */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Device Information</h2>
@@ -448,6 +484,87 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             )}
           </section>
 
+          {/* Diagnosis Checklist */}
+          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Diagnosis Checklist</h2>
+                {order.checklist.length > 0 && (
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {order.checklist.filter(c => c.status !== "PENDING").length}/{order.checklist.length} checked
+                  </p>
+                )}
+              </div>
+              {order.checklist.length === 0 && (
+                <button onClick={loadChecklist} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+                  + Load Checklist
+                </button>
+              )}
+            </div>
+
+            {order.checklist.length === 0 ? (
+              <p className="text-sm text-slate-500">Click "Load Checklist" to start diagnosis.</p>
+            ) : (
+              <div className="space-y-2">
+                {order.checklist.map(check => (
+                  <div key={check.id} className="flex items-start gap-3 group">
+                    <div className="flex gap-1 flex-shrink-0 mt-0.5">
+                      {[
+                        { s: "OK", icon: "✓", active: "bg-green-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-green-900 hover:text-green-400" },
+                        { s: "ISSUE", icon: "!", active: "bg-red-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-red-900 hover:text-red-400" },
+                        { s: "NA", icon: "—", active: "bg-slate-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
+                        { s: "PENDING", icon: "○", active: "bg-slate-700 text-slate-400", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
+                      ].map(btn => (
+                        <button key={btn.s} onClick={() => updateCheck(check.id, btn.s)}
+                          className={`w-6 h-6 rounded text-xs font-bold transition-all ${check.status === btn.s ? btn.active : btn.inactive}`}>
+                          {btn.icon}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                      <p className={`text-xs mt-1 ${
+                        check.status === "OK" ? "text-green-400" :
+                        check.status === "ISSUE" ? "text-red-400" :
+                        check.status === "NA" ? "text-slate-600 line-through" :
+                        "text-slate-300"
+                      }`}>{check.item}</p>
+                      <button onClick={() => deleteCheckItem(check.id)} className="text-slate-700 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">×</button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Progress bar */}
+                {order.checklist.length > 0 && (
+                  <div className="pt-3 mt-1 border-t border-slate-800">
+                    <div className="flex gap-3 text-xs mb-2">
+                      <span className="text-green-400">✓ {checkOK} OK</span>
+                      <span className="text-red-400">! {checkIssue} Issues</span>
+                      <span className="text-slate-500">— {checkNA} N/A</span>
+                      <span className="text-slate-600">○ {checkPending} Pending</span>
+                    </div>
+                    <div className="flex h-1.5 rounded-full overflow-hidden bg-slate-800">
+                      <div className="bg-green-500 h-full transition-all" style={{ width: `${(checkOK / order.checklist.length) * 100}%` }} />
+                      <div className="bg-red-500 h-full transition-all" style={{ width: `${(checkIssue / order.checklist.length) * 100}%` }} />
+                      <div className="bg-slate-600 h-full transition-all" style={{ width: `${(checkNA / order.checklist.length) * 100}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Add custom item */}
+                <div className="flex gap-2 pt-2">
+                  <input className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    placeholder="Add custom check item..." value={newCheckItem}
+                    onChange={e => setNewCheckItem(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") addCheckItem(); }} />
+                  <button onClick={addCheckItem} disabled={addingCheck || !newCheckItem.trim()}
+                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-slate-300 text-xs rounded-lg transition-colors">
+                    {addingCheck ? "..." : "+ Add"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
           {/* Bounce history */}
           {order.bounces.length > 0 && (
             <section className="bg-red-950/20 border border-red-800/30 rounded-xl p-5">
@@ -543,7 +660,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Quotation Remarks</label>
-                  <textarea rows={2} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none resize-none" placeholder="Optional..." value={quotationRemarks} onChange={(e) => setQuotationRemarks(e.target.value)} />
+                  <textarea rows={2} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none resize-none" value={quotationRemarks} onChange={(e) => setQuotationRemarks(e.target.value)} />
                 </div>
                 <button onClick={saveQuotation} disabled={savingQuotation} className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{savingQuotation ? "Saving..." : "Save"}</button>
               </div>
@@ -551,27 +668,20 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
             {/* Payment section */}
             <div className="border border-slate-700 rounded-lg overflow-hidden">
-              {/* Payment summary bar */}
               <div className="bg-slate-800 px-3 py-2 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-green-400 font-medium">Paid: {order.collected.toFixed(2)} MAD</span>
-                    {remaining > 0.01 && <span className="text-red-400 font-medium">Due: {remaining.toFixed(2)} MAD</span>}
-                    {isFullyPaid && <span className="text-green-400 font-medium">✓ Fully paid</span>}
-                  </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-green-400 font-medium">Paid: {order.collected.toFixed(2)} MAD</span>
+                  {remaining > 0.01 && <span className="text-red-400 font-medium">Due: {remaining.toFixed(2)} MAD</span>}
+                  {isFullyPaid && <span className="text-green-400 font-medium">✓ Fully paid</span>}
                 </div>
-                <button
-                  onClick={() => setShowPaymentForm(!showPaymentForm)}
-                  className="text-xs px-2.5 py-1 bg-green-600 hover:bg-green-500 text-white rounded-md font-medium transition-colors whitespace-nowrap"
-                >
+                <button onClick={() => setShowPaymentForm(!showPaymentForm)}
+                  className="text-xs px-2.5 py-1 bg-green-600 hover:bg-green-500 text-white rounded-md font-medium transition-colors whitespace-nowrap">
                   + Payment
                 </button>
               </div>
 
-              {/* Payment form */}
               {showPaymentForm && (
                 <div className="bg-slate-800/50 border-t border-slate-700 p-3 space-y-3">
-                  {/* Method selector */}
                   <div className="grid grid-cols-4 gap-1">
                     {[
                       { key: "CASH", icon: "💵", label: "Cash" },
@@ -580,72 +690,59 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                       { key: "OTHER", icon: "💰", label: "Other" },
                     ].map(m => (
                       <button key={m.key} onClick={() => setPaymentMethod(m.key)}
-                        className={`py-2 rounded-lg text-xs font-medium transition-colors flex flex-col items-center gap-0.5 ${
-                          paymentMethod === m.key ? "bg-green-600 text-white" : "bg-slate-700 text-slate-400 hover:bg-slate-600"
-                        }`}>
+                        className={`py-2 rounded-lg text-xs font-medium transition-colors flex flex-col items-center gap-0.5 ${paymentMethod === m.key ? "bg-green-600 text-white" : "bg-slate-700 text-slate-400 hover:bg-slate-600"}`}>
                         <span className="text-base">{m.icon}</span>
                         <span>{m.label}</span>
                       </button>
                     ))}
                   </div>
-
-                  {/* Amount */}
                   <div>
                     <label className="text-xs text-slate-400 mb-1 block">Amount (MAD) *</label>
                     <input type="number" min="0" placeholder="0.00"
                       className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500"
                       value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
                   </div>
-
-                  {/* Card-specific fields */}
                   {paymentMethod === "CARD" && (
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Last 4 digits of card</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Last 4 digits</label>
                       <input type="text" maxLength={4} placeholder="1234"
                         className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-green-500"
                         value={cardLast4} onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, ""))} />
                     </div>
                   )}
-
-                  {/* Bank transfer-specific fields */}
                   {paymentMethod === "BANK_TRANSFER" && (
                     <div className="space-y-2">
                       <div>
                         <label className="text-xs text-slate-400 mb-1 block">Bank name</label>
-                        <input type="text" placeholder="e.g. CIH, Attijariwafa, BMCE"
+                        <input type="text" placeholder="e.g. CIH, Attijariwafa"
                           className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500"
                           value={bankName} onChange={(e) => setBankName(e.target.value)} />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400 mb-1 block">Transfer reference number</label>
+                        <label className="text-xs text-slate-400 mb-1 block">Reference number</label>
                         <input type="text" placeholder="REF-XXXXXXXX"
                           className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-green-500"
                           value={bankRef} onChange={(e) => setBankRef(e.target.value)} />
                       </div>
                     </div>
                   )}
-
-                  {/* Other-specific fields */}
                   {paymentMethod === "OTHER" && (
                     <div>
                       <label className="text-xs text-slate-400 mb-1 block">Description *</label>
-                      <input type="text" placeholder="e.g. Cheque, PayPal, etc."
+                      <input type="text" placeholder="e.g. Cheque, PayPal"
                         className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500"
                         value={otherDesc} onChange={(e) => setOtherDesc(e.target.value)} />
                     </div>
                   )}
-
-                  {/* Optional note for all */}
                   <div>
                     <label className="text-xs text-slate-400 mb-1 block">Note (optional)</label>
                     <input type="text" placeholder="Any additional note..."
                       className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-green-500"
                       value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
                   </div>
-
                   <div className="flex gap-2">
                     <button onClick={collectPayment} disabled={savingPayment || !paymentAmount || (paymentMethod === "OTHER" && !otherDesc)}
-                      className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
+                      className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg">
                       {savingPayment ? "Saving..." : "Record Payment"}
                     </button>
                     <button onClick={() => setShowPaymentForm(false)} className="px-3 py-2 bg-slate-700 text-slate-300 text-xs rounded-lg">Cancel</button>
@@ -653,7 +750,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </div>
               )}
 
-              {/* Payment history */}
               {order.payments && order.payments.length > 0 && (
                 <div className="border-t border-slate-700">
                   <div className="px-3 py-2 bg-slate-800/30">
@@ -673,9 +769,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                             <p className="text-xs text-slate-600 mt-0.5">{p.collector.name} · {new Date(p.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
-                        {isAdmin && (
-                          <button onClick={() => deletePayment(p.id)} className="text-red-400 hover:text-red-300 text-xs flex-shrink-0 mt-1">×</button>
-                        )}
+                        {isAdmin && <button onClick={() => deletePayment(p.id)} className="text-red-400 hover:text-red-300 text-xs flex-shrink-0 mt-1">×</button>}
                       </div>
                     ))}
                   </div>
