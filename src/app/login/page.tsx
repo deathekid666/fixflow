@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
     setError("");
+    setLoading(true);
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
 
@@ -23,45 +25,53 @@ export default function LoginPage() {
 
     if (!res.ok) {
       setError(data.error || "Login failed");
+      setLoading(false);
       return;
     }
 
-    // cookie is now httpOnly — nothing to store manually
-
-router.refresh();
-router.push("/dashboard");  }
+    window.location.href = "/dashboard";
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-[350px] p-6 border rounded-xl space-y-3">
-        <h1 className="text-xl font-bold">Login</h1>
+    <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="w-[380px] p-8 bg-slate-900 border border-slate-800 rounded-2xl space-y-5">
+        <div>
+          <h1 className="text-2xl font-bold text-white">FixFlow</h1>
+          <p className="text-sm text-slate-500 mt-1">Sign in to your account</p>
+        </div>
 
-        <input
-          className="w-full border p-2"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Email</label>
+            <input
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              placeholder="admin@fixflow.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Password</label>
+            <input
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
+            />
+          </div>
+        </div>
 
-        <input
-          className="w-full border p-2"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        {error && (
-          <p className="text-red-500 text-sm">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-red-400 text-sm">{error}</p>}
 
         <button
-          className="w-full bg-black text-white p-2"
           onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
         >
-          Login
+          {loading ? "Signing in..." : "Sign In"}
         </button>
       </div>
     </div>
