@@ -1,76 +1,139 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
-interface Shop { id: string; name: string; address: string | null; phone: string | null; createdAt: string; _count: { users: number; customers: number; workOrders: number }; }
+type Shop = {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  status: string;
+  plan: string;
+  trialEndsAt: string | null;
+  createdAt: string;
+};
 
-export default function ShopsPage() {
-  const [shops, setShops] = useState<Shop[]>([]);
+export default function ShopSettingsPage() {
+  const { user } = useAuth();
+  const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", address: "", phone: "" });
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [form, setForm] = useState({ name: "", address: "", phone: "", email: "" });
 
-  const load = useCallback(async () => {
-    try { const res = await fetch("/api/shops", { credentials: "include" }); const data = await res.json(); if (Array.isArray(data)) setShops(data); }
-    catch { setError("Failed to load shops"); } finally { setLoading(false); }
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => { load(); }, [load]);
+  async function load() {
+    const res = await fetch("/api/shops", { credentials: "include" });
+    const data = await res.json();
+    const s = Array.isArray(data) ? data[0] : null;
+    if (s) {
+      setShop(s);
+      setForm({ name: s.name, address: s.address || "", phone: s.phone || "", email: s.email || "" });
+    }
+    setLoading(false);
+  }
 
-  async function createShop() {
-    if (!form.name.trim()) { setError("Shop name is required"); return; }
+  async function handleSave() {
+    if (!form.name) { setError("Shop name is required"); return; }
     setSaving(true); setError("");
-    try {
-      const res = await fetch("/api/shops", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(form) });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? "Failed"); }
-      setForm({ name: "", address: "", phone: "" }); setShowForm(false); await load();
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+    const res = await fetch(`/api/shops/${shop?.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(form),
+    });
+    if (res.ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      await load();
+    } else {
+      const d = await res.json();
+      setError(d.error || "Failed to save");
+    }
+    setSaving(false);
   }
 
-  async function deleteShop(id: string) {
-    if (!confirm("Delete this shop?")) return;
-    await fetch(`/api/shops/${id}`, { method: "DELETE", credentials: "include" });
-    setShops((prev) => prev.filter((s) => s.id !== id));
+  if (!user?.isSuperAdmin) {
+    return (
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-4xl mb-3">🔒</p>
+          <p className="text-slate-400 text-sm">Super admin access required.</p>
+        </div>
+      </div>
+    );
   }
+
+  if (loading) return <div className="p-6 text-slate-500 text-sm">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-slate-100">Shops</h1><p className="text-sm text-slate-400 mt-1">Manage branches</p></div>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">+ New Shop</button>
+    <div className="p-6 space-y-6 max-w-2xl mx-auto">
+      <div>
+        <h1 className="text-xl font-semibold text-white">Shop Settings</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Manage your shop information</p>
       </div>
-      {showForm && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-          <h2 className="font-semibold text-slate-300">New Shop</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input placeholder="Shop name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input placeholder="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <div className="flex gap-3">
-            <button onClick={createShop} disabled={saving} className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">{saving ? "Saving..." : "Create Shop"}</button>
-            <button onClick={() => setShowForm(false)} className="px-5 py-2 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-800 transition">Cancel</button>
-          </div>
-        </div>
-      )}
-      {loading ? <p className="text-slate-400 text-sm">Loading...</p> : shops.length === 0 ? <p className="text-slate-400 text-sm">No shops yet.</p> : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {shops.map((shop) => (
-            <div key={shop.id} className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
-              <div className="flex items-start justify-between">
-                <div><h3 className="font-bold text-slate-100">{shop.name}</h3>{shop.address && <p className="text-sm text-slate-400">{shop.address}</p>}{shop.phone && <p className="text-sm text-slate-400">{shop.phone}</p>}</div>
-                <button onClick={() => deleteShop(shop.id)} className="text-xs text-red-400 hover:text-red-300 transition">Delete</button>
-              </div>
-              <div className="flex gap-4 text-xs text-slate-400">
-                <span>👤 {shop._count.users} users</span>
-                <span>🔧 {shop._count.workOrders} orders</span>
-              </div>
+
+      {/* Plan & status banner */}
+      {shop && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                shop.status === "ACTIVE" ? "bg-green-500/20 text-green-400" :
+                shop.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-400" :
+                "bg-red-500/20 text-red-400"
+              }`}>{shop.status}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{shop.plan}</span>
             </div>
-          ))}
+            {shop.status === "TRIAL" && shop.trialEndsAt && (
+              <p className="text-xs text-slate-500">
+                Trial ends: <span className="text-yellow-400">{new Date(shop.trialEndsAt).toLocaleDateString()}</span>
+                {" "}({Math.max(0, Math.ceil((new Date(shop.trialEndsAt).getTime() - Date.now()) / 86400000))} days left)
+              </p>
+            )}
+          </div>
+          <p className="text-xs text-slate-500">Member since {new Date(shop.createdAt).toLocaleDateString()}</p>
         </div>
       )}
+
+      {/* Edit form */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-slate-300">Shop Information</h2>
+
+        {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
+        {saved && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">✓ Saved successfully</div>}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <label className="text-xs text-slate-400 mb-1 block">Shop Name *</label>
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Phone</label>
+            <input placeholder="+212..." value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Email</label>
+            <input type="email" placeholder="shop@example.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+          </div>
+          <div className="col-span-2">
+            <label className="text-xs text-slate-400 mb-1 block">Address</label>
+            <input placeholder="Shop address" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <button onClick={handleSave} disabled={saving}
+          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
     </div>
   );
 }

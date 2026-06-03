@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },
       { href: "/dashboard/reports", label: "Reports", icon: "📈" },
       { href: "/dashboard/templates", label: "Templates", icon: "🗂️" },
-      { href: "/dashboard/shops", label: "Shops", icon: "🏪" },
+      ...(user.isSuperAdmin ? [{ href: "/dashboard/shops", label: "Shop Settings", icon: "🏪" }] : []),
       { href: "/dashboard/warranties", label: "Warranties", icon: "🛡" },
     ] : []),
   ];
