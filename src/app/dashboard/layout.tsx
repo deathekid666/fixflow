@@ -26,6 +26,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
 
+  // Check shop status on every load
+  useEffect(() => {
+    if (user && !user.isSuperAdmin) {
+      fetch("/api/me/shop-status", { credentials: "include" })
+        .then(r => r.json())
+        .then(data => {
+          if (data.suspended) window.location.href = "/suspended?reason=suspended";
+          if (data.trialExpired) window.location.href = "/suspended?reason=trial";
+        }).catch(() => {});
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) loadNotifications();
     const interval = setInterval(() => { if (user) loadNotifications(); }, 30000);
@@ -72,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },
       { href: "/dashboard/reports", label: "Reports", icon: "📈" },
       { href: "/dashboard/templates", label: "Templates", icon: "🗂️" },
-     ...(user.isSuperAdmin ? [
+      ...(user.isSuperAdmin ? [
         { href: "/dashboard/shops", label: "Shops", icon: "🏪" },
       ] : []),
       { href: "/dashboard/warranties", label: "Warranties", icon: "🛡" },
@@ -92,12 +104,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-56 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col
@@ -138,9 +148,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile top bar */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-30">
           <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-white p-1">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +164,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-auto relative pb-16 lg:pb-0">
           {showNotifications && (
             <div className="absolute top-0 right-0 w-full sm:w-96 h-full bg-slate-900 border-l border-slate-800 z-50 flex flex-col">
@@ -183,7 +190,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
 
-        {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-30 flex">
           {bottomNav.map((item) => {
             const active = pathname === item.href;
