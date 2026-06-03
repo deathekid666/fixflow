@@ -8,35 +8,20 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
+  const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user) {
-    return Response.json(
-      { error: "Invalid credentials" },
-      { status: 401 }
-    );
-  }
+  if (!user) return Response.json({ error: "Invalid credentials" }, { status: 401 });
 
-  const valid = await bcrypt.compare(
-    password,
-    user.password
-  );
-
-  if (!valid) {
-    return Response.json(
-      { error: "Invalid credentials" },
-      { status: 401 }
-    );
-  }
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return Response.json({ error: "Invalid credentials" }, { status: 401 });
 
   const token = jwt.sign(
     {
       id: user.id,
       role: user.role,
-      shopId: user.shopId, // 🔥 IMPORTANT FOR SAAS
+      shopId: user.shopId,
       email: user.email,
+      isSuperAdmin: user.isSuperAdmin,
     },
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }
