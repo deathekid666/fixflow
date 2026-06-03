@@ -510,12 +510,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   <div key={check.id} className="flex items-start gap-3 group">
                     <div className="flex gap-1 flex-shrink-0 mt-0.5">
                       {[
-                        { s: "OK", icon: "✓", active: "bg-green-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-green-900 hover:text-green-400" },
-                        { s: "ISSUE", icon: "!", active: "bg-red-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-red-900 hover:text-red-400" },
-                        { s: "NA", icon: "—", active: "bg-slate-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
-                        { s: "PENDING", icon: "○", active: "bg-slate-700 text-slate-400", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
+                        { s: "OK", icon: "✓", title: "OK — No issues", active: "bg-green-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-green-900 hover:text-green-400" },
+                        { s: "ISSUE", icon: "!", title: "Issue — Problem found", active: "bg-red-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-red-900 hover:text-red-400" },
+                        { s: "NA", icon: "—", title: "N/A — Not applicable", active: "bg-slate-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
+                        { s: "PENDING", icon: "○", title: "Pending — Not checked yet", active: "bg-slate-700 text-slate-400", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
                       ].map(btn => (
                         <button key={btn.s} onClick={() => updateCheck(check.id, btn.s)}
+                          title={btn.title}
                           className={`w-6 h-6 rounded text-xs font-bold transition-all ${check.status === btn.s ? btn.active : btn.inactive}`}>
                           {btn.icon}
                         </button>
