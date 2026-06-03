@@ -32,6 +32,8 @@ export default function NewWorkOrderPage() {
   const [lookingUp, setLookingUp] = useState(false);
   const phoneTimer = useRef<NodeJS.Timeout | null>(null);
   const [filterCategory, setFilterCategory] = useState("");
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [intakePhotos, setIntakePhotos] = useState<{ file: File; preview: string }[]>([]);
 
   const [form, setForm] = useState({
     deviceBrand: "", deviceModel: "", serialNumber: "", imei: "",
@@ -86,12 +88,30 @@ export default function NewWorkOrderPage() {
     finally { setLookingUp(false); }
   }
 
+  function onPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        setIntakePhotos(prev => [...prev, { file, preview: ev.target?.result as string }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    if (photoRef.current) photoRef.current.value = "";
+  }
+
+  function removePhoto(i: number) {
+    setIntakePhotos(prev => prev.filter((_, idx) => idx !== i));
+  }
+
   async function handleSubmit() {
     setError("");
     if (!form.deviceBrand || !form.deviceModel || !form.customerName || !form.customerPhone || !form.faultDescription) {
       setError("Please fill in all required fields."); return;
     }
     setLoading(true);
+
+    // Create work order
     const res = await fetch("/api/workorders", {
       method: "POST", headers: { "Content-Type": "application/json" },
       credentials: "include", body: JSON.stringify(form),
@@ -99,21 +119,34 @@ export default function NewWorkOrderPage() {
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Failed to create work order"); setLoading(false); return; }
 
-    // Apply default parts and line items from template
+    const workOrderId = data.id;
+
+    // Upload intake photos
+    if (intakePhotos.length > 0) {
+      await Promise.all(intakePhotos.map(async ({ file }) => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("tag", "intake");
+        await fetch(`/api/workorders/${workOrderId}/attachments`, {
+          method: "POST", credentials: "include", body: fd,
+        });
+      }));
+    }
+
+    // Apply template parts and line items
     if (selectedTemplate) {
       const parts = Array.isArray(selectedTemplate.defaultParts) ? selectedTemplate.defaultParts : [];
       const items = Array.isArray(selectedTemplate.defaultLineItems) ? selectedTemplate.defaultLineItems : [];
-
       await Promise.all([
         ...parts.map((p: DefaultPart) =>
-          fetch(`/api/workorders/${data.id}/parts`, {
+          fetch(`/api/workorders/${workOrderId}/parts`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({ sparePartId: p.sparePartId, quantity: p.quantity }),
           })
         ),
         ...items.map((li: DefaultLineItem) =>
-          fetch(`/api/workorders/${data.id}/lineitems`, {
+          fetch(`/api/workorders/${workOrderId}/lineitems`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({ label: li.label, amount: li.amount }),
@@ -122,7 +155,7 @@ export default function NewWorkOrderPage() {
       ]);
     }
 
-    router.push(`/dashboard/workorders/${data.id}`);
+    router.push(`/dashboard/workorders/${workOrderId}`);
   }
 
   const categories = [...new Set(templates.map(t => t.category).filter(Boolean))];
@@ -168,8 +201,6 @@ export default function NewWorkOrderPage() {
       {showTemplates && (
         <div className="bg-slate-900 border border-blue-800/50 rounded-xl p-4 space-y-3">
           <p className="text-xs text-slate-400 font-medium">Select a template to auto-fill the form:</p>
-
-          {/* Category filter */}
           {categories.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => setFilterCategory("")} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${!filterCategory ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>All</button>
@@ -178,9 +209,8 @@ export default function NewWorkOrderPage() {
               ))}
             </div>
           )}
-
           {filteredTemplates.length === 0 ? (
-            <p className="text-xs text-slate-500">No templates yet. Admins can create them in the Templates page.</p>
+            <p className="text-xs text-slate-500">No templates yet.</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {filteredTemplates.map(t => (
@@ -218,6 +248,56 @@ export default function NewWorkOrderPage() {
           <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded border-slate-600" />
           Device is under warranty
         </label>
+      </section>
+
+      {/* Device Photos on Intake */}
+      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Device Photos</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Document device condition on intake — protects against disputes</p>
+          </div>
+          <button onClick={() => photoRef.current?.click()}
+            className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-1.5">
+            📷 Add Photos
+          </button>
+          <input ref={photoRef} type="file" className="hidden" accept="image/*" multiple onChange={onPhotoSelected} />
+        </div>
+
+        {intakePhotos.length === 0 ? (
+          <button onClick={() => photoRef.current?.click()}
+            className="w-full border-2 border-dashed border-slate-700 hover:border-slate-600 rounded-xl p-8 text-center transition-colors group">
+            <p className="text-3xl mb-2">📷</p>
+            <p className="text-sm text-slate-400 group-hover:text-slate-300">Click to add device photos</p>
+            <p className="text-xs text-slate-600 mt-1">Front, back, sides, any existing damage</p>
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              {intakePhotos.map((p, i) => (
+                <div key={i} className="relative group rounded-lg overflow-hidden bg-slate-800 aspect-square">
+                  <img src={p.preview} alt={`Intake photo ${i + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button onClick={() => removePhoto(i)}
+                      className="bg-red-600 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg transition-colors">
+                      Remove
+                    </button>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
+                    <p className="text-xs text-white truncate">{p.file.name}</p>
+                  </div>
+                </div>
+              ))}
+              {/* Add more button */}
+              <button onClick={() => photoRef.current?.click()}
+                className="aspect-square border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors group">
+                <span className="text-2xl">+</span>
+                <span className="text-xs text-slate-500 group-hover:text-slate-300">Add more</span>
+              </button>
+            </div>
+            <p className="text-xs text-slate-500">{intakePhotos.length} photo{intakePhotos.length !== 1 ? "s" : ""} added</p>
+          </div>
+        )}
       </section>
 
       {/* Customer Info */}
