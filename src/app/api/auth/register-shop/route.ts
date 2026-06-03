@@ -39,7 +39,11 @@ export async function POST(req: Request) {
   });
 
   const token = jwt.sign(
-    { id: user.id, role: user.role, shopId: shop.id, email: user.email, isSuperAdmin: false },
+    {
+      id: user.id, role: user.role, shopId: shop.id,
+      email: user.email, isSuperAdmin: false,
+      shopStatus: "TRIAL", trialEndsAt: shop.trialEndsAt,
+    },
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }
   );

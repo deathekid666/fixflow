@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { shop: true },
+  });
 
   if (!user) return Response.json({ error: "Invalid credentials" }, { status: 401 });
 
@@ -22,6 +25,8 @@ export async function POST(req: Request) {
       shopId: user.shopId,
       email: user.email,
       isSuperAdmin: user.isSuperAdmin,
+      shopStatus: user.shop?.status ?? "ACTIVE",
+      trialEndsAt: user.shop?.trialEndsAt ?? null,
     },
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }

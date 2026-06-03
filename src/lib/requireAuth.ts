@@ -6,6 +6,8 @@ export type AuthUser = {
   role: string;
   shopId: string | null;
   isSuperAdmin: boolean;
+  shopStatus: string;
+  trialEndsAt: string | null;
 };
 
 export function requireAuth(req: Request): AuthUser | null {
