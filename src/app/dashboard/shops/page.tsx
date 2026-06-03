@@ -26,20 +26,29 @@ export default function ShopSettingsPage() {
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const res = await fetch("/api/shops", { credentials: "include" });
-    const data = await res.json();
-    const s = Array.isArray(data) ? data[0] : null;
-    if (s) {
-      setShop(s);
-      setForm({ name: s.name, address: s.address || "", phone: s.phone || "", email: s.email || "" });
-    }
-    setLoading(false);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/shops", { credentials: "include" });
+      const data = await res.json();
+      const s = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      if (s) {
+        setShop(s);
+        setForm({
+          name: s.name ?? "",
+          address: s.address ?? "",
+          phone: s.phone ?? "",
+          email: s.email ?? "",
+        });
+      }
+    } catch { setError("Failed to load shop"); }
+    finally { setLoading(false); }
   }
 
   async function handleSave() {
     if (!form.name) { setError("Shop name is required"); return; }
+    if (!shop) return;
     setSaving(true); setError("");
-    const res = await fetch(`/api/shops/${shop?.id}`, {
+    const res = await fetch(`/api/shops/${shop.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -68,6 +77,11 @@ export default function ShopSettingsPage() {
   }
 
   if (loading) return <div className="p-6 text-slate-500 text-sm">Loading...</div>;
+  if (!shop) return <div className="p-6 text-slate-500 text-sm">No shop found.</div>;
+
+  const daysLeft = shop.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(shop.trialEndsAt).getTime() - Date.now()) / 86400000))
+    : null;
 
   return (
     <div className="p-6 space-y-6 max-w-2xl mx-auto">
@@ -77,27 +91,25 @@ export default function ShopSettingsPage() {
       </div>
 
       {/* Plan & status banner */}
-      {shop && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                shop.status === "ACTIVE" ? "bg-green-500/20 text-green-400" :
-                shop.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-400" :
-                "bg-red-500/20 text-red-400"
-              }`}>{shop.status}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{shop.plan}</span>
-            </div>
-            {shop.status === "TRIAL" && shop.trialEndsAt && (
-              <p className="text-xs text-slate-500">
-                Trial ends: <span className="text-yellow-400">{new Date(shop.trialEndsAt).toLocaleDateString()}</span>
-                {" "}({Math.max(0, Math.ceil((new Date(shop.trialEndsAt).getTime() - Date.now()) / 86400000))} days left)
-              </p>
-            )}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              shop.status === "ACTIVE" ? "bg-green-500/20 text-green-400" :
+              shop.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-400" :
+              "bg-red-500/20 text-red-400"
+            }`}>{shop.status}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{shop.plan}</span>
           </div>
-          <p className="text-xs text-slate-500">Member since {new Date(shop.createdAt).toLocaleDateString()}</p>
+          {shop.status === "TRIAL" && daysLeft !== null && (
+            <p className="text-xs text-slate-500">
+              Trial ends: <span className="text-yellow-400">{new Date(shop.trialEndsAt!).toLocaleDateString()}</span>
+              {" "}({daysLeft} days left)
+            </p>
+          )}
         </div>
-      )}
+        <p className="text-xs text-slate-500">Member since {new Date(shop.createdAt).toLocaleDateString()}</p>
+      </div>
 
       {/* Edit form */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
