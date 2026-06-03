@@ -23,9 +23,17 @@ export default function LoginPage() {
 
     const data = await res.json();
 
-    if (!res.ok) {
+ if (!res.ok) {
       setError(data.error || "Login failed");
       setLoading(false);
+      if (res.status === 403) {
+        // Redirect to suspended page after 2 seconds
+        setTimeout(() => {
+          window.location.href = data.error?.includes("trial")
+            ? "/suspended?reason=trial"
+            : "/suspended?reason=suspended";
+        }, 2000);
+      }
       return;
     }
 
