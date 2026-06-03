@@ -14,12 +14,14 @@ type WorkOrder = {
   faultLevel: string;
   isUnderWarranty: boolean;
   createdAt: string;
-  assignee: { name: string } | null;
+  assignee: { id: string; name: string } | null;
   total: number;
   collected: number;
   tatDays: number;
   isOverdue: boolean;
 };
+
+type Engineer = { id: string; name: string };
 
 const STATUS_COLORS: Record<string, string> = {
   RECEIVED: "bg-blue-500/20 text-blue-400",
@@ -36,13 +38,25 @@ const FAULT_COLORS: Record<string, string> = {
   HIGH: "text-red-400",
 };
 
+const STATUS_OPTIONS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"];
+
 export default function DashboardPage() {
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [engineers, setEngineers] = useState<Engineer[]>([]);
 
-  useEffect(() => { load(); }, [search, statusFilter]);
+  // Bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkEngineer, setBulkEngineer] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  useEffect(() => {
+    load();
+    fetch("/api/users", { credentials: "include" }).then(r => r.json()).then(d => setEngineers(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [search, statusFilter]);
 
   async function load() {
     setLoading(true);
@@ -52,10 +66,80 @@ export default function DashboardPage() {
     const res = await fetch(`/api/workorders?${params}`, { credentials: "include" });
     const data = await res.json();
     setOrders(Array.isArray(data) ? data : []);
+    setSelected(new Set());
     setLoading(false);
   }
 
-  // ── Stats ────────────────────────────────────────────────────────────────
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === orders.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(orders.map(o => o.id)));
+    }
+  }
+
+  async function applyBulkStatus() {
+    if (!bulkStatus || selected.size === 0) return;
+    setBulkLoading(true);
+    await Promise.all([...selected].map(id =>
+      fetch(`/api/workorders/${id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status: bulkStatus }),
+      })
+    ));
+    setBulkStatus("");
+    await load();
+    setBulkLoading(false);
+  }
+
+  async function applyBulkEngineer() {
+    if (!bulkEngineer || selected.size === 0) return;
+    setBulkLoading(true);
+    await Promise.all([...selected].map(id =>
+      fetch(`/api/workorders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ assignedTo: bulkEngineer }),
+      })
+    ));
+    setBulkEngineer("");
+    await load();
+    setBulkLoading(false);
+  }
+
+  function exportSelected() {
+    const selectedOrders = orders.filter(o => selected.has(o.id));
+    const csv = [
+      ["Order #", "Customer", "Phone", "Device", "Status", "Total", "Date"].join(","),
+      ...selectedOrders.map(o => [
+        o.orderNumber.slice(0, 8).toUpperCase(),
+        o.customerName,
+        o.customerPhone,
+        `${o.deviceBrand} ${o.deviceModel}`,
+        o.status,
+        o.total.toFixed(2),
+        new Date(o.createdAt).toLocaleDateString(),
+      ].join(","))
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "workorders.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const allOrders = orders;
   const active = allOrders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status));
   const totalRevenue = allOrders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + o.total, 0);
@@ -122,21 +206,78 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Bulk actions bar — shows when items selected */}
+      {selected.size > 0 && (
+        <div className="bg-blue-950/40 border border-blue-800/50 rounded-xl px-4 py-3 flex items-center gap-4 flex-wrap">
+          <span className="text-sm text-blue-300 font-medium">{selected.size} selected</span>
+
+          {/* Bulk status change */}
+          <div className="flex items-center gap-2">
+            <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
+              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+              <option value="">Change status...</option>
+              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <button onClick={applyBulkStatus} disabled={!bulkStatus || bulkLoading}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+              Apply
+            </button>
+          </div>
+
+          {/* Bulk engineer assign */}
+          <div className="flex items-center gap-2">
+            <select value={bulkEngineer} onChange={e => setBulkEngineer(e.target.value)}
+              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+              <option value="">Assign engineer...</option>
+              {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+            <button onClick={applyBulkEngineer} disabled={!bulkEngineer || bulkLoading}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+              Assign
+            </button>
+          </div>
+
+          {/* Export selected */}
+          <button onClick={exportSelected}
+            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-lg transition-colors ml-auto">
+            ⬇ Export Selected ({selected.size})
+          </button>
+
+          {/* Clear selection */}
+          <button onClick={() => setSelected(new Set())}
+            className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+            ✕ Clear
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800">
+              <th className="px-4 py-3 w-8">
+                <input type="checkbox"
+                  checked={orders.length > 0 && selected.size === orders.length}
+                  onChange={toggleSelectAll}
+                  className="rounded border-slate-600 bg-slate-800 cursor-pointer" />
+              </th>
               {["Order #", "Customer", "Device", "Fault", "Status", "Assigned To", "Total", "Date", ""].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
-            {!loading && orders.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">No work orders found.</td></tr>}
+            {loading && <tr><td colSpan={10} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
+            {!loading && orders.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-slate-500">No work orders found.</td></tr>}
             {orders.map((o) => (
-              <tr key={o.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+              <tr key={o.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${selected.has(o.id) ? "bg-blue-950/20" : ""}`}>
+                <td className="px-4 py-3">
+                  <input type="checkbox"
+                    checked={selected.has(o.id)}
+                    onChange={() => toggleSelect(o.id)}
+                    className="rounded border-slate-600 bg-slate-800 cursor-pointer" />
+                </td>
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-slate-400">{o.orderNumber.slice(0, 8).toUpperCase()}</span>
                   {o.isUnderWarranty && <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">W</span>}
