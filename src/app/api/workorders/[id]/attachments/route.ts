@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { put, del } from "@vercel/blob";
 
 export const dynamic = "force-dynamic";
 
-const MAX_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain"];
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB now that we use Blob
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf", "text/plain"];
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
@@ -34,16 +35,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const tag = (formData.get("tag") as string) || "other";
 
   if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-  if (file.size > MAX_SIZE) return NextResponse.json({ error: "File exceeds 5MB limit" }, { status: 400 });
+  if (file.size > MAX_SIZE) return NextResponse.json({ error: "File exceeds 10MB limit" }, { status: 400 });
   if (!ALLOWED_TYPES.includes(file.type)) return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+  let filePath: string;
+
+  try {
+    // Upload to Vercel Blob
+    const blob = await put(`workorders/${params.id}/${Date.now()}-${file.name}`, file, {
+      access: "public",
+      contentType: file.type,
+    });
+    filePath = blob.url;
+  } catch {
+    // Fallback to base64 if Blob fails
+    const buffer = Buffer.from(await file.arrayBuffer());
+    filePath = `data:${file.type};base64,${buffer.toString("base64")}`;
+  }
 
   const attachment = await prisma.workOrderAttachment.create({
     data: {
       filename: file.name,
-      path: base64,
+      path: filePath,
       tag,
       workOrderId: params.id,
     },
@@ -78,6 +91,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     where: { id: attachmentId, workOrderId: params.id },
   });
   if (!attachment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Delete from Vercel Blob if it's a blob URL
+  if (attachment.path.startsWith("https://")) {
+    try { await del(attachment.path); } catch { /* ignore */ }
+  }
 
   await prisma.workOrderAttachment.delete({ where: { id: attachmentId } });
 
