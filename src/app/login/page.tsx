@@ -74,6 +74,10 @@ export default function LoginPage() {
           {loading ? "Signing in..." : "Sign In"}
         </button>
       </div>
+      <p className="text-center text-xs text-slate-600 mt-6">
+        Don't have an account?{" "}
+        <a href="/register" className="text-blue-400 hover:text-blue-300">Start free trial</a>
+      </p>
     </div>
   );
 }

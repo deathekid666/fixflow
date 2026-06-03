@@ -26,8 +26,14 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    if (isAdminRoute && payload.role !== "ADMIN") {
+    // Super admin panel — only isSuperAdmin can access
+    if (isAdminRoute && !payload.isSuperAdmin) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Dashboard — any logged in user
+    if (isDashboard && !payload.id) {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
     return NextResponse.next();

@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  name     String
-  password String
-  role     String  @default("ENGINEER")
-  shopId   String?
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String
+  password     String
+  role         String  @default("ENGINEER")
+  shopId       String?
+  isSuperAdmin Boolean @default(false)
 
   shop             Shop?             @relation(fields: [shopId], references: [id])
   createdOrders    WorkOrder[]       @relation("CreatedBy")
@@ -27,10 +28,16 @@ model User {
 }
 
 model Shop {
-  id         String      @id @default(cuid())
-  name       String
-  address    String?
-  phone      String?
+  id          String   @id @default(cuid())
+  name        String
+  address     String?
+  phone       String?
+  email       String?
+  status      String   @default("TRIAL") // TRIAL | ACTIVE | SUSPENDED
+  plan        String   @default("FREE")  // FREE | PRO | ENTERPRISE
+  trialEndsAt DateTime?
+  createdAt   DateTime @default(now())
+
   users      User[]
   workOrders WorkOrder[]
   spareParts SparePart[]
@@ -186,7 +193,7 @@ model WorkOrderAttachment {
   id       String @id @default(cuid())
   filename String
   path     String
-  tag      String @default("other") // intake | repair | completion | other
+  tag      String @default("other")
 
   createdAt DateTime @default(now())
 
