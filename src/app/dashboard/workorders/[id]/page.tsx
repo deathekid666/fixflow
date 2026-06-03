@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
-type Attachment = { id: string; filename: string; path: string; createdAt: string };
+type Attachment = { id: string; filename: string; path: string; tag: string; createdAt: string };
 type Bounce = { id: string; reason: string; scenario: string; createdAt: string };
 type Payment = { id: string; amount: number; method: string; note: string | null; createdAt: string; collector: { name: string } };
 type CheckItem = { id: string; item: string; status: string; note: string | null };
@@ -78,6 +78,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [submittingBounce, setSubmittingBounce] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadTag, setUploadTag] = useState("other");
   const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
@@ -271,8 +272,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setUploadingFile(true);
     const fd = new FormData();
     fd.append("file", pendingFile);
+    fd.append("tag", uploadTag);
     await fetch(`/api/workorders/${params.id}/attachments`, { method: "POST", credentials: "include", body: fd });
-    setPendingFile(null); await load(); setUploadingFile(false);
+    setPendingFile(null); setUploadTag("other"); await load(); setUploadingFile(false);
   }
 
   function cancelUpload() { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }
@@ -458,15 +460,34 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               <button onClick={() => fileRef.current?.click()} disabled={uploadingFile || !!pendingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">{uploadingFile ? "Uploading..." : "Upload File"}</button>
               <input ref={fileRef} type="file" className="hidden" accept="image/*,.pdf,.txt" onChange={onFileSelected} />
             </div>
-            {pendingFile && (
-              <div className="mb-4 bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 flex items-center justify-between gap-3">
+           {pendingFile && (
+              <div className="mb-4 bg-blue-900/30 border border-blue-700/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-blue-300 font-medium">{pendingFile.name}</p>
+                    <p className="text-xs text-slate-400">{(pendingFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                </div>
                 <div>
-                  <p className="text-xs text-blue-300 font-medium">{pendingFile.name}</p>
-                  <p className="text-xs text-slate-400">{(pendingFile.size / 1024).toFixed(1)} KB</p>
+                  <label className="text-xs text-slate-400 mb-1 block">Photo stage</label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { key: "intake", icon: "📥", label: "Intake" },
+                      { key: "repair", icon: "🔧", label: "Repair" },
+                      { key: "completion", icon: "✅", label: "Done" },
+                      { key: "other", icon: "📄", label: "Other" },
+                    ].map(t => (
+                      <button key={t.key} onClick={() => setUploadTag(t.key)}
+                        className={`py-1.5 rounded-lg text-xs font-medium transition-colors flex flex-col items-center gap-0.5 ${uploadTag === t.key ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-400 hover:bg-slate-600"}`}>
+                        <span>{t.icon}</span>
+                        <span>{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={confirmUpload} disabled={uploadingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:opacity-50">{uploadingFile ? "Uploading..." : "Confirm"}</button>
-                  <button onClick={cancelUpload} className="text-xs px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg">Cancel</button>
+                  <button onClick={confirmUpload} disabled={uploadingFile} className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg disabled:opacity-50">{uploadingFile ? "Uploading..." : "Confirm Upload"}</button>
+                  <button onClick={cancelUpload} className="px-3 py-1.5 bg-slate-700 text-slate-300 text-xs rounded-lg">Cancel</button>
                 </div>
               </div>
             )}
@@ -475,7 +496,17 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 {order.attachments.map(a => (
                   <div key={a.id} className="bg-slate-800 rounded-lg overflow-hidden group relative">
                     {a.path.startsWith("data:image") ? <img src={a.path} alt={a.filename} className="w-full h-24 object-cover" /> : <div className="h-24 flex items-center justify-center text-slate-400 text-xs">📄 {a.filename}</div>}
-                    <p className="text-xs text-slate-500 px-2 py-1 truncate">{a.filename}</p>
+                    <div className="px-2 py-1 flex items-center justify-between gap-1">
+                      <p className="text-xs text-slate-500 truncate">{a.filename}</p>
+                      <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${
+                        a.tag === "intake" ? "bg-blue-500/20 text-blue-400" :
+                        a.tag === "repair" ? "bg-orange-500/20 text-orange-400" :
+                        a.tag === "completion" ? "bg-green-500/20 text-green-400" :
+                        "bg-slate-700 text-slate-400"
+                      }`}>
+                        {a.tag === "intake" ? "📥" : a.tag === "repair" ? "🔧" : a.tag === "completion" ? "✅" : "📄"}
+                      </span>
+                    </div>
                     <button onClick={() => { if (confirm(`Delete "${a.filename}"?`)) deleteAttachment(a.id); }} disabled={deletingAttachmentId === a.id}
                       className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50">×</button>
                   </div>

@@ -186,6 +186,7 @@ model WorkOrderAttachment {
   id       String @id @default(cuid())
   filename String
   path     String
+  tag      String @default("other") // intake | repair | completion | other
 
   createdAt DateTime @default(now())
 

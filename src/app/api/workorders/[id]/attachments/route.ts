@@ -1,4 +1,3 @@
-// src/app/api/workorders/[id]/attachments/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
@@ -14,7 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const attachments = await prisma.workOrderAttachment.findMany({
     where: { workOrderId: params.id },
-    select: { id: true, filename: true, path: true, createdAt: true },
+    select: { id: true, filename: true, path: true, tag: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -32,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
+  const tag = (formData.get("tag") as string) || "other";
 
   if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
   if (file.size > MAX_SIZE) return NextResponse.json({ error: "File exceeds 5MB limit" }, { status: 400 });
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     data: {
       filename: file.name,
       path: base64,
+      tag,
       workOrderId: params.id,
     },
   });
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await prisma.operationLog.create({
     data: {
       action: "ATTACHMENT_ADDED",
-      description: `File uploaded: ${file.name}`,
+      description: `File uploaded: ${file.name} [${tag}]`,
       workOrderId: params.id,
       userId: user.id,
     },
@@ -61,11 +62,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     id: attachment.id,
     filename: attachment.filename,
     path: attachment.path,
+    tag: attachment.tag,
     createdAt: attachment.createdAt,
   }, { status: 201 });
 }
 
-// NEW: Delete a specific attachment
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
