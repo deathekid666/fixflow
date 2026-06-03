@@ -22,7 +22,6 @@ function SuspendedContent() {
               : "Your account has been suspended. Please contact support to resolve this issue."}
           </p>
         </div>
-
         {isTrialExpired && (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3 text-left">
             <h2 className="text-sm font-semibold text-white">Upgrade to continue</h2>
@@ -34,16 +33,13 @@ function SuspendedContent() {
               ))}
             </div>
             <div className="pt-2 border-t border-slate-800">
-              <p className="text-xs text-slate-500 mb-3">Contact us to upgrade your plan:</p>
-              <div className="space-y-2">
-                <a href="mailto:support@fixflow.ma" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300">
-                  📧 support@fixflow.ma
-                </a>
-              </div>
+              <p className="text-xs text-slate-500 mb-3">Contact us to upgrade:</p>
+              <a href="mailto:support@fixflow.ma" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300">
+                📧 support@fixflow.ma
+              </a>
             </div>
           </div>
         )}
-
         {!isTrialExpired && (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-left space-y-2">
             <p className="text-xs text-slate-500">Contact support:</p>
@@ -52,7 +48,6 @@ function SuspendedContent() {
             </a>
           </div>
         )}
-
         <div className="flex gap-3 justify-center">
           <a href="/login" className="px-4 py-2 border border-slate-700 text-slate-300 text-sm rounded-lg hover:bg-slate-800 transition-colors">
             Sign in to another account
