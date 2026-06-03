@@ -12,14 +12,24 @@ type Shop = {
   plan: string;
   trialEndsAt: string | null;
   createdAt: string;
+  _count?: { workOrders: number; users: number };
+  users?: { name: string; email: string }[];
 };
 
-export default function ShopSettingsPage() {
+const STATUS_COLORS: Record<string, string> = {
+  TRIAL: "bg-yellow-500/20 text-yellow-400",
+  ACTIVE: "bg-green-500/20 text-green-400",
+  SUSPENDED: "bg-red-500/20 text-red-400",
+};
+
+export default function ShopsPage() {
   const { user } = useAuth();
-  const [shop, setShop] = useState<Shop | null>(null);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [myShop, setMyShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [updating, setUpdating] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", address: "", phone: "", email: "" });
 
@@ -28,27 +38,38 @@ export default function ShopSettingsPage() {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch("/api/shops", { credentials: "include" });
-      const data = await res.json();
-      const s = Array.isArray(data) && data.length > 0 ? data[0] : null;
-      if (s) {
-        setShop(s);
-        setForm({
-          name: s.name ?? "",
-          address: s.address ?? "",
-          phone: s.phone ?? "",
-          email: s.email ?? "",
-        });
+      if (user?.isSuperAdmin) {
+        // Load all shops for super admin
+        const res = await fetch("/api/admin/shops", { credentials: "include" });
+        const data = await res.json();
+        setShops(Array.isArray(data) ? data : []);
+
+        // Also load own shop
+        const myRes = await fetch("/api/shops", { credentials: "include" });
+        const myData = await myRes.json();
+        const s = Array.isArray(myData) && myData.length > 0 ? myData[0] : null;
+        if (s) {
+          setMyShop(s);
+          setForm({ name: s.name ?? "", address: s.address ?? "", phone: s.phone ?? "", email: s.email ?? "" });
+        }
+      } else {
+        const res = await fetch("/api/shops", { credentials: "include" });
+        const data = await res.json();
+        const s = Array.isArray(data) && data.length > 0 ? data[0] : null;
+        if (s) {
+          setMyShop(s);
+          setForm({ name: s.name ?? "", address: s.address ?? "", phone: s.phone ?? "", email: s.email ?? "" });
+        }
       }
-    } catch { setError("Failed to load shop"); }
+    } catch { setError("Failed to load"); }
     finally { setLoading(false); }
   }
 
   async function handleSave() {
     if (!form.name) { setError("Shop name is required"); return; }
-    if (!shop) return;
+    if (!myShop) return;
     setSaving(true); setError("");
-    const res = await fetch(`/api/shops/${shop.id}`, {
+    const res = await fetch(`/api/shops/${myShop.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -65,6 +86,18 @@ export default function ShopSettingsPage() {
     setSaving(false);
   }
 
+  async function updateShopStatus(shopId: string, data: { status?: string; plan?: string }) {
+    setUpdating(shopId);
+    await fetch("/api/admin/shops", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ shopId, ...data }),
+    });
+    await load();
+    setUpdating(null);
+  }
+
   if (!user?.isSuperAdmin) {
     return (
       <div className="p-6 flex items-center justify-center h-64">
@@ -77,74 +110,161 @@ export default function ShopSettingsPage() {
   }
 
   if (loading) return <div className="p-6 text-slate-500 text-sm">Loading...</div>;
-  if (!shop) return <div className="p-6 text-slate-500 text-sm">No shop found.</div>;
 
-  const daysLeft = shop.trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(shop.trialEndsAt).getTime() - Date.now()) / 86400000))
+  const daysLeft = myShop?.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(myShop.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
 
+  const totalOrders = shops.reduce((s, sh) => s + (sh._count?.workOrders ?? 0), 0);
+
   return (
-    <div className="p-6 space-y-6 max-w-2xl mx-auto">
+    <div className="p-6 space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-xl font-semibold text-white">Shop Settings</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Manage your shop information</p>
+        <h1 className="text-xl font-semibold text-white">Shop Management</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Manage your shop settings and all tenant shops</p>
       </div>
 
-      {/* Plan & status banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              shop.status === "ACTIVE" ? "bg-green-500/20 text-green-400" :
-              shop.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-400" :
-              "bg-red-500/20 text-red-400"
-            }`}>{shop.status}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{shop.plan}</span>
+      {/* ── MY SHOP SETTINGS ─────────────────────────────── */}
+      <div className="space-y-4">
+        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">My Shop Settings</h2>
+
+        {myShop && (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[myShop.status] ?? "bg-slate-700 text-slate-400"}`}>{myShop.status}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{myShop.plan}</span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              {myShop.status === "TRIAL" && daysLeft !== null && (
+                <span>Trial: <span className="text-yellow-400">{daysLeft} days left</span></span>
+              )}
+              <span>Since {new Date(myShop.createdAt).toLocaleDateString()}</span>
+            </div>
           </div>
-          {shop.status === "TRIAL" && daysLeft !== null && (
-            <p className="text-xs text-slate-500">
-              Trial ends: <span className="text-yellow-400">{new Date(shop.trialEndsAt!).toLocaleDateString()}</span>
-              {" "}({daysLeft} days left)
-            </p>
-          )}
+        )}
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
+          {saved && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">✓ Saved successfully</div>}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="text-xs text-slate-400 mb-1 block">Shop Name *</label>
+              <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Phone</label>
+              <input placeholder="+212..." value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Email</label>
+              <input type="email" placeholder="shop@example.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs text-slate-400 mb-1 block">Address</label>
+              <input placeholder="Shop address" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+
+          <button onClick={handleSave} disabled={saving}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
         </div>
-        <p className="text-xs text-slate-500">Member since {new Date(shop.createdAt).toLocaleDateString()}</p>
       </div>
 
-      {/* Edit form */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300">Shop Information</h2>
-
-        {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
-        {saved && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">✓ Saved successfully</div>}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <label className="text-xs text-slate-400 mb-1 block">Shop Name *</label>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Phone</label>
-            <input placeholder="+212..." value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Email</label>
-            <input type="email" placeholder="shop@example.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-          </div>
-          <div className="col-span-2">
-            <label className="text-xs text-slate-400 mb-1 block">Address</label>
-            <input placeholder="Shop address" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+      {/* ── ALL SHOPS (SUPER ADMIN) ───────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">All Tenant Shops</h2>
+          <div className="flex gap-3 text-xs text-slate-500">
+            <span>🏪 {shops.length} shops</span>
+            <span>📋 {totalOrders} total orders</span>
+            <span className="text-yellow-400">⏳ {shops.filter(s => s.status === "TRIAL").length} trial</span>
+            <span className="text-green-400">✅ {shops.filter(s => s.status === "ACTIVE").length} active</span>
           </div>
         </div>
 
-        <button onClick={handleSave} disabled={saving}
-          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-800">
+                {["Shop", "Owner", "Orders", "Status", "Plan", "Trial Ends", "Actions"].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {shops.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No shops yet.</td></tr>
+              )}
+              {shops.map(shop => (
+                <tr key={shop.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                  <td className="px-4 py-3">
+                    <p className="text-white font-medium">{shop.name || "—"}</p>
+                    {shop.phone && <p className="text-xs text-slate-500">{shop.phone}</p>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {shop.users?.[0] ? (
+                      <div>
+                        <p className="text-slate-300 text-xs">{shop.users[0].name}</p>
+                        <p className="text-slate-500 text-xs">{shop.users[0].email}</p>
+                      </div>
+                    ) : <span className="text-slate-600 text-xs">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-slate-300 text-xs">{shop._count?.workOrders ?? 0}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[shop.status] ?? "bg-slate-700 text-slate-400"}`}>
+                      {shop.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select value={shop.plan}
+                      onChange={e => updateShopStatus(shop.id, { plan: e.target.value })}
+                      disabled={updating === shop.id}
+                      className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                      <option value="FREE">FREE</option>
+                      <option value="PRO">PRO</option>
+                      <option value="ENTERPRISE">ENTERPRISE</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">
+                    {shop.trialEndsAt ? new Date(shop.trialEndsAt).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      {shop.status !== "ACTIVE" && (
+                        <button onClick={() => updateShopStatus(shop.id, { status: "ACTIVE" })}
+                          disabled={updating === shop.id}
+                          className="text-xs px-2 py-1 bg-green-600/30 hover:bg-green-600/50 text-green-400 rounded transition-colors">
+                          Activate
+                        </button>
+                      )}
+                      {shop.status !== "TRIAL" && (
+                        <button onClick={() => updateShopStatus(shop.id, { status: "TRIAL" })}
+                          disabled={updating === shop.id}
+                          className="text-xs px-2 py-1 bg-yellow-600/30 hover:bg-yellow-600/50 text-yellow-400 rounded transition-colors">
+                          Trial
+                        </button>
+                      )}
+                      {shop.status !== "SUSPENDED" && (
+                        <button onClick={() => updateShopStatus(shop.id, { status: "SUSPENDED" })}
+                          disabled={updating === shop.id}
+                          className="text-xs px-2 py-1 bg-red-600/30 hover:bg-red-600/50 text-red-400 rounded transition-colors">
+                          Suspend
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
