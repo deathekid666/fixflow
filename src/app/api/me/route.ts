@@ -16,6 +16,13 @@ export async function GET(req: Request) {
       name: true,
       shopId: true,
       isSuperAdmin: true,
+      shop: {
+        select: {
+          id: true,
+          name: true,
+          onboardingComplete: true,
+        }
+      }
     },
   });
 

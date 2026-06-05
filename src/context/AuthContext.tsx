@@ -9,6 +9,11 @@ type User = {
   name: string;
   shopId: string | null;
   isSuperAdmin: boolean;
+  shop?: {
+    id: string;
+    name: string;
+    onboardingComplete: boolean;
+  } | null;
 };
 
 type AuthContextType = {

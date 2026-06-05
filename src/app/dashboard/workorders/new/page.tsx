@@ -1,5 +1,6 @@
 "use client";
 
+import UpgradeModal from "@/components/UpgradeModal";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -22,6 +23,8 @@ type Template = {
 };
 
 export default function NewWorkOrderPage() {
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState({ limit: 50, current: 50 });
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -111,17 +114,25 @@ export default function NewWorkOrderPage() {
     }
     setLoading(true);
 
-    // Create work order
     const res = await fetch("/api/workorders", {
       method: "POST", headers: { "Content-Type": "application/json" },
       credentials: "include", body: JSON.stringify(form),
     });
     const data = await res.json();
-    if (!res.ok) { setError(data.error || "Failed to create work order"); setLoading(false); return; }
+    if (!res.ok) {
+      if (data.limitReached) {
+        setUpgradeInfo({ limit: data.limit, current: data.current });
+        setShowUpgradeModal(true);
+        setLoading(false);
+        return;
+      }
+      setError(data.error || "Failed to create work order");
+      setLoading(false);
+      return;
+    }
 
     const workOrderId = data.id;
 
-    // Upload intake photos
     if (intakePhotos.length > 0) {
       await Promise.all(intakePhotos.map(async ({ file }) => {
         const fd = new FormData();
@@ -133,7 +144,6 @@ export default function NewWorkOrderPage() {
       }));
     }
 
-    // Apply template parts and line items
     if (selectedTemplate) {
       const parts = Array.isArray(selectedTemplate.defaultParts) ? selectedTemplate.defaultParts : [];
       const items = Array.isArray(selectedTemplate.defaultLineItems) ? selectedTemplate.defaultLineItems : [];
@@ -169,6 +179,15 @@ export default function NewWorkOrderPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
+      {showUpgradeModal && (
+        <UpgradeModal
+          onClose={() => setShowUpgradeModal(false)}
+          feature="work orders"
+          limit={upgradeInfo.limit}
+          current={upgradeInfo.current}
+        />
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
@@ -182,7 +201,6 @@ export default function NewWorkOrderPage() {
         </button>
       </div>
 
-      {/* Applied template banner */}
       {selectedTemplate && (
         <div className="bg-blue-950/30 border border-blue-800/50 rounded-xl px-4 py-3 flex items-center justify-between">
           <div>
@@ -197,7 +215,6 @@ export default function NewWorkOrderPage() {
         </div>
       )}
 
-      {/* Template picker */}
       {showTemplates && (
         <div className="bg-slate-900 border border-blue-800/50 rounded-xl p-4 space-y-3">
           <p className="text-xs text-slate-400 font-medium">Select a template to auto-fill the form:</p>
@@ -250,7 +267,7 @@ export default function NewWorkOrderPage() {
         </label>
       </section>
 
-      {/* Device Photos on Intake */}
+      {/* Device Photos */}
       <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -263,7 +280,6 @@ export default function NewWorkOrderPage() {
           </button>
           <input ref={photoRef} type="file" className="hidden" accept="image/*" multiple onChange={onPhotoSelected} />
         </div>
-
         {intakePhotos.length === 0 ? (
           <button onClick={() => photoRef.current?.click()}
             className="w-full border-2 border-dashed border-slate-700 hover:border-slate-600 rounded-xl p-8 text-center transition-colors group">
@@ -278,17 +294,13 @@ export default function NewWorkOrderPage() {
                 <div key={i} className="relative group rounded-lg overflow-hidden bg-slate-800 aspect-square">
                   <img src={p.preview} alt={`Intake photo ${i + 1}`} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button onClick={() => removePhoto(i)}
-                      className="bg-red-600 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg transition-colors">
-                      Remove
-                    </button>
+                    <button onClick={() => removePhoto(i)} className="bg-red-600 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg">Remove</button>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
                     <p className="text-xs text-white truncate">{p.file.name}</p>
                   </div>
                 </div>
               ))}
-              {/* Add more button */}
               <button onClick={() => photoRef.current?.click()}
                 className="aspect-square border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors group">
                 <span className="text-2xl">+</span>

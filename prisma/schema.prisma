@@ -30,15 +30,16 @@ model User {
   payments         Payment[]
 }
 model Shop {
-  id          String   @id @default(cuid())
-  name        String
-  address     String?
-  phone       String?
-  email       String?
-  status      String   @default("TRIAL") // TRIAL | ACTIVE | SUSPENDED
-  plan        String   @default("FREE")  // FREE | PRO | ENTERPRISE
-  trialEndsAt DateTime?
-  createdAt   DateTime @default(now())
+  id                 String   @id @default(cuid())
+  name               String
+  address            String?
+  phone              String?
+  email              String?
+  status             String   @default("TRIAL")
+  plan               String   @default("FREE")
+  trialEndsAt        DateTime?
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
 
   users      User[]
   workOrders WorkOrder[]
