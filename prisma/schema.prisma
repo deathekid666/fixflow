@@ -8,13 +8,16 @@ datasource db {
 }
 
 model User {
-  id           String  @id @default(cuid())
-  email        String  @unique
-  name         String
-  password     String
-  role         String  @default("ENGINEER")
-  shopId       String?
-  isSuperAdmin Boolean @default(false)
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String
+  password           String
+  role               String   @default("ENGINEER")
+  shopId             String?
+  isSuperAdmin       Boolean  @default(false)
+  emailVerified      Boolean  @default(false)
+  emailVerifyToken   String?
+  resetPasswordToken String?
 
   shop             Shop?             @relation(fields: [shopId], references: [id])
   createdOrders    WorkOrder[]       @relation("CreatedBy")
@@ -26,7 +29,6 @@ model User {
   shifts           Shift[]
   payments         Payment[]
 }
-
 model Shop {
   id          String   @id @default(cuid())
   name        String

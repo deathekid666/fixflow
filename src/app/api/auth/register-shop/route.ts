@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { randomBytes } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
   if (exists) return Response.json({ error: "Email already registered" }, { status: 400 });
 
   const hashed = await bcrypt.hash(password, 10);
+  const verifyToken = randomBytes(32).toString("hex");
 
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + 14);
@@ -34,26 +35,20 @@ export async function POST(req: Request) {
   const user = await prisma.user.create({
     data: {
       name, email, password: hashed,
-      role: "ADMIN", shopId: shop.id, isSuperAdmin: false,
+      role: "ADMIN", shopId: shop.id,
+      isSuperAdmin: false,
+      emailVerified: false,
+      emailVerifyToken: verifyToken,
     },
   });
 
-  const token = jwt.sign(
-    {
-      id: user.id, role: user.role, shopId: shop.id,
-      email: user.email, isSuperAdmin: false,
-      shopStatus: "TRIAL", trialEndsAt: shop.trialEndsAt,
-    },
-    process.env.JWT_SECRET!,
-    { expiresIn: "7d" }
-  );
+  // Send verification email
+  try {
+    const { sendVerificationEmail } = await import("@/lib/email");
+    await sendVerificationEmail(email, name, verifyToken);
+  } catch (e) {
+    console.error("Email send failed:", e);
+  }
 
-  cookies().set("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
-
-  return Response.json({ success: true, shopId: shop.id });
+  return Response.json({ success: true, requiresVerification: true });
 }

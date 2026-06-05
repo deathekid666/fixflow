@@ -18,13 +18,16 @@ export async function POST(req: Request) {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return Response.json({ error: "Invalid credentials" }, { status: 401 });
 
-  // Check shop status — block suspended shops from logging in
+  // Block unverified emails
+  if (!user.emailVerified && !user.isSuperAdmin) {
+    return Response.json({ error: "Please verify your email before logging in. Check your inbox." }, { status: 403 });
+  }
+
+  // Check shop status
   if (!user.isSuperAdmin && user.shop) {
     if (user.shop.status === "SUSPENDED") {
       return Response.json({ error: "Your account has been suspended. Please contact support." }, { status: 403 });
     }
-
-    // Check trial expiry
     if (user.shop.status === "TRIAL" && user.shop.trialEndsAt) {
       if (new Date() > new Date(user.shop.trialEndsAt)) {
         return Response.json({ error: "Your trial has expired. Please upgrade to continue." }, { status: 403 });
