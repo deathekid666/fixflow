@@ -8,15 +8,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const { name, address, phone, email } = await req.json();
+  const body = await req.json();
+  const { name, address, phone, email, onboardingComplete } = body;
 
   const shop = await prisma.shop.update({
     where: { id: params.id },
     data: {
       ...(name && { name }),
-      address: address || null,
-      phone: phone || null,
-      email: email || null,
+      address: address !== undefined ? address || null : undefined,
+      phone: phone !== undefined ? phone || null : undefined,
+      email: email !== undefined ? email || null : undefined,
+      ...(onboardingComplete !== undefined && { onboardingComplete }),
     },
   });
 
@@ -36,10 +38,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const shop = await prisma.shop.findFirst({
-    where: { id: params.id },
-  });
-
+  const shop = await prisma.shop.findFirst({ where: { id: params.id } });
   if (!shop) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json(shop);
 }
