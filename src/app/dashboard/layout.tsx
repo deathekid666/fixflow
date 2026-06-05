@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 type Notification = {
   id: string;
@@ -15,7 +16,7 @@ type Notification = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -23,10 +24,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    refresh();
+  }, []);
+
+  useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
 
-  // Check shop status on every load
   useEffect(() => {
     if (user && !user.isSuperAdmin) {
       fetch("/api/me/shop-status", { credentials: "include" })
@@ -186,6 +190,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ))}
               </div>
             </div>
+          )}
+          {user && !user.isSuperAdmin && user.shop && !user.shop.onboardingComplete && (
+            <OnboardingWizard shopId={user.shopId ?? ""} shopName={user.shop.name ?? ""} />
           )}
           {children}
         </main>
