@@ -35,7 +35,7 @@ export default function RegisterPage() {
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Registration failed"); setLoading(false); return; }
-    window.location.href = "/verify-email";
+    window.location.href = "/dashboard";
   }
 
   return (

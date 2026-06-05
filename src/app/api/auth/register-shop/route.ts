@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 
@@ -37,18 +38,38 @@ export async function POST(req: Request) {
       name, email, password: hashed,
       role: "ADMIN", shopId: shop.id,
       isSuperAdmin: false,
-      emailVerified: false,
+      emailVerified: true, // Auto verify until domain is ready
       emailVerifyToken: verifyToken,
     },
   });
 
-  // Send verification email
+  // Try to send email but don't block if it fails
   try {
     const { sendVerificationEmail } = await import("@/lib/email");
-    await sendVerificationEmail(email, name, verifyToken);
-  } catch (e) {
-    console.error("Email send failed:", e);
+    await Promise.race([
+      sendVerificationEmail(email, name, verifyToken),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+    ]);
+  } catch {
+    console.log("Email send skipped or timed out");
   }
 
-  return Response.json({ success: true, requiresVerification: true });
+  const token = jwt.sign(
+    {
+      id: user.id, role: user.role, shopId: shop.id,
+      email: user.email, isSuperAdmin: false,
+      shopStatus: "TRIAL", trialEndsAt: shop.trialEndsAt,
+    },
+    process.env.JWT_SECRET!,
+    { expiresIn: "7d" }
+  );
+
+  cookies().set("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+
+  return Response.json({ success: true, requiresVerification: false });
 }
