@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { randomBytes } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +16,6 @@ export async function POST(req: Request) {
   if (exists) return Response.json({ error: "Email already registered" }, { status: 400 });
 
   const hashed = await bcrypt.hash(password, 10);
-  const verifyToken = randomBytes(32).toString("hex");
 
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + 14);
@@ -38,21 +36,9 @@ export async function POST(req: Request) {
       name, email, password: hashed,
       role: "ADMIN", shopId: shop.id,
       isSuperAdmin: false,
-      emailVerified: true, // Auto verify until domain is ready
-      emailVerifyToken: verifyToken,
+      emailVerified: true,
     },
   });
-
-  // Try to send email but don't block if it fails
-  try {
-    const { sendVerificationEmail } = await import("@/lib/email");
-    await Promise.race([
-      sendVerificationEmail(email, name, verifyToken),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
-    ]);
-  } catch {
-    console.log("Email send skipped or timed out");
-  }
 
   const token = jwt.sign(
     {
@@ -71,5 +57,5 @@ export async function POST(req: Request) {
     path: "/",
   });
 
-  return Response.json({ success: true, requiresVerification: false });
+  return Response.json({ success: true });
 }
