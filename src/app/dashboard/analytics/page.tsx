@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
+  CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 
 type RevenueData = {
@@ -21,15 +21,10 @@ type Analytics = {
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
-const STATUS_COLORS: Record<string, string> = {
-  Received: "#3b82f6", Diagnosing: "#f59e0b", Repairing: "#ea580c",
-  Done: "#10b981", Delivered: "#64748b", Cancelled: "#ef4444",
-};
-
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
- const [period, setPeriod] = useState("monthly");
+  const [period, setPeriod] = useState("monthly");
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
 
@@ -75,6 +70,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -93,30 +89,15 @@ export default function AnalyticsPage() {
           <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
           <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
         </div>
+      </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          {
-            label: "Total Orders", value: revenue.summary.totalOrders,
-            sub: `${activeOrders} active`, color: "text-white", icon: "📋",
-            bg: "bg-blue-500/10 border-blue-500/20",
-          },
-          {
-            label: "Total Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`,
-            sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-white", icon: "💰",
-            bg: "bg-slate-900 border-slate-800",
-          },
-          {
-            label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`,
-            sub: `${collectionRate}% collection rate`, color: "text-green-400", icon: "✅",
-            bg: "bg-green-500/10 border-green-500/20",
-          },
-          {
-            label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`,
-            sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-red-400" : "text-slate-400", icon: "⏳",
-            bg: outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-slate-900 border-slate-800",
-          },
+          { label: "Total Orders", value: revenue.summary.totalOrders, sub: `${activeOrders} active`, color: "text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
+          { label: "Total Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`, sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-white", icon: "💰", bg: "bg-slate-900 border-slate-800" },
+          { label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`, sub: `${collectionRate}% collection rate`, color: "text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
+          { label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`, sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-red-400" : "text-slate-400", icon: "⏳", bg: outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-slate-900 border-slate-800" },
         ].map(s => (
           <div key={s.label} className={`border rounded-xl p-5 ${s.bg}`}>
             <div className="flex items-center justify-between mb-2">
@@ -173,7 +154,6 @@ export default function AnalyticsPage() {
 
       {/* Orders volume + Status breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Orders volume */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-slate-200 mb-1">Work Orders Volume</h2>
           <p className="text-xs text-slate-500 mb-4">Number of orders per period</p>
@@ -190,7 +170,6 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {/* Status breakdown */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-slate-200 mb-1">Orders by Status</h2>
           <p className="text-xs text-slate-500 mb-4">Current distribution</p>
@@ -257,9 +236,8 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* Top parts + Low stock side by side */}
+      {/* Top parts + Low stock */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Top parts */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-slate-200 mb-1">Top Spare Parts Used</h2>
           <p className="text-xs text-slate-500 mb-4">Most used parts this period</p>
@@ -284,7 +262,6 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {/* Low stock */}
         <div className={`border rounded-xl p-5 ${analytics.lowStock.length > 0 ? "bg-orange-950/20 border-orange-800/30" : "bg-slate-900 border-slate-800"}`}>
           <h2 className={`text-sm font-semibold mb-1 ${analytics.lowStock.length > 0 ? "text-orange-400" : "text-slate-200"}`}>
             {analytics.lowStock.length > 0 ? `⚠️ Low Stock (${analytics.lowStock.length})` : "Stock Status"}
