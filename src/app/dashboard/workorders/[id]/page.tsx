@@ -348,158 +348,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-          {/* Quick action buttons */}
-          {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          {/* Quick action buttons */}
-          {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          {/* Quick action buttons */}
-          {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          {/* Quick action buttons */}
-          {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          <select className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status] ?? "bg-slate-700 text-slate-300"}`}
-            value={order.status} onChange={(e) => changeStatus(e.target.value)}>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>{order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
-            </button>
-          )}
-          {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
-            </button>
-          )}
-          {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
-            </button>
-          )}
-          {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
-            </button>
-          )}
-          <select className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status] ?? "bg-slate-700 text-slate-300"}`}
-            value={order.status} onChange={(e) => changeStatus(e.target.value)}>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
       </div>
 
       {/* Bounce form */}
@@ -632,13 +480,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               <button onClick={() => fileRef.current?.click()} disabled={uploadingFile || !!pendingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">{uploadingFile ? "Uploading..." : "Upload File"}</button>
               <input ref={fileRef} type="file" className="hidden" accept="image/*,.pdf,.txt" onChange={onFileSelected} />
             </div>
-           {pendingFile && (
+            {pendingFile && (
               <div className="mb-4 bg-blue-900/30 border border-blue-700/50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-blue-300 font-medium">{pendingFile.name}</p>
-                    <p className="text-xs text-slate-400">{(pendingFile.size / 1024).toFixed(1)} KB</p>
-                  </div>
+                <div>
+                  <p className="text-xs text-blue-300 font-medium">{pendingFile.name}</p>
+                  <p className="text-xs text-slate-400">{(pendingFile.size / 1024).toFixed(1)} KB</p>
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Photo stage</label>
@@ -667,7 +513,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               <div className="grid grid-cols-3 gap-3">
                 {order.attachments.map(a => (
                   <div key={a.id} className="bg-slate-800 rounded-lg overflow-hidden group relative">
-                    {a.path.startsWith("data:image") ? <img src={a.path} alt={a.filename} className="w-full h-24 object-cover" /> : <div className="h-24 flex items-center justify-center text-slate-400 text-xs">📄 {a.filename}</div>}
+                    {a.path.startsWith("data:image") || a.path.startsWith("https://") ? (
+                      <img src={a.path} alt={a.filename} className="w-full h-24 object-cover" />
+                    ) : (
+                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">📄 {a.filename}</div>
+                    )}
                     <div className="px-2 py-1 flex items-center justify-between gap-1">
                       <p className="text-xs text-slate-500 truncate">{a.filename}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${
@@ -693,18 +543,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               <div>
                 <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Diagnosis Checklist</h2>
                 {order.checklist.length > 0 && (
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    {order.checklist.filter(c => c.status !== "PENDING").length}/{order.checklist.length} checked
-                  </p>
+                  <p className="text-xs text-slate-600 mt-0.5">{order.checklist.filter(c => c.status !== "PENDING").length}/{order.checklist.length} checked</p>
                 )}
               </div>
               {order.checklist.length === 0 && (
-                <button onClick={loadChecklist} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
-                  + Load Checklist
-                </button>
+                <button onClick={loadChecklist} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">+ Load Checklist</button>
               )}
             </div>
-
             {order.checklist.length === 0 ? (
               <p className="text-sm text-slate-500">Click "Load Checklist" to start diagnosis.</p>
             ) : (
@@ -713,13 +558,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   <div key={check.id} className="flex items-start gap-3 group">
                     <div className="flex gap-1 flex-shrink-0 mt-0.5">
                       {[
-                        { s: "OK", icon: "✓", title: "OK — No issues", active: "bg-green-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-green-900 hover:text-green-400" },
-                        { s: "ISSUE", icon: "!", title: "Issue — Problem found", active: "bg-red-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-red-900 hover:text-red-400" },
-                        { s: "NA", icon: "—", title: "N/A — Not applicable", active: "bg-slate-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
-                        { s: "PENDING", icon: "○", title: "Pending — Not checked yet", active: "bg-slate-700 text-slate-400", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
+                        { s: "OK", icon: "✓", title: "OK", active: "bg-green-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-green-900 hover:text-green-400" },
+                        { s: "ISSUE", icon: "!", title: "Issue", active: "bg-red-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-red-900 hover:text-red-400" },
+                        { s: "NA", icon: "—", title: "N/A", active: "bg-slate-600 text-white", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
+                        { s: "PENDING", icon: "○", title: "Pending", active: "bg-slate-700 text-slate-400", inactive: "bg-slate-800 text-slate-600 hover:bg-slate-700" },
                       ].map(btn => (
-                        <button key={btn.s} onClick={() => updateCheck(check.id, btn.s)}
-                          title={btn.title}
+                        <button key={btn.s} onClick={() => updateCheck(check.id, btn.s)} title={btn.title}
                           className={`w-6 h-6 rounded text-xs font-bold transition-all ${check.status === btn.s ? btn.active : btn.inactive}`}>
                           {btn.icon}
                         </button>
@@ -729,15 +573,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                       <p className={`text-xs mt-1 ${
                         check.status === "OK" ? "text-green-400" :
                         check.status === "ISSUE" ? "text-red-400" :
-                        check.status === "NA" ? "text-slate-600 line-through" :
-                        "text-slate-300"
+                        check.status === "NA" ? "text-slate-600 line-through" : "text-slate-300"
                       }`}>{check.item}</p>
                       <button onClick={() => deleteCheckItem(check.id)} className="text-slate-700 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">×</button>
                     </div>
                   </div>
                 ))}
-
-                {/* Progress bar */}
                 {order.checklist.length > 0 && (
                   <div className="pt-3 mt-1 border-t border-slate-800">
                     <div className="flex gap-3 text-xs mb-2">
@@ -753,8 +594,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     </div>
                   </div>
                 )}
-
-                {/* Add custom item */}
                 <div className="flex gap-2 pt-2">
                   <input className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     placeholder="Add custom check item..." value={newCheckItem}
@@ -790,7 +629,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
         {/* Right sidebar */}
         <div className="space-y-4">
-          {/* TAT */}
           <section className={`border rounded-xl p-5 ${order.isOverdue ? "bg-orange-950/20 border-orange-800/30" : "bg-slate-900 border-slate-800"}`}>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Turnaround Time</h2>
             <div className="space-y-2 text-xs">
@@ -803,7 +641,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Rating */}
           {order.status === "DELIVERED" && (
             <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Rating</h2>
@@ -821,7 +658,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </section>
           )}
 
-          {/* Engineer */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Assigned Engineer</h2>
             <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" value={order.assignee?.id ?? ""} onChange={(e) => assignEngineer(e.target.value)}>
@@ -830,7 +666,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </select>
           </section>
 
-          {/* Quotation */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quotation</h2>
@@ -855,7 +690,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               {order.discount > 0 && <div className="flex justify-between text-slate-400"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
               <div className="flex justify-between text-white font-bold border-t border-slate-700 pt-2"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
             </div>
-
             {editingQuotation && (
               <div className="space-y-3 mb-4 bg-slate-800 rounded-lg p-3">
                 <div>
@@ -869,8 +703,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 <button onClick={saveQuotation} disabled={savingQuotation} className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{savingQuotation ? "Saving..." : "Save"}</button>
               </div>
             )}
-
-            {/* Payment section */}
             <div className="border border-slate-700 rounded-lg overflow-hidden">
               <div className="bg-slate-800 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3 text-xs">
@@ -883,7 +715,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   + Payment
                 </button>
               </div>
-
               {showPaymentForm && (
                 <div className="bg-slate-800/50 border-t border-slate-700 p-3 space-y-3">
                   <div className="grid grid-cols-4 gap-1">
@@ -953,7 +784,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   </div>
                 </div>
               )}
-
               {order.payments && order.payments.length > 0 && (
                 <div className="border-t border-slate-700">
                   <div className="px-3 py-2 bg-slate-800/30">
@@ -982,7 +812,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Customer tracking */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Tracking</h2>
             <p className="text-xs text-slate-400 mb-3">Share this link with the customer:</p>
@@ -992,7 +821,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Internal notes */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Internal Notes</h2>
             <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
@@ -1013,7 +841,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Operation log */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Operation Log</h2>
             <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -1030,7 +857,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
-          {/* Meta */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-xs space-y-2">
             <Info label="Created by" value={order.creator.name} />
             <Info label="Created" value={new Date(order.createdAt).toLocaleString()} />
