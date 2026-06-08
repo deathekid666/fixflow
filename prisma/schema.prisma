@@ -29,12 +29,14 @@ model User {
   shifts           Shift[]
   payments         Payment[]
 }
+
 model Shop {
   id                 String   @id @default(cuid())
   name               String
   address            String?
   phone              String?
   email              String?
+  logoUrl            String?
   status             String   @default("TRIAL")
   plan               String   @default("FREE")
   trialEndsAt        DateTime?

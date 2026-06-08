@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import OnboardingWizard from "@/components/OnboardingWizard";
+import TrialBanner from "@/components/TrialBanner";
 
 type Notification = {
   id: string;
@@ -23,9 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useEffect(() => { refresh(); }, []);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -93,13 +92,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ] : []),
       { href: "/dashboard/warranties", label: "Warranties", icon: "🛡" },
     ] : []),
+    { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
   ];
 
   const bottomNav = [
     { href: "/dashboard", label: "Orders", icon: "📋" },
     { href: "/dashboard/spareparts", label: "Parts", icon: "🔧" },
     { href: "/dashboard/customers", label: "Customers", icon: "👤" },
-    { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
+    { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
   ];
 
   const unread = notifications.filter(n => !n.read).length;
@@ -167,6 +167,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </button>
         </header>
+
+        <TrialBanner />
 
         <main className="flex-1 overflow-auto relative pb-16 lg:pb-0">
           {showNotifications && (

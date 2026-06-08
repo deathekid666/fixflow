@@ -136,6 +136,10 @@ export default function LandingPage() {
           <a href="mailto:support@fixflow.ma" className="hover:text-slate-300 transition-colors">support@fixflow.ma</a>
           <Link href="/login" className="hover:text-slate-300 transition-colors">Sign in</Link>
           <Link href="/register" className="hover:text-slate-300 transition-colors">Register</Link>
+          <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms</Link>
+          <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms</Link>
+          <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy</Link>
         </div>
       </footer>
     </div>
