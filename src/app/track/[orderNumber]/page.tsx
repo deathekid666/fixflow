@@ -75,7 +75,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.05)", borderRadius: 99, padding: "8px 20px", marginBottom: 12 }}>
             {(data?.shop as any)?.logoUrl ? (
-              <img src={(data.shop as any).logoUrl} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
+              <img src={(data?.shop as any)?.logoUrl} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
             ) : (
               <span style={{ fontSize: 18 }}>🔧</span>
             )}
