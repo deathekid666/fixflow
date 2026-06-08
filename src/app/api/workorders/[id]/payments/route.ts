@@ -45,9 +45,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   });
 
   const totalCollected = order.payments.reduce((s, p) => s + p.amount, 0) + parseFloat(amount);
+  const autoTotal = order.subtotal + order.quotationItems - order.discount;
   await prisma.workOrder.update({
     where: { id: params.id },
-    data: { collected: totalCollected, updatedAt: new Date() },
+    data: {
+      collected: totalCollected,
+      total: autoTotal > 0 ? autoTotal : order.total,
+      updatedAt: new Date(),
+    },
   });
 
   await prisma.operationLog.create({

@@ -71,6 +71,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [editingQuotation, setEditingQuotation] = useState(false);
   const [discount, setDiscount] = useState("0");
   const [quotationRemarks, setQuotationRemarks] = useState("");
+  const [manualTotal, setManualTotal] = useState("0");
   const [savingQuotation, setSavingQuotation] = useState(false);
   const [showBounceForm, setShowBounceForm] = useState(false);
   const [bounceReason, setBounceReason] = useState("");
@@ -108,6 +109,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     if (!res.ok) { router.push("/dashboard"); return; }
     const data = await res.json();
     setOrder(data);
+    setDiscount(data.discount.toString());
+    setQuotationRemarks(data.quotationRemarks || "");
     setDiscount(data.discount.toString());
     setQuotationRemarks(data.quotationRemarks || "");
     setLoading(false);
@@ -205,9 +208,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   async function saveQuotation() {
     setSavingQuotation(true);
     const d = parseFloat(discount) || 0;
+    const autoTotal = (order?.subtotal ?? 0) + (order?.quotationItems ?? 0) - d;
+    const finalTotal = autoTotal > 0 ? autoTotal : parseFloat(manualTotal) || 0;
     await fetch(`/api/workorders/${params.id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include",
-      body: JSON.stringify({ discount: d, quotationRemarks, total: (order?.subtotal ?? 0) + (order?.quotationItems ?? 0) - d }),
+      body: JSON.stringify({ discount: d, quotationRemarks, total: finalTotal }),
     });
     setEditingQuotation(false); await load(); setSavingQuotation(false);
   }
@@ -692,6 +697,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
             {editingQuotation && (
               <div className="space-y-3 mb-4 bg-slate-800 rounded-lg p-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Total (MAD)</label>
+                  <input type="number" min="0" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" value={manualTotal} onChange={(e) => setManualTotal(e.target.value)}
+                    placeholder="Set total manually if no parts added" />
+                  <p className="text-xs text-slate-600 mt-0.5">Auto-calculated from parts + services when available</p>
+                </div>
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Discount</label>
                   <input type="number" min="0" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" value={discount} onChange={(e) => setDiscount(e.target.value)} />
