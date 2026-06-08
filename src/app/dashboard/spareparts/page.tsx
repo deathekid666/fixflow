@@ -4,12 +4,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 type SparePart = {
-  id: string;
-  name: string;
-  partNumber: string;
-  description: string;
-  unitPrice: number;
-  stock: number;
+  id: string; name: string; partNumber: string;
+  description: string; unitPrice: number; stock: number;
 };
 
 const LOW_STOCK_THRESHOLD = 5;
@@ -23,10 +19,11 @@ export default function SparePartsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", partNumber: "", description: "", unitPrice: "", stock: "" });
   const [saving, setSaving] = useState(false);
-  const [adjustingPart, setAdjustingPart] = useState<SparePart | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
   const [adjQuantity, setAdjQuantity] = useState("");
   const [adjType, setAdjType] = useState("ADD");
   const [adjReason, setAdjReason] = useState("");
+  const [adjPrice, setAdjPrice] = useState("");
   const [savingAdj, setSavingAdj] = useState(false);
 
   useEffect(() => { load(); }, [search]);
@@ -63,29 +60,51 @@ export default function SparePartsPage() {
     setSaving(false);
   }
 
-  async function handleAdjust() {
-    if (!adjustingPart || !adjQuantity) return;
+  function openAdjust(p: SparePart) {
+    setAdjustingId(p.id);
+    setAdjQuantity("");
+    setAdjType("ADD");
+    setAdjReason("");
+    setAdjPrice(p.unitPrice.toFixed(2));
+  }
+
+  async function handleAdjust(part: SparePart) {
+    if (!adjQuantity && !adjPrice) return;
     setSavingAdj(true);
-    await fetch("/api/spareparts/adjustments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        sparePartId: adjustingPart.id,
-        quantity: parseInt(adjQuantity),
-        type: adjType,
-        reason: adjReason,
-      }),
-    });
-    setAdjustingPart(null);
-    setAdjQuantity(""); setAdjType("ADD"); setAdjReason("");
+
+    // Update price if changed
+    if (adjPrice && parseFloat(adjPrice) !== part.unitPrice) {
+      await fetch(`/api/spareparts/${part.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ unitPrice: parseFloat(adjPrice) }),
+      });
+    }
+
+    // Adjust stock if quantity entered
+    if (adjQuantity) {
+      await fetch("/api/spareparts/adjustments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          sparePartId: part.id,
+          quantity: parseInt(adjQuantity),
+          type: adjType,
+          reason: adjReason,
+        }),
+      });
+    }
+
+    setAdjustingId(null);
+    setAdjQuantity(""); setAdjType("ADD"); setAdjReason(""); setAdjPrice("");
     await load();
     setSavingAdj(false);
   }
 
   const outOfStock = parts.filter(p => p.stock === 0);
   const lowStock = parts.filter(p => p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD);
-
   const filtered = parts.filter(p => {
     if (stockFilter === "out") return p.stock === 0;
     if (stockFilter === "low") return p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD;
@@ -107,7 +126,7 @@ export default function SparePartsPage() {
         )}
       </div>
 
-      {/* Low stock alert banner */}
+      {/* Low stock alert */}
       {(outOfStock.length > 0 || lowStock.length > 0) && (
         <div className="bg-orange-950/30 border border-orange-800/50 rounded-xl p-4 space-y-2">
           <div className="flex items-center gap-2">
@@ -118,23 +137,15 @@ export default function SparePartsPage() {
             <div>
               <p className="text-xs text-red-400 font-semibold mb-1">Out of Stock ({outOfStock.length})</p>
               <div className="flex flex-wrap gap-2">
-                {outOfStock.map(p => (
-                  <span key={p.id} className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-lg">
-                    {p.name} {p.partNumber ? `(${p.partNumber})` : ""}
-                  </span>
-                ))}
+                {outOfStock.map(p => <span key={p.id} className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-lg">{p.name}</span>)}
               </div>
             </div>
           )}
           {lowStock.length > 0 && (
             <div>
-              <p className="text-xs text-yellow-400 font-semibold mb-1">Low Stock — less than {LOW_STOCK_THRESHOLD} units ({lowStock.length})</p>
+              <p className="text-xs text-yellow-400 font-semibold mb-1">Low Stock ({lowStock.length})</p>
               <div className="flex flex-wrap gap-2">
-                {lowStock.map(p => (
-                  <span key={p.id} className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">
-                    {p.name} ({p.stock} left)
-                  </span>
-                ))}
+                {lowStock.map(p => <span key={p.id} className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">{p.name} ({p.stock} left)</span>)}
               </div>
             </div>
           )}
@@ -149,7 +160,7 @@ export default function SparePartsPage() {
             {[
               { label: "Name *", field: "name", placeholder: "e.g. Screen Assembly" },
               { label: "Part Number", field: "partNumber", placeholder: "e.g. SCR-AN10D" },
-              { label: "Unit Price *", field: "unitPrice", placeholder: "0.00" },
+              { label: "Unit Price (MAD) *", field: "unitPrice", placeholder: "0.00" },
               { label: "Stock Qty", field: "stock", placeholder: "0" },
             ].map(f => (
               <div key={f.field}>
@@ -168,53 +179,10 @@ export default function SparePartsPage() {
           </div>
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg">
               {saving ? "Saving..." : "Save Part"}
             </button>
-            <button onClick={() => setShowForm(false)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Stock adjustment modal */}
-      {adjustingPart && (
-        <div className="bg-slate-900 border border-blue-800/50 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-300">Adjust Stock — {adjustingPart.name}</h2>
-          <p className="text-xs text-slate-500">Current stock: <span className="text-white font-medium">{adjustingPart.stock}</span></p>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Type</label>
-              <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
-                value={adjType} onChange={e => setAdjType(e.target.value)}>
-                <option value="ADD">Add Stock</option>
-                <option value="REMOVE">Remove Stock</option>
-                <option value="CORRECTION">Set exact qty</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Quantity</label>
-              <input type="number" min="0"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-                value={adjQuantity} onChange={e => setAdjQuantity(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Reason</label>
-              <input className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                placeholder="Optional" value={adjReason} onChange={e => setAdjReason(e.target.value)} />
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={handleAdjust} disabled={savingAdj || !adjQuantity}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-              {savingAdj ? "Saving..." : "Save Adjustment"}
-            </button>
-            <button onClick={() => setAdjustingPart(null)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
-              Cancel
-            </button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-slate-800 text-slate-300 text-sm rounded-lg">Cancel</button>
           </div>
         </div>
       )}
@@ -229,12 +197,9 @@ export default function SparePartsPage() {
             { key: "low", label: `Low Stock (${lowStock.length})`, color: lowStock.length > 0 ? "text-yellow-400" : "" },
             { key: "out", label: `Out of Stock (${outOfStock.length})`, color: outOfStock.length > 0 ? "text-red-400" : "" },
           ].map(f => (
-            <button key={f.key}
-              onClick={() => setStockFilter(f.key as any)}
+            <button key={f.key} onClick={() => setStockFilter(f.key as any)}
               className={`px-3 py-2 text-xs rounded-lg border font-medium transition-colors ${
-                stockFilter === f.key
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : `bg-slate-900 border-slate-800 hover:border-slate-600 ${f.color || "text-slate-400"}`
+                stockFilter === f.key ? "bg-blue-600 text-white border-blue-600" : `bg-slate-900 border-slate-800 hover:border-slate-600 ${f.color || "text-slate-400"}`
               }`}>
               {f.label}
             </button>
@@ -247,47 +212,97 @@ export default function SparePartsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800">
-              {["Name", "Part #", "Description", "Unit Price", "Stock", "Status", ""].map(h => (
+              {["Name", "Part #", "Unit Price", "Stock", "Status", ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
+            {loading && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
+            {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
             {filtered.map(p => (
-              <tr key={p.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-950/10" : ""}`}>
-                <td className="px-4 py-3 text-white font-medium">
-                  {p.name}
-                  {p.stock === 0 && <span className="ml-2 text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">⚠ Out</span>}
-                  {p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">Low</span>}
-                </td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-400">{p.partNumber || "—"}</td>
-                <td className="px-4 py-3 text-slate-400 text-xs max-w-[180px] truncate">{p.description || "—"}</td>
-                <td className="px-4 py-3 text-white">{p.unitPrice.toFixed(2)}</td>
-                <td className="px-4 py-3">
-                  <span className={`font-bold text-base ${p.stock === 0 ? "text-red-400" : p.stock < LOW_STOCK_THRESHOLD ? "text-yellow-400" : "text-white"}`}>
-                    {p.stock}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    p.stock === 0 ? "bg-red-500/20 text-red-400" :
-                    p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-500/20 text-yellow-400" :
-                    "bg-green-500/20 text-green-400"
-                  }`}>
-                    {p.stock === 0 ? "Out of Stock" : p.stock < LOW_STOCK_THRESHOLD ? "Low Stock" : "In Stock"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {user?.role === "ADMIN" && (
-                    <button onClick={() => setAdjustingPart(p)}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                      Adjust
-                    </button>
-                  )}
-                </td>
-              </tr>
+              <>
+                <tr key={p.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-950/10" : ""}`}>
+                  <td className="px-4 py-3 text-white font-medium">
+                    {p.name}
+                    {p.stock === 0 && <span className="ml-2 text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">Out</span>}
+                    {p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">Low</span>}
+                    {p.description && <p className="text-xs text-slate-500 font-normal mt-0.5">{p.description}</p>}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-400">{p.partNumber || "—"}</td>
+                  <td className="px-4 py-3 text-white font-medium">{p.unitPrice.toFixed(2)} MAD</td>
+                  <td className="px-4 py-3">
+                    <span className={`font-bold text-base ${p.stock === 0 ? "text-red-400" : p.stock < LOW_STOCK_THRESHOLD ? "text-yellow-400" : "text-white"}`}>
+                      {p.stock}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      p.stock === 0 ? "bg-red-500/20 text-red-400" :
+                      p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-500/20 text-yellow-400" :
+                      "bg-green-500/20 text-green-400"
+                    }`}>
+                      {p.stock === 0 ? "Out of Stock" : p.stock < LOW_STOCK_THRESHOLD ? "Low Stock" : "In Stock"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {user?.role === "ADMIN" && (
+                      <button onClick={() => adjustingId === p.id ? setAdjustingId(null) : openAdjust(p)}
+                        className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${adjustingId === p.id ? "bg-slate-700 text-slate-300" : "bg-blue-600/20 hover:bg-blue-600/40 text-blue-400"}`}>
+                        {adjustingId === p.id ? "✕ Close" : "✏ Edit"}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+
+                {/* Inline edit/adjust row */}
+                {adjustingId === p.id && (
+                  <tr key={`adj-${p.id}`} className="border-b border-blue-800/30 bg-slate-800/50">
+                    <td colSpan={6} className="px-4 py-4">
+                      <div className="space-y-3">
+                        <p className="text-xs text-slate-400 font-medium">Edit part — changes save immediately</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Unit Price (MAD)</label>
+                            <input type="number" min="0" step="0.01"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                              value={adjPrice} onChange={e => setAdjPrice(e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Stock Adjustment</label>
+                            <select className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                              value={adjType} onChange={e => setAdjType(e.target.value)}>
+                              <option value="ADD">+ Add Stock</option>
+                              <option value="REMOVE">− Remove Stock</option>
+                              <option value="CORRECTION">= Set Exact</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Quantity</label>
+                            <input type="number" min="0"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                              placeholder="0" value={adjQuantity} onChange={e => setAdjQuantity(e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Reason</label>
+                            <input className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                              placeholder="Optional" value={adjReason} onChange={e => setAdjReason(e.target.value)} />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleAdjust(p)} disabled={savingAdj || (!adjQuantity && !adjPrice)}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                            {savingAdj ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button onClick={() => setAdjustingId(null)} className="px-4 py-2 bg-slate-700 text-slate-300 text-xs rounded-lg">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
