@@ -323,6 +323,178 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               <button onClick={() => setShowDeleteConfirm(false)} className="text-xs px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg">No</button>
             </div>
           )}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          <select className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status] ?? "bg-slate-700 text-slate-300"}`}
+            value={order.status} onChange={(e) => changeStatus(e.target.value)}>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+          {/* Quick action buttons */}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          {/* Quick action buttons */}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          {/* Quick action buttons */}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          {/* Quick action buttons */}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          <select className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status] ?? "bg-slate-700 text-slate-300"}`}
+            value={order.status} onChange={(e) => changeStatus(e.target.value)}>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>{order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
+          {order.status === "RECEIVED" && (
+            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+              → Start Diagnosis
+            </button>
+          )}
+          {order.status === "DIAGNOSING" && (
+            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+              → Start Repair
+            </button>
+          )}
+          {order.status === "REPAIRING" && (
+            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Done
+            </button>
+          )}
+          {order.status === "DONE" && (
+            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+              → Mark Delivered
+            </button>
+          )}
           <select className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status] ?? "bg-slate-700 text-slate-300"}`}
             value={order.status} onChange={(e) => changeStatus(e.target.value)}>
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}

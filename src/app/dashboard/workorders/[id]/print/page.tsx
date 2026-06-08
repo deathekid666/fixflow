@@ -4,44 +4,26 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type WorkOrder = {
-  id: string;
-  orderNumber: string;
-  deviceBrand: string;
-  deviceModel: string;
-  serialNumber: string;
-  imei: string;
-  warrantyStart: string;
-  warrantyEnd: string;
-  isUnderWarranty: boolean;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  faultDescription: string;
-  appearance: string;
-  remarks: string;
-  serviceType: string;
-  repairType: string;
-  faultLevel: string;
-  status: string;
-  receivedAt: string;
-  doneAt: string | null;
-  deliveredAt: string | null;
-  tatDays: number;
-  subtotal: number;
-  quotationItems: number;
-  discount: number;
-  total: number;
-  collected: number;
-  quotationRemarks: string | null;
-  createdAt: string;
-  creator: { name: string };
-  assignee: { name: string } | null;
+  id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
+  serialNumber: string; imei: string; warrantyStart: string; warrantyEnd: string;
+  isUnderWarranty: boolean; customerName: string; customerPhone: string; customerEmail: string;
+  faultDescription: string; appearance: string; remarks: string; serviceType: string;
+  repairType: string; faultLevel: string; status: string; receivedAt: string;
+  doneAt: string | null; deliveredAt: string | null; tatDays: number;
+  subtotal: number; quotationItems: number; discount: number; total: number;
+  collected: number; quotationRemarks: string | null; createdAt: string;
+  creator: { name: string }; assignee: { name: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
+  shop?: { name: string; phone: string | null; address: string | null; email: string | null; logoUrl: string | null };
 };
 
 function formatWO(raw: string, date: string) {
   return `WO-${new Date(date).getFullYear()}-${raw.slice(0, 6).toUpperCase()}`;
+}
+
+function mad(n: number) {
+  return `${n.toFixed(2)} MAD`;
 }
 
 export default function PrintWorkOrderPage({ params }: { params: { id: string } }) {
@@ -50,21 +32,20 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/workorders/${params.id}`)
+    fetch(`/api/workorders/${params.id}`, { credentials: "include" })
       .then(r => r.json())
       .then(data => { setOrder(data); setLoading(false); });
   }, []);
 
   useEffect(() => {
-    if (!loading && order) {
-      setTimeout(() => window.print(), 500);
-    }
+    if (!loading && order) setTimeout(() => window.print(), 500);
   }, [loading, order]);
 
   if (loading) return <div className="flex items-center justify-center h-64 text-slate-500 text-sm">Preparing print...</div>;
   if (!order) return null;
 
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
+  const remaining = grandTotal - order.collected;
 
   return (
     <>
@@ -72,26 +53,36 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
+          @page { margin: 15mm; }
         }
         body { font-family: Arial, sans-serif; }
       `}</style>
 
       <div className="no-print p-4 bg-slate-900 flex items-center gap-3">
         <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
-        <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg">Print / Save PDF</button>
+        <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg">🖨 Print / Save PDF</button>
       </div>
 
       <div className="max-w-2xl mx-auto p-8 bg-white text-black" style={{ minHeight: "100vh" }}>
-        {/* Header */}
+
+        {/* Header with shop branding */}
         <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-black">
-          <div>
-            <h1 className="text-2xl font-bold">FixFlow</h1>
-            <p className="text-sm text-gray-500">Repair Work Order</p>
+          <div className="flex items-center gap-3">
+            {order.shop?.logoUrl && (
+              <img src={order.shop.logoUrl} alt="Shop logo" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 8 }} />
+            )}
+            <div>
+              <h1 className="text-2xl font-bold">{order.shop?.name ?? "FixFlow"}</h1>
+              {order.shop?.address && <p className="text-sm text-gray-500">{order.shop.address}</p>}
+              {order.shop?.phone && <p className="text-sm text-gray-500">📞 {order.shop.phone}</p>}
+              {order.shop?.email && <p className="text-sm text-gray-500">✉ {order.shop.email}</p>}
+            </div>
           </div>
           <div className="text-right">
+            <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Repair Work Order</p>
             <p className="text-lg font-bold">{formatWO(order.orderNumber, order.createdAt)}</p>
             <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
-            <span className="inline-block mt-1 text-xs px-2 py-0.5 border border-gray-400 rounded">{order.status}</span>
+            <span className="inline-block mt-1 text-xs px-2 py-0.5 border border-gray-400 rounded font-medium">{order.status}</span>
           </div>
         </div>
 
@@ -121,6 +112,7 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
             <span>Level: {order.faultLevel}</span>
             {order.repairType && <span>Repair: {order.repairType}</span>}
           </div>
+          {order.appearance && <p className="text-xs text-gray-500 mt-1">Appearance: {order.appearance}</p>}
         </div>
 
         {/* Parts */}
@@ -143,8 +135,8 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
                     <td className="py-1">{p.sparePart.name}</td>
                     <td className="py-1 text-gray-500">{p.sparePart.partNumber || "—"}</td>
                     <td className="py-1 text-right">{p.quantity}</td>
-                    <td className="py-1 text-right">{p.unitPrice.toFixed(2)}</td>
-                    <td className="py-1 text-right font-medium">{p.total.toFixed(2)}</td>
+                    <td className="py-1 text-right">{mad(p.unitPrice)}</td>
+                    <td className="py-1 text-right font-medium">{mad(p.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -159,21 +151,32 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
             {order.lineItems.map(item => (
               <div key={item.id} className="flex justify-between text-sm border-b border-gray-100 py-1">
                 <span>{item.label}</span>
-                <span>{item.amount.toFixed(2)}</span>
+                <span>{mad(item.amount)}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Quotation */}
+        {/* Totals */}
         <div className="mt-4 border-t-2 border-black pt-3">
-          <div className="flex justify-between text-sm"><span className="text-gray-600">Parts subtotal</span><span>{order.subtotal.toFixed(2)}</span></div>
-          {order.quotationItems > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Services subtotal</span><span>{order.quotationItems.toFixed(2)}</span></div>}
-          {order.discount > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
-          <div className="flex justify-between font-bold text-base mt-2 border-t border-black pt-2"><span>Total</span><span>{grandTotal.toFixed(2)}</span></div>
-          <div className="flex justify-between text-sm text-green-700"><span>Collected</span><span>{order.collected.toFixed(2)}</span></div>
-          {grandTotal - order.collected > 0 && (
-            <div className="flex justify-between text-sm text-red-700"><span>Remaining</span><span>{(grandTotal - order.collected).toFixed(2)}</span></div>
+          {order.subtotal > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Parts subtotal</span><span>{mad(order.subtotal)}</span></div>}
+          {order.quotationItems > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Services subtotal</span><span>{mad(order.quotationItems)}</span></div>}
+          {order.discount > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Discount</span><span>-{mad(order.discount)}</span></div>}
+          <div className="flex justify-between font-bold text-lg mt-2 border-t border-black pt-2">
+            <span>Total</span><span>{mad(grandTotal)}</span>
+          </div>
+          <div className="flex justify-between text-sm text-green-700 mt-1">
+            <span>Collected</span><span>{mad(order.collected)}</span>
+          </div>
+          {remaining > 0.01 && (
+            <div className="flex justify-between text-sm text-red-700 font-medium">
+              <span>Remaining</span><span>{mad(remaining)}</span>
+            </div>
+          )}
+          {remaining <= 0.01 && order.collected > 0 && (
+            <div className="flex justify-between text-sm text-green-700 font-medium">
+              <span>✓ Fully Paid</span><span></span>
+            </div>
           )}
         </div>
 
@@ -181,7 +184,7 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
           <p className="text-xs text-gray-500 mt-3 border-t border-gray-200 pt-2">{order.quotationRemarks}</p>
         )}
 
-        {/* TAT + Footer */}
+        {/* TAT */}
         <div className="mt-6 pt-4 border-t border-gray-200 grid grid-cols-2 gap-4 text-xs text-gray-500">
           <div>
             <p>Received: {new Date(order.receivedAt).toLocaleDateString()}</p>
@@ -195,8 +198,21 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
           </div>
         </div>
 
+        {/* Signatures */}
+        <div className="mt-8 grid grid-cols-2 gap-8">
+          <div>
+            <div className="border-b border-gray-300 mb-1 h-8" />
+            <p className="text-xs text-gray-400 text-center">Customer Signature</p>
+          </div>
+          <div>
+            <div className="border-b border-gray-300 mb-1 h-8" />
+            <p className="text-xs text-gray-400 text-center">Technician Signature</p>
+          </div>
+        </div>
+
         <div className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
-          <p>Thank you for choosing our service</p>
+          <p>Thank you for choosing {order.shop?.name ?? "our service"}</p>
+          {order.shop?.phone && <p>📞 {order.shop.phone}</p>}
         </div>
       </div>
     </>

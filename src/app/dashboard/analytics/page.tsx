@@ -29,16 +29,17 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
-  const [period, setPeriod] = useState("monthly");
+ const [period, setPeriod] = useState("monthly");
+  const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadAll(); }, [period]);
+  useEffect(() => { loadAll(); }, [period, dateRange]);
 
   async function loadAll() {
     setLoading(true);
     const [a, r] = await Promise.all([
-      fetch("/api/analytics", { credentials: "include" }).then(x => x.json()),
-      fetch(`/api/reports/revenue?period=${period}`, { credentials: "include" }).then(x => x.json()),
+      fetch(`/api/analytics?range=${dateRange}`, { credentials: "include" }).then(x => x.json()),
+      fetch(`/api/reports/revenue?period=${period}&range=${dateRange}`, { credentials: "include" }).then(x => x.json()),
     ]);
     setAnalytics(a);
     setRevenue(r);
@@ -81,11 +82,17 @@ export default function AnalyticsPage() {
           <p className="text-sm text-slate-500 mt-0.5">Revenue, performance and insights</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {["7d", "30d", "90d", "all"].map(r => (
+            <button key={r} onClick={() => setDateRange(r)}
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${dateRange === r ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+              {r === "7d" ? "7 days" : r === "30d" ? "30 days" : r === "90d" ? "90 days" : "All time"}
+            </button>
+          ))}
+          <div className="w-px bg-slate-700 mx-1" />
           <button onClick={() => exportCSV("workorders")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Orders</button>
           <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
           <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
         </div>
-      </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

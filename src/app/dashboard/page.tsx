@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import UpgradeModal from "@/components/UpgradeModal";
 
 type WorkOrder = {
   id: string;
@@ -39,6 +40,7 @@ const FAULT_COLORS: Record<string, string> = {
 };
 
 const STATUS_OPTIONS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"];
+const PAGE_SIZE = 20;
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState<WorkOrder[]>([]);
@@ -46,6 +48,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [engineers, setEngineers] = useState<Engineer[]>([]);
+  const [page, setPage] = useState(1);
 
   // Bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -53,16 +56,27 @@ export default function DashboardPage() {
   const [bulkEngineer, setBulkEngineer] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
 
+  // Upgrade modal
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState({ limit: 50, current: 50 });
+
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
+  useEffect(() => { load(); }, [search, statusFilter, page]);
+
   useEffect(() => {
-    load();
-    fetch("/api/users", { credentials: "include" }).then(r => r.json()).then(d => setEngineers(Array.isArray(d) ? d : [])).catch(() => {});
-  }, [search, statusFilter]);
+    fetch("/api/users", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => setEngineers(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
 
   async function load() {
     setLoading(true);
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
+    params.set("page", page.toString());
+    params.set("limit", PAGE_SIZE.toString());
     const res = await fetch(`/api/workorders?${params}`, { credentials: "include" });
     const data = await res.json();
     setOrders(Array.isArray(data) ? data : []);
@@ -80,11 +94,8 @@ export default function DashboardPage() {
   }
 
   function toggleSelectAll() {
-    if (selected.size === orders.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(orders.map(o => o.id)));
-    }
+    if (selected.size === orders.length) setSelected(new Set());
+    else setSelected(new Set(orders.map(o => o.id)));
   }
 
   async function applyBulkStatus() {
@@ -92,15 +103,11 @@ export default function DashboardPage() {
     setBulkLoading(true);
     await Promise.all([...selected].map(id =>
       fetch(`/api/workorders/${id}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status: bulkStatus }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include", body: JSON.stringify({ status: bulkStatus }),
       })
     ));
-    setBulkStatus("");
-    await load();
-    setBulkLoading(false);
+    setBulkStatus(""); await load(); setBulkLoading(false);
   }
 
   async function applyBulkEngineer() {
@@ -108,15 +115,11 @@ export default function DashboardPage() {
     setBulkLoading(true);
     await Promise.all([...selected].map(id =>
       fetch(`/api/workorders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ assignedTo: bulkEngineer }),
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        credentials: "include", body: JSON.stringify({ assignedTo: bulkEngineer }),
       })
     ));
-    setBulkEngineer("");
-    await load();
-    setBulkLoading(false);
+    setBulkEngineer(""); await load(); setBulkLoading(false);
   }
 
   function exportSelected() {
@@ -125,11 +128,9 @@ export default function DashboardPage() {
       ["Order #", "Customer", "Phone", "Device", "Status", "Total", "Date"].join(","),
       ...selectedOrders.map(o => [
         o.orderNumber.slice(0, 8).toUpperCase(),
-        o.customerName,
-        o.customerPhone,
+        o.customerName, o.customerPhone,
         `${o.deviceBrand} ${o.deviceModel}`,
-        o.status,
-        o.total.toFixed(2),
+        o.status, o.total.toFixed(2),
         new Date(o.createdAt).toLocaleDateString(),
       ].join(","))
     ].join("\n");
@@ -157,6 +158,10 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} feature="work orders" limit={upgradeInfo.limit} current={upgradeInfo.current} />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -193,8 +198,7 @@ export default function DashboardPage() {
         />
         <div className="flex gap-2 flex-wrap">
           {["", "RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"].map((s) => (
-            <button key={s}
-              onClick={() => setStatusFilter(s)}
+            <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-3 py-2 text-xs rounded-lg border font-medium transition-colors ${
                 statusFilter === s
                   ? "bg-blue-600 text-white border-blue-600"
@@ -206,12 +210,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bulk actions bar — shows when items selected */}
+      {/* Bulk actions */}
       {selected.size > 0 && (
         <div className="bg-blue-950/40 border border-blue-800/50 rounded-xl px-4 py-3 flex items-center gap-4 flex-wrap">
           <span className="text-sm text-blue-300 font-medium">{selected.size} selected</span>
-
-          {/* Bulk status change */}
           <div className="flex items-center gap-2">
             <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
               className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -223,8 +225,6 @@ export default function DashboardPage() {
               Apply
             </button>
           </div>
-
-          {/* Bulk engineer assign */}
           <div className="flex items-center gap-2">
             <select value={bulkEngineer} onChange={e => setBulkEngineer(e.target.value)}
               className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
@@ -236,18 +236,11 @@ export default function DashboardPage() {
               Assign
             </button>
           </div>
-
-          {/* Export selected */}
           <button onClick={exportSelected}
             className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-lg transition-colors ml-auto">
-            ⬇ Export Selected ({selected.size})
+            ⬇ Export ({selected.size})
           </button>
-
-          {/* Clear selection */}
-          <button onClick={() => setSelected(new Set())}
-            className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-            ✕ Clear
-          </button>
+          <button onClick={() => setSelected(new Set())} className="text-xs text-slate-500 hover:text-slate-300">✕ Clear</button>
         </div>
       )}
 
@@ -273,9 +266,7 @@ export default function DashboardPage() {
             {orders.map((o) => (
               <tr key={o.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${selected.has(o.id) ? "bg-blue-950/20" : ""}`}>
                 <td className="px-4 py-3">
-                  <input type="checkbox"
-                    checked={selected.has(o.id)}
-                    onChange={() => toggleSelect(o.id)}
+                  <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleSelect(o.id)}
                     className="rounded border-slate-600 bg-slate-800 cursor-pointer" />
                 </td>
                 <td className="px-4 py-3">
@@ -299,7 +290,7 @@ export default function DashboardPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-300 text-xs font-medium">
-                  {o.total > 0 ? `${o.total.toFixed(0)}` : "—"}
+                  {o.total > 0 ? `${o.total.toFixed(0)} MAD` : "—"}
                   {o.total > o.collected && o.status === "DELIVERED" && (
                     <span className="text-red-400 ml-1 text-xs">({(o.total - o.collected).toFixed(0)} due)</span>
                   )}
@@ -313,6 +304,26 @@ export default function DashboardPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {(orders.length === PAGE_SIZE || page > 1) && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-500">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{(page - 1) * PAGE_SIZE + orders.length}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs rounded-lg transition-colors">
+              ← Prev
+            </button>
+            <span className="px-3 py-1.5 text-xs text-slate-400">Page {page}</span>
+            <button onClick={() => setPage(p => p + 1)} disabled={orders.length < PAGE_SIZE}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs rounded-lg transition-colors">
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

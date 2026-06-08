@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     include: {
       creator: { select: { id: true, name: true, email: true } },
       assignee: { select: { id: true, name: true, email: true } },
-      shop: { select: { id: true, name: true, phone: true, address: true } },
+      shop: { select: { id: true, name: true, phone: true, address: true, email: true, logoUrl: true } },
       parts: {
         include: { sparePart: { select: { id: true, name: true, partNumber: true } } },
       },
@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         orderBy: { createdAt: "asc" },
       },
       attachments: {
-        select: { id: true, filename: true, path: true, createdAt: true },
+        select: { id: true, filename: true, path: true, tag: true, createdAt: true },
         orderBy: { createdAt: "desc" },
       },
       bounces: { orderBy: { createdAt: "asc" } },
