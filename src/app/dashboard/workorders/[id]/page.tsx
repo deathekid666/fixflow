@@ -685,10 +685,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               ))}
             </div>
             <div className="flex gap-2 mb-3">
-              <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none" placeholder="e.g. Labor fee" value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} />
-              <input className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none" placeholder="0.00" type="number" value={newItemAmount} onChange={(e) => setNewItemAmount(e.target.value)} />
-              <button onClick={addLineItem} disabled={addingItem || !newItemLabel || !newItemAmount} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded">+</button>
+              <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none" placeholder="e.g. Labor fee, Screen repair..." value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && newItemLabel && newItemAmount) addLineItem(); }} />
+              <input className="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none" placeholder="Price MAD" type="number" value={newItemAmount} onChange={(e) => setNewItemAmount(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && newItemLabel && newItemAmount) addLineItem(); }} />
+              <button onClick={addLineItem} disabled={addingItem || !newItemLabel || !newItemAmount} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded">+ Add</button>
             </div>
+            <p className="text-xs text-slate-600 mb-3">Add labor fees and services above — total updates automatically</p>
             <div className="space-y-1.5 text-sm mb-4">
               {order.subtotal > 0 && <div className="flex justify-between text-slate-400"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>}
               {order.quotationItems > 0 && <div className="flex justify-between text-slate-400"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>}
@@ -717,9 +720,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <div className="border border-slate-700 rounded-lg overflow-hidden">
               <div className="bg-slate-800 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3 text-xs">
+                  <span className="text-slate-400 font-medium">Total: {grandTotal.toFixed(2)} MAD</span>
                   <span className="text-green-400 font-medium">Paid: {order.collected.toFixed(2)} MAD</span>
                   {remaining > 0.01 && <span className="text-red-400 font-medium">Due: {remaining.toFixed(2)} MAD</span>}
                   {isFullyPaid && <span className="text-green-400 font-medium">✓ Fully paid</span>}
+                  {grandTotal === 0 && <span className="text-yellow-400 font-medium">⚠ Add a service fee above</span>}
                 </div>
                 <button onClick={() => setShowPaymentForm(!showPaymentForm)}
                   className="text-xs px-2.5 py-1 bg-green-600 hover:bg-green-500 text-white rounded-md font-medium transition-colors whitespace-nowrap">
