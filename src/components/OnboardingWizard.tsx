@@ -163,15 +163,15 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
 
   async function finish() {
     setCompleting(true);
-    // Mark onboarding complete by setting a flag
-    await fetch(`/api/shops/${shopId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ onboardingComplete: true }),
-    });
-    router.push("/dashboard");
-    router.refresh();
+    try {
+      await fetch(`/api/shops/${shopId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ onboardingComplete: true }),
+      });
+    } catch { /* ignore */ }
+    window.location.href = "/dashboard";
   }
 
   const progress = ((step) / (STEPS.length - 1)) * 100;
