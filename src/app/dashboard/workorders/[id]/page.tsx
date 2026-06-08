@@ -848,7 +848,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 <div key={log.id} className="text-xs border-b border-slate-800/50 pb-2">
                   <div className="flex items-center justify-between">
                     <span className="text-blue-400 font-medium">{log.action}</span>
-                    <span className="text-slate-600">{new Date(log.createdAt).toLocaleDateString()}</span>
+                    <span className="text-slate-600 font-mono text-xs">{new Date(log.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</span>
                   </div>
                   <p className="text-slate-400 mt-0.5">{log.description}</p>
                   <p className="text-slate-600">by {log.user.name}</p>
