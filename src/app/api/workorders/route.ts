@@ -20,6 +20,7 @@ export async function GET(req: Request) {
   const orders = await prisma.workOrder.findMany({
     where: {
       shopId: user.shopId ?? undefined,
+      ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
       ...(status ? { status } : {}),
       ...(search ? {
         OR: [
