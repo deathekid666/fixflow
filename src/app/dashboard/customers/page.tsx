@@ -59,7 +59,15 @@ export default function CustomersPage() {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
-            {!loading && customers.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No customers found.</td></tr>}
+            {!loading && customers.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center">
+                  <p className="text-4xl mb-3">👤</p>
+                  <p className="text-slate-400 font-medium">{search ? "No customers match your search" : "No customers yet"}</p>
+                  <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search" : "Customers appear automatically when you create work orders"}</p>
+                </td>
+              </tr>
+            )}
             {customers.map((c) => (
               <tr key={c.phone} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                 <td className="px-4 py-3">

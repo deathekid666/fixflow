@@ -171,10 +171,16 @@ export default function DashboardPage() {
           <h1 className="text-xl font-semibold text-white">Work Orders</h1>
           <p className="text-sm text-slate-500 mt-0.5">Manage repair work orders</p>
         </div>
-        <Link href="/dashboard/workorders/new"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-          + New Work Order
-        </Link>
+        <div className="flex items-center gap-2">
+          <button onClick={() => load()}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
+            🔄 Refresh
+          </button>
+          <Link href="/dashboard/workorders/new"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
+            + New Work Order
+          </Link>
+        </div>
       </div>
 
       {/* Stats cards */}
@@ -265,7 +271,26 @@ export default function DashboardPage() {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={10} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
-            {!loading && orders.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-slate-500">No work orders found.</td></tr>}
+            {!loading && orders.length === 0 && (
+              <tr>
+                <td colSpan={10} className="px-4 py-12 text-center">
+                  <div className="space-y-3">
+                    <p className="text-4xl">📋</p>
+                    <p className="text-slate-400 font-medium">
+                      {search || statusFilter ? "No orders match your search" : "No work orders yet"}
+                    </p>
+                    <p className="text-slate-600 text-sm">
+                      {search || statusFilter ? "Try a different search or filter" : "Create your first work order to get started"}
+                    </p>
+                    {!search && !statusFilter && (
+                      <Link href="/dashboard/workorders/new" className="inline-block mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
+                        + New Work Order
+                      </Link>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )}
             {orders.map((o) => (
               <tr key={o.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${selected.has(o.id) ? "bg-blue-950/20" : ""}`}>
                 <td className="px-4 py-3">
