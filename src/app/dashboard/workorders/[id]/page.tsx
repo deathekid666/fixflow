@@ -111,8 +111,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setOrder(data);
     setDiscount(data.discount.toString());
     setQuotationRemarks(data.quotationRemarks || "");
-    setDiscount(data.discount.toString());
-    setQuotationRemarks(data.quotationRemarks || "");
     setLoading(false);
   }
 
