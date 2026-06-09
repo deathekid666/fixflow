@@ -125,7 +125,17 @@ export default function DashboardPage() {
     setBulkEngineer(""); await load(); setBulkLoading(false);
   }
 
-  function exportSelected() {
+  async function bulkDelete() {
+    if (!confirm(`Delete ${selected.size} work order${selected.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    setBulkLoading(true);
+    await Promise.all([...selected].map(id =>
+      fetch(`/api/workorders/${id}/edit`, {
+        method: "DELETE", credentials: "include",
+      })
+    ));
+    await load();
+    setBulkLoading(false);
+  }
     const selectedOrders = orders.filter(o => selected.has(o.id));
     const csv = [
       ["Order #", "Customer", "Phone", "Device", "Status", "Total", "Date"].join(","),
@@ -248,6 +258,11 @@ export default function DashboardPage() {
           <button onClick={exportSelected}
             className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-lg transition-colors ml-auto">
             ⬇ Export ({selected.size})
+          </button>
+          <button onClick={bulkDelete}
+            disabled={bulkLoading}
+            className="px-3 py-1.5 bg-red-700/40 hover:bg-red-700/70 disabled:opacity-50 text-red-400 text-xs rounded-lg transition-colors">
+            🗑 Delete ({selected.size})
           </button>
           <button onClick={() => setSelected(new Set())} className="text-xs text-slate-500 hover:text-slate-300">✕ Clear</button>
         </div>

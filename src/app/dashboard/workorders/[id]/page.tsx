@@ -311,7 +311,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 flex-wrap">
           <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
-          <h1 className="text-white font-bold">WO-{new Date(order.createdAt).getFullYear()}-{order.orderNumber.slice(0, 6).toUpperCase()}</h1>
+          <h1 className="text-white font-bold">
+            {order.orderNumber.startsWith("wo-")
+              ? order.orderNumber.toUpperCase()
+              : `WO-${new Date(order.createdAt).getFullYear()}-${order.orderNumber.slice(0, 6).toUpperCase()}`}
+          </h1>
           {order.isBounce && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Bounce ×{order.bounceCount}</span>}
           {order.isOverdue && <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full">⚠ Overdue {order.tatDays}d</span>}
           <span className="text-xs text-slate-500">TAT: {order.tatDays} day{order.tatDays !== 1 ? "s" : ""}</span>
