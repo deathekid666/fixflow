@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   const plan = (shop?.plan ?? "FREE") as keyof typeof PLAN_LIMITS;
   const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE;
 
-  if (limits.workOrders !== Infinity) {
+  if (!user.isSuperAdmin && limits.workOrders !== Infinity) {
     const count = await prisma.workOrder.count({ where: { shopId: user.shopId } });
     if (count >= limits.workOrders) {
       return Response.json({

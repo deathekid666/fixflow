@@ -3,6 +3,7 @@
 import UpgradeModal from "@/components/UpgradeModal";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 type CustomerHistory = {
   name: string; phone: string; email: string;
@@ -23,6 +24,7 @@ type Template = {
 };
 
 export default function NewWorkOrderPage() {
+  const { user } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState({ limit: 50, current: 50 });
   const router = useRouter();
@@ -120,7 +122,7 @@ export default function NewWorkOrderPage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      if (data.limitReached) {
+      if (data.limitReached && !user?.isSuperAdmin) {
         setUpgradeInfo({ limit: data.limit, current: data.current });
         setShowUpgradeModal(true);
         setLoading(false);
