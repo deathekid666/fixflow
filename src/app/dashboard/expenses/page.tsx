@@ -76,6 +76,28 @@ export default function ExpensesPage() {
       )
     : expenses;
 
+  function exportCSV() {
+    const rows = [
+      ["Date", "Title", "Category", "Amount", "Note", "Added By"],
+      ...expenses.map(e => [
+        new Date(e.date).toLocaleDateString(),
+        e.title,
+        e.category,
+        e.amount.toFixed(2),
+        e.note ?? "",
+        e.user.name,
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`)),
+    ];
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
   const byCategory = CATEGORIES.map(c => ({
     cat: c,
@@ -89,12 +111,20 @@ export default function ExpensesPage() {
           <h1 className="text-xl font-semibold text-white">Expenses</h1>
           <p className="text-sm text-slate-500 mt-0.5">Track your shop expenses</p>
         </div>
-        {user?.role === "ADMIN" && (
-          <button onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-            + Add Expense
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {expenses.length > 0 && (
+            <button onClick={exportCSV}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors font-medium">
+              ⬇ Export CSV
+            </button>
+          )}
+          {user?.role === "ADMIN" && (
+            <button onClick={() => setShowForm(!showForm)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
+              + Add Expense
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
