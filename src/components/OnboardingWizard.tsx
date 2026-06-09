@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 type ShopInfo = {
   name: string;
@@ -65,7 +66,10 @@ const REPAIR_TYPES: RepairType[] = [
 const STEPS = ["Welcome", "Shop Setup", "Repair Types", "Invite Engineer", "Done"];
 
 export default function OnboardingWizard({ shopId, shopName }: { shopId: string; shopName: string }) {
+  const { user } = useAuth();
   const router = useRouter();
+
+  if (!user || user.isSuperAdmin || user.role !== "ADMIN") return null;
   const [step, setStep] = useState(0);
   const [completing, setCompleting] = useState(false);
 
