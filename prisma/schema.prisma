@@ -28,7 +28,8 @@ model User {
   stockAdjustments StockAdjustment[]
   shifts           Shift[]
   payments         Payment[]
-  expenses   Expense[]
+  expenses         Expense[]
+  customerNotes    CustomerNote[]
 }
 
 model Shop {
@@ -44,11 +45,12 @@ model Shop {
   onboardingComplete Boolean  @default(false)
   createdAt          DateTime @default(now())
 
-  users      User[]
-  workOrders WorkOrder[]
-  spareParts SparePart[]
-  shifts     Shift[]
-  expenses   Expense[]
+  users         User[]
+  workOrders    WorkOrder[]
+  spareParts    SparePart[]
+  shifts        Shift[]
+  expenses      Expense[]
+  customerNotes CustomerNote[]
 }
 
 model WorkOrder {
@@ -320,6 +322,20 @@ model DiagnosisCheck {
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
+model CustomerNote {
+  id        String   @id @default(cuid())
+  phone     String
+  shopId    String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([phone, shopId])
+}
+
 model Expense {
   id          String   @id @default(cuid())
   title       String

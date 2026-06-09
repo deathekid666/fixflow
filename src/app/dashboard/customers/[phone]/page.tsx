@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+
+type Note = {
+  id: string; message: string; createdAt: string;
+  user: { name: string };
+};
 
 type WorkOrder = {
   id: string;
@@ -35,16 +41,53 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function CustomerDetailPage({ params }: { params: { phone: string } }) {
   const router = useRouter();
+  const { user } = useAuth();
   const phone = decodeURIComponent(params.phone);
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     fetch(`/api/customers/history?phone=${encodeURIComponent(phone)}`)
       .then(r => r.json())
       .then(setOrders)
       .finally(() => setLoading(false));
+    loadNotes();
   }, []);
+
+  async function loadNotes() {
+    const res = await fetch(`/api/customers/notes?phone=${encodeURIComponent(phone)}`, { credentials: "include" });
+    if (res.ok) setNotes(await res.json());
+  }
+
+  async function addNote() {
+    if (!noteText.trim()) return;
+    setSavingNote(true);
+    const res = await fetch("/api/customers/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ phone, message: noteText }),
+    });
+    if (res.ok) {
+      setNoteText("");
+      await loadNotes();
+    }
+    setSavingNote(false);
+  }
+
+  async function deleteNote(id: string) {
+    await fetch("/api/customers/notes", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id }),
+    });
+    await loadNotes();
+  }
 
   const totalSpent = orders.reduce((s, o) => s + o.total, 0);
   const totalCollected = orders.reduce((s, o) => s + o.collected, 0);
@@ -78,6 +121,61 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
           </div>
         </div>
       )}
+
+      {/* Team Notes */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-slate-300">Team Notes</h2>
+          <span className="text-xs bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">Internal only</span>
+        </div>
+
+        {/* Add note */}
+        <div className="space-y-2">
+          <textarea
+            ref={textareaRef}
+            value={noteText}
+            onChange={e => setNoteText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) addNote(); }}
+            placeholder="Add a note about this customer... (Ctrl+Enter to save)"
+            rows={3}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+          />
+          <div className="flex justify-end">
+            <button onClick={addNote} disabled={savingNote || !noteText.trim()}
+              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
+              {savingNote ? "Saving..." : "Add Note"}
+            </button>
+          </div>
+        </div>
+
+        {/* Notes list */}
+        {notes.length === 0 ? (
+          <p className="text-xs text-slate-600 text-center py-3">No notes yet. Add one above.</p>
+        ) : (
+          <div className="space-y-2">
+            {notes.map(n => (
+              <div key={n.id} className="group flex items-start gap-3 bg-slate-800/50 rounded-lg px-3 py-2.5">
+                <div className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-0.5">
+                  {n.user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-medium text-slate-300">{n.user.name}</span>
+                    <span className="text-xs text-slate-600">{new Date(n.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-sm text-slate-300 whitespace-pre-wrap break-words">{n.message}</p>
+                </div>
+                {(user?.role === "ADMIN") && (
+                  <button onClick={() => deleteNote(n.id)}
+                    className="opacity-0 group-hover:opacity-100 text-xs text-slate-600 hover:text-red-400 transition-all flex-shrink-0 mt-0.5">
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-800">
