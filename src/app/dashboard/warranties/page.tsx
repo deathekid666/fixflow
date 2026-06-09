@@ -1,103 +1,230 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
 
-interface Warranty { id: string; durationDays: number; expiryDate: string; status: "ACTIVE" | "EXPIRED" | "VOID"; notes: string | null; inventoryItem: { id: string; name: string; sku: string | null }; }
-interface SparePart { id: string; name: string; partNumber: string | null; }
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
-const STATUS_STYLES = { ACTIVE: "bg-green-900/40 text-green-400", EXPIRED: "bg-red-900/40 text-red-400", VOID: "bg-slate-800 text-slate-500" };
+type WarrantyOrder = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  deviceBrand: string;
+  deviceModel: string;
+  warrantyStart: string | null;
+  warrantyEnd: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  assignee: { name: string } | null;
+};
 
-export default function WarrantiesPage() {
-  const [warranties, setWarranties] = useState<Warranty[]>([]);
-  const [parts, setParts] = useState<SparePart[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "EXPIRED">("ALL");
-  const [form, setForm] = useState({ inventoryItemId: "", durationDays: "365", expiryDate: "", notes: "" });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+type Data = { active: WarrantyOrder[]; expiringSoon: WarrantyOrder[]; expired: WarrantyOrder[] };
+type Tab = "active" | "expiringSoon" | "expired";
 
-  const load = useCallback(async () => {
-    try {
-      const [wRes, pRes] = await Promise.all([fetch("/api/warranties", { credentials: "include" }), fetch("/api/spareparts", { credentials: "include" })]);
-      const [wData, pData] = await Promise.all([wRes.json(), pRes.json()]);
-      setWarranties(Array.isArray(wData) ? wData : []); setParts(Array.isArray(pData) ? pData : []);
-    } catch { setError("Failed to load"); } finally { setLoading(false); }
-  }, []);
+function daysUntil(date: string) {
+  return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+}
 
-  useEffect(() => { load(); }, [load]);
+function daysSince(date: string) {
+  return Math.ceil((Date.now() - new Date(date).getTime()) / 86400000);
+}
 
-  async function createWarranty() {
-    if (!form.inventoryItemId || !form.expiryDate) { setError("Part and expiry date required"); return; }
-    setSaving(true); setError("");
-    try {
-      const res = await fetch("/api/warranties", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ inventoryItemId: form.inventoryItemId, durationDays: parseInt(form.durationDays), expiryDate: form.expiryDate, notes: form.notes || undefined }) });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? "Failed"); }
-      setForm({ inventoryItemId: "", durationDays: "365", expiryDate: "", notes: "" }); setShowForm(false); await load();
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
-  }
+function orderLabel(o: WarrantyOrder) {
+  return o.orderNumber.startsWith("wo-") ? o.orderNumber.toUpperCase() : o.orderNumber.slice(0, 8).toUpperCase();
+}
 
-  async function voidWarranty(id: string) {
-    await fetch(`/api/warranties/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ status: "VOID" }) });
-    await load();
-  }
+function WarrantyCard({ o, tab }: { o: WarrantyOrder; tab: Tab }) {
+  const days = tab === "expired" ? daysSince(o.warrantyEnd) : daysUntil(o.warrantyEnd);
+  const border =
+    tab === "expiringSoon" && days <= 7 ? "border-red-600/40 bg-red-950/10" :
+    tab === "expiringSoon" ? "border-orange-600/40 bg-orange-950/10" :
+    tab === "active" ? "border-green-800/30 bg-slate-900" :
+    "border-slate-700 bg-slate-900";
 
-  const filtered = warranties.filter((w) => filter === "ALL" || w.status === filter);
-  const daysLeft = (expiry: string) => Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
+  const badgeClass =
+    tab === "active" ? "bg-green-500/20 text-green-400 border border-green-500/20" :
+    tab === "expiringSoon" && days <= 7 ? "bg-red-500/20 text-red-400 border border-red-500/20" :
+    tab === "expiringSoon" ? "bg-orange-500/20 text-orange-400 border border-orange-500/20" :
+    "bg-slate-700/50 text-slate-400";
+
+  const badgeText =
+    tab === "active" ? `${days}d left` :
+    tab === "expiringSoon" ? `${days}d left` :
+    `${days}d ago`;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-slate-100">Warranties</h1><p className="text-sm text-slate-400 mt-1">Track spare part warranties</p></div>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">+ Add Warranty</button>
+    <div className={`border rounded-xl p-4 space-y-3 ${border}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
+          <div className="text-white font-medium mt-0.5">{o.customerName}</div>
+          <div className="text-xs text-slate-500">{o.customerPhone}</div>
+        </div>
+        <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${badgeClass}`}>{badgeText}</span>
       </div>
-      {showForm && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-          <h2 className="font-semibold text-slate-300">New Warranty</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="text-xs text-slate-400 mb-1 block">Spare Part *</label>
-              <select value={form.inventoryItemId} onChange={(e) => setForm({ ...form, inventoryItemId: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-                <option value="">Select a part...</option>
-                {parts.map((p) => <option key={p.id} value={p.id}>{p.name} {p.partNumber ? `(${p.partNumber})` : ""}</option>)}
-              </select>
-            </div>
-            <div><label className="text-xs text-slate-400 mb-1 block">Duration (days)</label><input type="number" value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
-            <div><label className="text-xs text-slate-400 mb-1 block">Expiry Date *</label><input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
-            <div><label className="text-xs text-slate-400 mb-1 block">Notes</label><input type="text" placeholder="Optional" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
+
+      <div className="text-sm text-slate-300">{o.deviceBrand} {o.deviceModel}</div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-slate-800/60 rounded-lg px-3 py-2">
+          <p className="text-slate-500 mb-0.5">Warranty ends</p>
+          <p className="text-white font-medium">{new Date(o.warrantyEnd).toLocaleDateString()}</p>
+        </div>
+        <div className="bg-slate-800/60 rounded-lg px-3 py-2">
+          <p className="text-slate-500 mb-0.5">{o.warrantyStart ? "Started" : "Repaired"}</p>
+          <p className="text-white font-medium">{new Date(o.warrantyStart ?? o.createdAt).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+        <span className="text-xs text-slate-500">{o.assignee?.name ?? "Unassigned"}</span>
+        <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium">
+          View →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ tab }: { tab: Tab }) {
+  return (
+    <div className="py-12 text-center">
+      <p className="text-3xl mb-3">{tab === "active" ? "🛡️" : tab === "expiringSoon" ? "⏳" : "📁"}</p>
+      <p className="text-slate-400 font-medium">
+        {tab === "active" ? "No active warranties" : tab === "expiringSoon" ? "None expiring within 30 days" : "No expired warranties"}
+      </p>
+      <p className="text-xs text-slate-600 mt-1">Warranties are set when creating or editing a work order</p>
+    </div>
+  );
+}
+
+function WarrantyTable({ orders, tab }: { orders: WarrantyOrder[]; tab: Tab }) {
+  if (orders.length === 0) return <EmptyState tab={tab} />;
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-slate-800">
+          {["Order #", "Customer", "Device", "Warranty Period", "Remaining", "Assigned", ""].map(h => (
+            <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {orders.map(o => {
+          const days = tab === "expired" ? daysSince(o.warrantyEnd) : daysUntil(o.warrantyEnd);
+          const remainingColor =
+            tab === "active" ? "text-green-400" :
+            tab === "expiringSoon" && days <= 7 ? "text-red-400 font-semibold" :
+            tab === "expiringSoon" ? "text-orange-400 font-semibold" :
+            "text-slate-500";
+
+          return (
+            <tr key={o.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+              <td className="px-4 py-3 font-mono text-xs text-slate-400">{orderLabel(o)}</td>
+              <td className="px-4 py-3">
+                <div className="text-white font-medium">{o.customerName}</div>
+                <div className="text-xs text-slate-500">{o.customerPhone}</div>
+              </td>
+              <td className="px-4 py-3">
+                <div className="text-slate-300">{o.deviceBrand}</div>
+                <div className="text-xs text-slate-500">{o.deviceModel}</div>
+              </td>
+              <td className="px-4 py-3 text-xs text-slate-400">
+                {o.warrantyStart ? new Date(o.warrantyStart).toLocaleDateString() : "—"} → {new Date(o.warrantyEnd).toLocaleDateString()}
+              </td>
+              <td className={`px-4 py-3 text-xs ${remainingColor}`}>
+                {tab === "expired" ? `${days}d ago` : `${days}d`}
+              </td>
+              <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
+              <td className="px-4 py-3">
+                <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View →</Link>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+export default function WarrantiesPage() {
+  const [data, setData] = useState<Data | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("active");
+
+  useEffect(() => {
+    fetch("/api/warranties", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const tabs: { key: Tab; label: string; icon: string; count: number; activeClass: string }[] = data ? [
+    { key: "active", label: "Active", icon: "🛡️", count: data.active.length, activeClass: "text-green-400 border-green-500" },
+    { key: "expiringSoon", label: "Expiring Soon", icon: "⏳", count: data.expiringSoon.length, activeClass: data.expiringSoon.length > 0 ? "text-orange-400 border-orange-500" : "text-slate-400 border-slate-500" },
+    { key: "expired", label: "Expired", icon: "📁", count: data.expired.length, activeClass: "text-slate-400 border-slate-500" },
+  ] : [];
+
+  const current = data?.[tab] ?? [];
+
+  return (
+    <div className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
+      <div>
+        <h1 className="text-xl font-semibold text-white">Warranties</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Track warranty status across all repaired devices</p>
+      </div>
+
+      {/* Stats */}
+      {data && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+            <p className="text-xs text-slate-500 mb-1">Active</p>
+            <p className="text-2xl font-bold text-green-400">{data.active.length}</p>
+            <p className="text-xs text-slate-600 mt-1">under warranty</p>
           </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <div className="flex gap-3">
-            <button onClick={createWarranty} disabled={saving} className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">{saving ? "Saving..." : "Save"}</button>
-            <button onClick={() => setShowForm(false)} className="px-5 py-2 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-800 transition">Cancel</button>
+          <div className={`border rounded-xl p-4 ${data.expiringSoon.length > 0 ? "bg-orange-500/10 border-orange-500/20" : "bg-slate-900 border-slate-800"}`}>
+            <p className="text-xs text-slate-500 mb-1">Expiring Soon</p>
+            <p className={`text-2xl font-bold ${data.expiringSoon.length > 0 ? "text-orange-400" : "text-slate-400"}`}>{data.expiringSoon.length}</p>
+            <p className="text-xs text-slate-600 mt-1">within 30 days</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <p className="text-xs text-slate-500 mb-1">Expired</p>
+            <p className="text-2xl font-bold text-slate-400">{data.expired.length}</p>
+            <p className="text-xs text-slate-600 mt-1">past end date</p>
           </div>
         </div>
       )}
-      <div className="flex gap-2">
-        {(["ALL", "ACTIVE", "EXPIRED"] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-4 py-1.5 rounded-full text-xs font-medium transition ${filter === f ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>{f}</button>
-        ))}
-      </div>
-      {loading ? <p className="text-slate-400 text-sm">Loading...</p> : filtered.length === 0 ? <p className="text-slate-400 text-sm">No warranties found.</p> : (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-800 text-xs text-slate-400 uppercase">
-              <tr><th className="px-6 py-3 text-left">Part</th><th className="px-6 py-3 text-left">Expiry</th><th className="px-6 py-3 text-left">Remaining</th><th className="px-6 py-3 text-left">Status</th><th className="px-6 py-3 text-left">Actions</th></tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {filtered.map((w) => {
-                const days = daysLeft(w.expiryDate);
-                return (
-                  <tr key={w.id} className="hover:bg-slate-800/50 transition">
-                    <td className="px-6 py-3 font-medium text-slate-200">{w.inventoryItem.name}</td>
-                    <td className="px-6 py-3 text-slate-400">{new Date(w.expiryDate).toLocaleDateString()}</td>
-                    <td className="px-6 py-3">{w.status === "ACTIVE" ? <span className={days <= 30 ? "text-orange-400 font-medium" : "text-slate-400"}>{days > 0 ? `${days} days` : "Today"}</span> : <span className="text-slate-600">—</span>}</td>
-                    <td className="px-6 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLES[w.status]}`}>{w.status}</span></td>
-                    <td className="px-6 py-3">{w.status === "ACTIVE" && <button onClick={() => voidWarranty(w.id)} className="text-xs text-slate-400 hover:text-red-400 transition">Void</button>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+
+      {/* Tabs */}
+      {!loading && (
+        <div className="flex gap-1 border-b border-slate-800">
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                tab === t.key ? `${t.activeClass} bg-transparent` : "text-slate-500 border-transparent hover:text-slate-300"
+              }`}>
+              <span>{t.icon}</span>
+              <span className="hidden sm:inline">{t.label}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t.key ? "bg-white/10" : "bg-slate-800"}`}>{t.count}</span>
+            </button>
+          ))}
         </div>
+      )}
+
+      {loading && <div className="py-16 text-center text-slate-500 text-sm">Loading warranties...</div>}
+
+      {!loading && data && (
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {current.length === 0 ? <EmptyState tab={tab} /> : current.map(o => <WarrantyCard key={o.id} o={o} tab={tab} />)}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <WarrantyTable orders={current} tab={tab} />
+          </div>
+        </>
       )}
     </div>
   );
