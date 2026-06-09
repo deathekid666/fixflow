@@ -142,8 +142,9 @@ export default function DashboardPage() {
     { label: "Received", value: orders.filter(o => o.status === "RECEIVED").length, sub: "awaiting diagnosis", color: "text-blue-400", icon: "📥", filter: "RECEIVED" },
     { label: "In Progress", value: orders.filter(o => ["DIAGNOSING", "REPAIRING"].includes(o.status)).length, sub: `${overdue} overdue`, color: overdue > 0 ? "text-orange-400" : "text-yellow-400", icon: "🔧", filter: "DIAGNOSING" },
     { label: "Ready", value: orders.filter(o => o.status === "DONE").length, sub: "awaiting pickup", color: "text-green-400", icon: "✅", filter: "DONE" },
-    { label: "Revenue", value: `${totalRevenue.toFixed(0)} MAD`, sub: `${pendingPayment.toFixed(0)} pending`, color: "text-emerald-400", icon: "💰", filter: "DELIVERED" },
+    { label: "Revenue", value: `${totalRevenue.toFixed(0)} MAD`, sub: `${pendingPayment.toFixed(0)} pending`, color: "text-emerald-400", icon: "💰", filter: null, href: "/dashboard/analytics" },
     { label: "Delivered", value: orders.filter(o => o.status === "DELIVERED").length, sub: "this period", color: "text-slate-400", icon: "📦", filter: "DELIVERED" },
+    { label: "Cancelled", value: orders.filter(o => o.status === "CANCELLED").length, sub: "this period", color: "text-red-400", icon: "🚫", filter: "CANCELLED" },
   ];
 
   const emptyState = (colSpan: number) => (
@@ -188,22 +189,29 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
-        {stats.map((s) => (
-          <button key={s.label} onClick={() => setStatusFilter(s.filter)}
-            className={`bg-slate-900 border rounded-xl p-3 md:p-4 space-y-1 text-left w-full cursor-pointer transition-all hover:bg-slate-800/60 active:scale-[0.98] ${
-              statusFilter === s.filter
-                ? "border-blue-500/60 ring-1 ring-blue-500/30"
-                : "border-slate-800 hover:border-slate-600"
-            }`}>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-500 leading-tight">{s.label}</p>
-              <span className="text-sm md:text-base">{s.icon}</span>
-            </div>
-            <p className={`text-lg md:text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-slate-600 hidden sm:block">{s.sub}</p>
-          </button>
-        ))}
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
+        {stats.map((s) => {
+          const cardClass = `bg-slate-900 border rounded-xl p-3 md:p-4 space-y-1 text-left w-full cursor-pointer transition-all hover:bg-slate-800/60 active:scale-[0.98] ${
+            s.filter !== null && statusFilter === s.filter
+              ? "border-blue-500/60 ring-1 ring-blue-500/30"
+              : "border-slate-800 hover:border-slate-600"
+          }`;
+          const inner = (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500 leading-tight">{s.label}</p>
+                <span className="text-sm md:text-base">{s.icon}</span>
+              </div>
+              <p className={`text-lg md:text-2xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-xs text-slate-600 hidden sm:block">{s.sub}</p>
+            </>
+          );
+          return s.href ? (
+            <Link key={s.label} href={s.href} className={cardClass}>{inner}</Link>
+          ) : (
+            <button key={s.label} onClick={() => setStatusFilter(s.filter as string)} className={cardClass}>{inner}</button>
+          );
+        })}
       </div>
 
       {/* Search */}
