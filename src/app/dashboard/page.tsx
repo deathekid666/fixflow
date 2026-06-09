@@ -61,7 +61,10 @@ export default function DashboardPage() {
   const [upgradeInfo, setUpgradeInfo] = useState({ limit: 50, current: 50 });
 
   useEffect(() => { setPage(1); }, [search, statusFilter]);
-  useEffect(() => { load(); }, [search, statusFilter, page]);
+  useEffect(() => {
+    const timer = setTimeout(() => { load(); }, 300);
+    return () => clearTimeout(timer);
+  }, [search, statusFilter, page]);
 
   useEffect(() => {
     fetch("/api/users", { credentials: "include" })

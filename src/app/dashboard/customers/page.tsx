@@ -20,7 +20,10 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => { load(); }, [search]);
+  useEffect(() => {
+    const timer = setTimeout(() => { load(); }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   async function load() {
     setLoading(true);
