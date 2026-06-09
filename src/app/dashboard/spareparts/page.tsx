@@ -270,9 +270,10 @@ export default function SparePartsPage() {
               </tr>
             ))}
             {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
-            {filtered.map(p => (
+            {filtered.map((p, i) => (
               <>
-                <tr key={p.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-950/10" : ""}`}>
+                <tr key={p.id} className={`fade-in border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-950/10" : ""}`}
+                  style={{ animationDelay: `${i * 30}ms` }}>
                   <td className="px-4 py-3 text-white font-medium">
                     {p.name}
                     {p.stock === 0 && <span className="ml-2 text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">Out</span>}

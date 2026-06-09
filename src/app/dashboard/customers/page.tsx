@@ -127,13 +127,14 @@ export default function CustomersPage() {
             <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search" : "Customers appear automatically when you create work orders"}</p>
           </div>
         )}
-        {sorted.map((c) => {
+        {sorted.map((c, i) => {
           const badge = loyaltyTier(c.totalOrders);
           const due = c.totalSpent - c.totalCollected;
           return (
             <div key={c.phone}
               onClick={() => router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-800 cursor-pointer">
+              className="fade-in bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-800 cursor-pointer"
+              style={{ animationDelay: `${i * 40}ms` }}>
               {/* Name + badge */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -227,11 +228,12 @@ export default function CustomersPage() {
                 </td>
               </tr>
             )}
-            {sorted.map((c) => {
+            {sorted.map((c, i) => {
               const badge = loyaltyTier(c.totalOrders);
               const due = c.totalSpent - c.totalCollected;
               return (
-                <tr key={c.phone} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                <tr key={c.phone} className="fade-in border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                  style={{ animationDelay: `${i * 30}ms` }}
                   onClick={() => router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}>
                   <td className="px-4 py-3">
                     <div className="text-white font-medium">{c.name}</div>

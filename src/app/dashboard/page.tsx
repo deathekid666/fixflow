@@ -306,9 +306,10 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {orders.map((o) => (
+        {orders.map((o, i) => (
           <div key={o.id}
-            className={`bg-slate-900 border rounded-xl p-4 space-y-3 transition-colors ${selected.has(o.id) ? "border-blue-600/50 bg-blue-950/20" : "border-slate-800"}`}>
+            className={`fade-in bg-slate-900 border rounded-xl p-4 space-y-3 transition-colors ${selected.has(o.id) ? "border-blue-600/50 bg-blue-950/20" : "border-slate-800"}`}
+            style={{ animationDelay: `${i * 35}ms` }}>
             {/* Row 1: checkbox + order # + badges + status */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -386,8 +387,9 @@ export default function DashboardPage() {
               </tr>
             ))}
             {!loading && orders.length === 0 && emptyState(10)}
-            {orders.map((o) => (
-              <tr key={o.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${selected.has(o.id) ? "bg-blue-950/20" : ""}`}>
+            {orders.map((o, i) => (
+              <tr key={o.id} className={`fade-in border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${selected.has(o.id) ? "bg-blue-950/20" : ""}`}
+                style={{ animationDelay: `${i * 30}ms` }}>
                 <td className="px-4 py-3">
                   <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleSelect(o.id)}
                     className="rounded border-slate-600 bg-slate-800 cursor-pointer" />

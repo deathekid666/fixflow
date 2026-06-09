@@ -245,8 +245,9 @@ export default function ExpensesPage() {
                 <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search term" : "Add your first expense to start tracking"}</p>
               </td></tr>
             )}
-            {filtered.map(e => (
-              <tr key={e.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+            {filtered.map((e, i) => (
+              <tr key={e.id} className="fade-in border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+                style={{ animationDelay: `${i * 30}ms` }}>
                 <td className="px-4 py-3 text-slate-400 text-xs">{new Date(e.date).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-white font-medium">{e.title}</td>
                 <td className="px-4 py-3">
