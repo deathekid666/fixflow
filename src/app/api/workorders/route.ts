@@ -28,6 +28,7 @@ export async function GET(req: Request) {
           { customerPhone: { contains: search, mode: "insensitive" } },
           { deviceModel: { contains: search, mode: "insensitive" } },
           { orderNumber: { contains: search, mode: "insensitive" } },
+          { assignee: { name: { contains: search, mode: "insensitive" } } },
         ],
       } : {}),
     },
