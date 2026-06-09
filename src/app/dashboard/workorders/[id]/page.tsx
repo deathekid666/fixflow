@@ -299,7 +299,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const selectedPartData = spareParts.find(p => p.id === selectedPart);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
-  const isFullyPaid = remaining <= 0.01 && order.collected > 0;
+  const isFullyPaid = remaining <= 0.01 && order.collected > 0 && order.collected <= grandTotal + 0.01;
   const checkOK = order.checklist.filter(c => c.status === "OK").length;
   const checkIssue = order.checklist.filter(c => c.status === "ISSUE").length;
   const checkNA = order.checklist.filter(c => c.status === "NA").length;
@@ -729,7 +729,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   <span className="text-slate-400 font-medium">Total: {grandTotal.toFixed(2)} MAD</span>
                   <span className="text-green-400 font-medium">Paid: {order.collected.toFixed(2)} MAD</span>
                   {remaining > 0.01 && <span className="text-red-400 font-medium">Due: {remaining.toFixed(2)} MAD</span>}
-                  {isFullyPaid && <span className="text-green-400 font-medium">✓ Fully paid</span>}
+                  {isFullyPaid && order.collected <= grandTotal + 0.01 && <span className="text-green-400 font-medium">✓ Fully paid</span>}
+                  {order.collected > grandTotal + 0.01 && <span className="text-orange-400 font-medium">⚠ Overpaid {(order.collected - grandTotal).toFixed(2)} MAD</span>}
                   {grandTotal === 0 && <span className="text-yellow-400 font-medium">⚠ Add a service fee above</span>}
                 </div>
                 <button onClick={() => setShowPaymentForm(!showPaymentForm)}
