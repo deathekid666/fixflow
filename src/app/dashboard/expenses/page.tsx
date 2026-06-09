@@ -27,6 +27,7 @@ export default function ExpensesPage() {
   const [form, setForm] = useState({ title: "", amount: "", category: "OTHER", note: "", date: new Date().toISOString().split("T")[0] });
   const [saving, setSaving] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => { load(); }, [categoryFilter]);
 
@@ -67,6 +68,13 @@ export default function ExpensesPage() {
     });
     await load();
   }
+
+  const filtered = search.trim()
+    ? expenses.filter(e =>
+        e.title.toLowerCase().includes(search.toLowerCase()) ||
+        (e.note ?? "").toLowerCase().includes(search.toLowerCase())
+      )
+    : expenses;
 
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
   const byCategory = CATEGORIES.map(c => ({
@@ -151,6 +159,19 @@ export default function ExpensesPage() {
         </div>
       )}
 
+      {/* Search */}
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by title or note..."
+          className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+        />
+      </div>
+
       {/* Category filter */}
       <div className="flex gap-2 flex-wrap">
         <button onClick={() => setCategoryFilter("")}
@@ -177,14 +198,14 @@ export default function ExpensesPage() {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
-            {!loading && expenses.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-12 text-center">
                 <p className="text-4xl mb-3">💸</p>
-                <p className="text-slate-400 font-medium">No expenses yet</p>
-                <p className="text-slate-600 text-sm mt-1">Add your first expense to start tracking</p>
+                <p className="text-slate-400 font-medium">{search ? "No matching expenses" : "No expenses yet"}</p>
+                <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search term" : "Add your first expense to start tracking"}</p>
               </td></tr>
             )}
-            {expenses.map(e => (
+            {filtered.map(e => (
               <tr key={e.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                 <td className="px-4 py-3 text-slate-400 text-xs">{new Date(e.date).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-white font-medium">{e.title}</td>
