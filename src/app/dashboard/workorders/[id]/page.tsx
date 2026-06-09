@@ -869,16 +869,35 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Operation Log</h2>
             <div className="space-y-3 max-h-64 overflow-y-auto">
-              {order.logs.map(log => (
-                <div key={log.id} className="text-xs border-b border-slate-800/50 pb-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-400 font-medium">{log.action}</span>
-                    <span className="text-slate-600 font-mono text-xs">{new Date(log.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</span>
+              {order.logs.map(log => {
+                const isStatusChange = log.action === "STATUS_CHANGED";
+                const newStatus = isStatusChange
+                  ? STATUS_OPTIONS.find(s => log.description.includes(s))
+                  : null;
+                return (
+                  <div key={log.id} className={`text-xs border-b border-slate-800/50 pb-2 ${isStatusChange ? "bg-slate-800/40 rounded-lg px-3 py-2 border-0" : ""}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isStatusChange && newStatus ? (
+                          <>
+                            <span className="text-slate-400 font-medium">Status →</span>
+                            <span className={`px-2 py-0.5 rounded-full font-semibold text-xs ${STATUS_COLORS[newStatus]}`}>
+                              {newStatus}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-blue-400 font-medium">{log.action.replace(/_/g, " ")}</span>
+                        )}
+                      </div>
+                      <span className="text-slate-600 font-mono text-xs flex-shrink-0">{new Date(log.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</span>
+                    </div>
+                    {(!isStatusChange || !newStatus) && (
+                      <p className="text-slate-400 mt-0.5">{log.description}</p>
+                    )}
+                    <p className="text-slate-600 mt-0.5">by {log.user.name}</p>
                   </div>
-                  <p className="text-slate-400 mt-0.5">{log.description}</p>
-                  <p className="text-slate-600">by {log.user.name}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
