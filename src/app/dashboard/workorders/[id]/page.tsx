@@ -672,10 +672,16 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quotation</h2>
               <button onClick={() => setEditingQuotation(!editingQuotation)} className="text-xs text-blue-400 hover:text-blue-300">{editingQuotation ? "Cancel" : "Edit"}</button>
             </div>
+            {grandTotal === 0 && (
+              <div className="bg-yellow-950/30 border border-yellow-800/50 rounded-lg px-3 py-2 mb-3 flex items-center gap-2">
+                <span className="text-yellow-400">⚠</span>
+                <span className="text-xs text-yellow-300">No price set — add a labor fee or service below, or set total manually in Edit</span>
+              </div>
+            )}
             <div className="space-y-1 mb-3">
               {order.lineItems.map(item => (
                 <div key={item.id} className="flex items-center justify-between text-xs">
