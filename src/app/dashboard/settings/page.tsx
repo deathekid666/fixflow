@@ -2,25 +2,45 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 
+type Tab = "profile" | "shop" | "security";
+
 type Shop = {
   id: string; name: string; phone: string | null;
   address: string | null; email: string | null;
   logoUrl: string | null; plan: string; status: string; trialEndsAt: string | null;
 };
 
+const INPUT = "w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
+
+function Alert({ type, msg }: { type: "success" | "error"; msg: string }) {
+  return (
+    <div className={`text-sm px-4 py-3 rounded-lg border ${
+      type === "success"
+        ? "bg-green-500/10 border-green-500/30 text-green-400"
+        : "bg-red-500/10 border-red-500/30 text-red-400"
+    }`}>{msg}</div>
+  );
+}
+
 export default function SettingsPage() {
   const { user, refresh } = useAuth();
   const logoRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<Tab>("profile");
 
   // Profile
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [profileError, setProfileError] = useState("");
+
+  // Security
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPw, setSavingPw] = useState(false);
+  const [pwMsg, setPwMsg] = useState("");
+  const [pwError, setPwError] = useState("");
 
   // Shop
   const [shop, setShop] = useState<Shop | null>(null);
@@ -41,22 +61,34 @@ export default function SettingsPage() {
   }, [user]);
 
   async function saveProfile() {
-    if (newPassword && newPassword !== confirmPassword) { setProfileError("Passwords don't match"); return; }
     setSavingProfile(true); setProfileMsg(""); setProfileError("");
     const res = await fetch("/api/me/update", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ name, email, currentPassword: currentPassword || undefined, newPassword: newPassword || undefined }),
+      body: JSON.stringify({ name, email }),
+    });
+    if (res.ok) { setProfileMsg("Profile updated."); await refresh(); }
+    else { const d = await res.json(); setProfileError(d.error || "Failed to update"); }
+    setSavingProfile(false);
+  }
+
+  async function savePassword() {
+    if (!currentPassword) { setPwError("Enter your current password"); return; }
+    if (newPassword.length < 6) { setPwError("New password must be at least 6 characters"); return; }
+    if (newPassword !== confirmPassword) { setPwError("Passwords don't match"); return; }
+    setSavingPw(true); setPwMsg(""); setPwError("");
+    const res = await fetch("/api/me/update", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ currentPassword, newPassword }),
     });
     if (res.ok) {
-      setProfileMsg("Profile updated successfully");
+      setPwMsg("Password changed successfully.");
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
-      await refresh();
     } else {
-      const d = await res.json();
-      setProfileError(d.error || "Failed to update");
+      const d = await res.json(); setPwError(d.error || "Failed to change password");
     }
-    setSavingProfile(false);
+    setSavingPw(false);
   }
 
   async function saveShop() {
@@ -66,7 +98,7 @@ export default function SettingsPage() {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       credentials: "include", body: JSON.stringify(shopForm),
     });
-    if (res.ok) setShopMsg("Shop updated successfully");
+    if (res.ok) setShopMsg("Shop settings saved.");
     setSavingShop(false);
   }
 
@@ -77,10 +109,7 @@ export default function SettingsPage() {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("tag", "logo");
-    // Upload to attachments and use URL as logo
-    const res = await fetch(`/api/shops/${shop.id}/logo`, {
-      method: "POST", credentials: "include", body: fd,
-    });
+    const res = await fetch(`/api/shops/${shop.id}/logo`, { method: "POST", credentials: "include", body: fd });
     if (res.ok) {
       const data = await res.json();
       setShop(prev => prev ? { ...prev, logoUrl: data.url } : prev);
@@ -93,14 +122,20 @@ export default function SettingsPage() {
     ? Math.max(0, Math.ceil((new Date(shop.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
 
+  const tabs: { key: Tab; label: string; icon: string }[] = [
+    { key: "profile", label: "Profile", icon: "👤" },
+    { key: "shop", label: "Shop", icon: "🏪" },
+    { key: "security", label: "Security", icon: "🔒" },
+  ];
+
   return (
-    <div className="p-6 space-y-8 max-w-2xl mx-auto">
+    <div className="p-6 space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-xl font-semibold text-white">Account Settings</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Manage your profile and shop settings</p>
+        <h1 className="text-xl font-semibold text-white">Settings</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Manage your account and shop</p>
       </div>
 
-      {/* Plan info */}
+      {/* Plan banner */}
       {shop && (
         <div className={`border rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 ${
           shop.status === "TRIAL" && daysLeft !== null && daysLeft <= 3
@@ -129,106 +164,132 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Profile settings */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300">Profile</h2>
-        {profileMsg && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">{profileMsg}</div>}
-        {profileError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{profileError}</div>}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Name</label>
-            <input value={name} onChange={e => setName(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-          </div>
-        </div>
-        <div className="border-t border-slate-800 pt-4 space-y-3">
-          <p className="text-xs text-slate-500 font-medium">Change Password</p>
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Current Password</label>
-            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
-              placeholder="Enter current password"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">New Password</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="Repeat password"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-            </div>
-          </div>
-        </div>
-        <button onClick={saveProfile} disabled={savingProfile}
-          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
-          {savingProfile ? "Saving..." : "Save Profile"}
-        </button>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${
+              tab === t.key
+                ? "bg-slate-700 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}>
+            <span className="text-base">{t.icon}</span>
+            <span>{t.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Shop settings */}
-      {shop && user?.role === "ADMIN" && (
+      {/* Profile tab */}
+      {tab === "profile" && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-300">Shop Settings</h2>
-          {shopMsg && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">{shopMsg}</div>}
-
-          {/* Logo */}
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700">
-              {shop.logoUrl ? (
-                <img src={shop.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-2xl">🔧</span>
-              )}
-            </div>
-            <div>
-              <p className="text-sm text-white font-medium">Shop Logo</p>
-              <p className="text-xs text-slate-500 mb-2">Shows on receipts and customer portal</p>
-              <button onClick={() => logoRef.current?.click()} disabled={uploadingLogo}
-                className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
-                {uploadingLogo ? "Uploading..." : "Upload Logo"}
-              </button>
-              <input ref={logoRef} type="file" className="hidden" accept="image/*" onChange={uploadLogo} />
-            </div>
-          </div>
-
+          <h2 className="text-sm font-semibold text-slate-300">Profile Information</h2>
+          {profileMsg && <Alert type="success" msg={profileMsg} />}
+          {profileError && <Alert type="error" msg={profileError} />}
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-xs text-slate-400 mb-1 block">Shop Name</label>
-              <input value={shopForm.name} onChange={e => setShopForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-            </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Phone</label>
-              <input value={shopForm.phone} onChange={e => setShopForm(p => ({ ...p, phone: e.target.value }))}
-                placeholder="+212..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+              <label className="text-xs text-slate-400 mb-1 block">Name</label>
+              <input value={name} onChange={e => setName(e.target.value)} className={INPUT} />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Email</label>
-              <input type="email" value={shopForm.email} onChange={e => setShopForm(p => ({ ...p, email: e.target.value }))}
-                placeholder="shop@example.com"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs text-slate-400 mb-1 block">Address</label>
-              <input value={shopForm.address} onChange={e => setShopForm(p => ({ ...p, address: e.target.value }))}
-                placeholder="Shop address"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={INPUT} />
             </div>
           </div>
-          <button onClick={saveShop} disabled={savingShop}
+          <div className="pt-1">
+            <p className="text-xs text-slate-500 mb-1">Role</p>
+            <span className="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">{user?.role}</span>
+          </div>
+          <button onClick={saveProfile} disabled={savingProfile}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
-            {savingShop ? "Saving..." : "Save Shop Settings"}
+            {savingProfile ? "Saving..." : "Save Profile"}
+          </button>
+        </div>
+      )}
+
+      {/* Shop tab */}
+      {tab === "shop" && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          {user?.role !== "ADMIN" ? (
+            <p className="text-sm text-slate-500 text-center py-6">Only admins can edit shop settings.</p>
+          ) : !shop ? (
+            <p className="text-sm text-slate-500 text-center py-6">Loading shop...</p>
+          ) : (
+            <>
+              <h2 className="text-sm font-semibold text-slate-300">Shop Settings</h2>
+              {shopMsg && <Alert type="success" msg={shopMsg} />}
+
+              {/* Logo */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700 flex-shrink-0">
+                  {shop.logoUrl
+                    ? <img src={shop.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    : <span className="text-2xl">🔧</span>}
+                </div>
+                <div>
+                  <p className="text-sm text-white font-medium">Shop Logo</p>
+                  <p className="text-xs text-slate-500 mb-2">Shown on receipts and the customer portal</p>
+                  <button onClick={() => logoRef.current?.click()} disabled={uploadingLogo}
+                    className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
+                    {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                  </button>
+                  <input ref={logoRef} type="file" className="hidden" accept="image/*" onChange={uploadLogo} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-xs text-slate-400 mb-1 block">Shop Name</label>
+                  <input value={shopForm.name} onChange={e => setShopForm(p => ({ ...p, name: e.target.value }))} className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Phone</label>
+                  <input value={shopForm.phone} onChange={e => setShopForm(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="+212..." className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Email</label>
+                  <input type="email" value={shopForm.email} onChange={e => setShopForm(p => ({ ...p, email: e.target.value }))}
+                    placeholder="shop@example.com" className={INPUT} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-slate-400 mb-1 block">Address</label>
+                  <input value={shopForm.address} onChange={e => setShopForm(p => ({ ...p, address: e.target.value }))}
+                    placeholder="Shop address" className={INPUT} />
+                </div>
+              </div>
+              <button onClick={saveShop} disabled={savingShop}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+                {savingShop ? "Saving..." : "Save Shop Settings"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Security tab */}
+      {tab === "security" && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-slate-300">Change Password</h2>
+          {pwMsg && <Alert type="success" msg={pwMsg} />}
+          {pwError && <Alert type="error" msg={pwError} />}
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Current Password</label>
+            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="Enter current password" className={INPUT} />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">New Password</label>
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+              placeholder="Min. 6 characters" className={INPUT} />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Confirm New Password</label>
+            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Repeat new password" className={INPUT} />
+          </div>
+          <button onClick={savePassword} disabled={savingPw}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+            {savingPw ? "Changing..." : "Change Password"}
           </button>
         </div>
       )}
