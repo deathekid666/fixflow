@@ -11,6 +11,12 @@ type RevenueData = {
   summary: { totalRevenue: number; totalCollected: number; totalOrders: number; avgOrderValue: number; totalExpenses: number; profit: number };
 };
 
+type MonthStats = {
+  orders: number; revenue: number; collected: number;
+  expenses: number; collectionRate: number; profit: number;
+};
+type Comparison = { thisMonth: MonthStats; lastMonth: MonthStats };
+
 type Analytics = {
   orders: { total: number; received: number; diagnosing: number; repairing: number; done: number; delivered: number; cancelled: number };
   revenue: { total: number; collected: number; outstanding: number };
@@ -45,6 +51,7 @@ function downloadChartSVG(containerId: string, filename: string) {
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
+  const [comparison, setComparison] = useState<Comparison | null>(null);
   const [period, setPeriod] = useState("monthly");
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -53,12 +60,14 @@ export default function AnalyticsPage() {
 
   async function loadAll() {
     setLoading(true);
-    const [a, r] = await Promise.all([
+    const [a, r, c] = await Promise.all([
       fetch(`/api/analytics?range=${dateRange}`, { credentials: "include" }).then(x => x.json()),
       fetch(`/api/reports/revenue?period=${period}&range=${dateRange}`, { credentials: "include" }).then(x => x.json()),
+      fetch(`/api/analytics/comparison`, { credentials: "include" }).then(x => x.json()),
     ]);
     setAnalytics(a);
     setRevenue(r);
+    setComparison(c);
     setLoading(false);
   }
 
@@ -163,6 +172,99 @@ export default function AnalyticsPage() {
           </div>
         ))}
       </div>
+
+      {/* Month-over-month comparison */}
+      {comparison && (() => {
+        const { thisMonth: tm, lastMonth: lm } = comparison;
+
+        function delta(curr: number, prev: number) {
+          if (prev === 0) return curr > 0 ? 100 : 0;
+          return Math.round(((curr - prev) / prev) * 100);
+        }
+
+        function DeltaBadge({ curr, prev, invert = false }: { curr: number; prev: number; invert?: boolean }) {
+          const pct = delta(curr, prev);
+          const positive = invert ? pct < 0 : pct >= 0;
+          if (curr === 0 && prev === 0) return <span className="text-xs text-slate-600">—</span>;
+          return (
+            <span className={`text-xs font-medium ${positive ? "text-emerald-400" : "text-red-400"}`}>
+              {pct >= 0 ? "▲" : "▼"} {Math.abs(pct)}%
+            </span>
+          );
+        }
+
+        const now = new Date();
+        const thisMonthName = now.toLocaleString("default", { month: "long" });
+        const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1).toLocaleString("default", { month: "long" });
+
+        const metrics = [
+          {
+            label: "Revenue",
+            icon: "💰",
+            curr: tm.revenue, prev: lm.revenue,
+            fmt: (v: number) => `${v.toFixed(0)} MAD`,
+            invert: false,
+          },
+          {
+            label: "Orders",
+            icon: "📋",
+            curr: tm.orders, prev: lm.orders,
+            fmt: (v: number) => v.toString(),
+            invert: false,
+          },
+          {
+            label: "Collection Rate",
+            icon: "✅",
+            curr: tm.collectionRate, prev: lm.collectionRate,
+            fmt: (v: number) => `${v}%`,
+            invert: false,
+          },
+          {
+            label: "Expenses",
+            icon: "💸",
+            curr: tm.expenses, prev: lm.expenses,
+            fmt: (v: number) => `${v.toFixed(0)} MAD`,
+            invert: true,
+          },
+          {
+            label: "Net Profit",
+            icon: tm.profit >= 0 ? "📈" : "📉",
+            curr: tm.profit, prev: lm.profit,
+            fmt: (v: number) => `${v.toFixed(0)} MAD`,
+            invert: false,
+          },
+        ];
+
+        return (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-200">Month-over-Month</h2>
+                <p className="text-xs text-slate-500 mt-0.5">{thisMonthName} vs {lastMonthName}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {metrics.map(m => (
+                <div key={m.label} className="bg-slate-800/50 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">{m.label}</span>
+                    <span className="text-sm">{m.icon}</span>
+                  </div>
+                  <div>
+                    <p className={`text-lg font-bold ${m.label === "Net Profit" ? (m.curr >= 0 ? "text-emerald-400" : "text-red-400") : m.label === "Expenses" ? "text-red-400" : "text-white"}`}>
+                      {m.fmt(m.curr)}
+                    </p>
+                    <DeltaBadge curr={m.curr} prev={m.prev} invert={m.invert} />
+                  </div>
+                  <div className="pt-1 border-t border-slate-700/50">
+                    <p className="text-xs text-slate-600">{lastMonthName.slice(0, 3)}: <span className="text-slate-400">{m.fmt(m.prev)}</span></p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Revenue vs Expenses vs Profit chart */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
