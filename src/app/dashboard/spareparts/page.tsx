@@ -259,7 +259,16 @@ export default function SparePartsPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
+            {loading && [...Array(6)].map((_, i) => (
+              <tr key={i} className="border-b border-slate-800/50 animate-pulse">
+                <td className="px-4 py-3.5 space-y-1.5"><div className={`h-3 bg-slate-700 rounded ${["w-28","w-36","w-24","w-32","w-28","w-30"][i]}`} /><div className="h-2 w-20 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded font-mono ${["w-20","w-16","w-24","w-14","w-20","w-18"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-5 w-8 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-5 w-18 bg-slate-800 rounded-full" /></td>
+                <td className="px-4 py-3.5"><div className="h-6 w-12 bg-slate-800 rounded-lg" /></td>
+              </tr>
+            ))}
             {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
             {filtered.map(p => (
               <>

@@ -227,7 +227,17 @@ export default function ExpensesPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
+            {loading && [...Array(6)].map((_, i) => (
+              <tr key={i} className="border-b border-slate-800/50 animate-pulse">
+                <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-700 rounded ${["w-32","w-28","w-36","w-24","w-32","w-28"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-5 w-20 bg-slate-800 rounded-full" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded ${["w-16","w-20","w-14","w-18","w-16","w-20"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded ${["w-24","w-16","w-28","w-20","w-0","w-24"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5" />
+              </tr>
+            ))}
             {!loading && filtered.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-12 text-center">
                 <p className="text-4xl mb-3">💸</p>

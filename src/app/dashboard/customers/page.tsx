@@ -104,7 +104,22 @@ export default function CustomersPage() {
 
       {/* ── Mobile card list ── */}
       <div className="md:hidden space-y-3">
-        {loading && <div className="py-10 text-center text-slate-500 text-sm">Loading...</div>}
+        {loading && [...Array(4)].map((_, i) => (
+          <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 animate-pulse">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1.5">
+                <div className={`h-4 bg-slate-700 rounded ${["w-32","w-28","w-36","w-24"][i]}`} />
+                <div className={`h-3 bg-slate-800 rounded ${["w-24","w-20","w-28","w-20"][i]}`} />
+              </div>
+              <div className="h-3 w-10 bg-slate-800 rounded" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="h-12 bg-slate-800/60 rounded-lg" />
+              <div className="h-12 bg-slate-800/60 rounded-lg" />
+              <div className="h-12 bg-slate-800/60 rounded-lg" />
+            </div>
+          </div>
+        ))}
         {!loading && sorted.length === 0 && (
           <div className="py-12 text-center">
             <p className="text-4xl mb-3">👤</p>
@@ -191,7 +206,18 @@ export default function CustomersPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>}
+            {loading && [...Array(6)].map((_, i) => (
+              <tr key={i} className="border-b border-slate-800/50 animate-pulse">
+                <td className="px-4 py-3.5 space-y-1.5"><div className={`h-3 bg-slate-700 rounded ${["w-28","w-32","w-24","w-36","w-28","w-30"][i]}`} /><div className="h-2 w-20 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded ${["w-24","w-28","w-20","w-24","w-28","w-20"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-8 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded ${["w-20","w-16","w-24","w-18","w-20","w-16"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-20 bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-5 w-14 bg-slate-800 rounded-full" /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-10 bg-slate-800 rounded" /></td>
+              </tr>
+            ))}
             {!loading && sorted.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center">
