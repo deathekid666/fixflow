@@ -110,11 +110,16 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         th { text-align: left; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid #e2e8f0; }
         td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
         .text-right { text-align: right; }
-        .totals-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; max-width: 280px; margin-left: auto; }
-        .total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #475569; }
-        .total-row.grand { font-weight: 700; font-size: 16px; color: #0f172a; border-top: 2px solid #1e293b; padding-top: 8px; margin-top: 6px; }
-        .total-row.collected { color: #16a34a; font-weight: 600; }
+        .totals-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; max-width: 320px; margin-left: auto; }
+        .total-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 4px 0; color: #475569; }
+        .total-row.item-row { color: #374151; }
+        .total-row.item-row span:first-child { padding-left: 8px; }
+        .total-row.subtotal-row { color: #64748b; font-size: 12px; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 2px; }
+        .total-row.discount { color: #dc2626; }
+        .total-row.grand { font-weight: 800; font-size: 16px; color: #0f172a; border-top: 2px solid #1e293b; padding-top: 10px; margin-top: 6px; }
+        .total-row.collected { color: #16a34a; font-weight: 600; border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 4px; }
         .total-row.remaining { color: #dc2626; font-weight: 600; }
+        .totals-section-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 8px 0 2px; margin-top: 4px; }
         .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
         .sig-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
         .sig-label { font-size: 10px; color: #94a3b8; margin-bottom: 40px; }
@@ -224,13 +229,40 @@ export default function PrintPage({ params }: { params: { id: string } }) {
 
         {/* Totals */}
         <div className="totals-block">
-          {order.subtotal > 0 && <div className="total-row"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>}
-          {order.quotationItems > 0 && <div className="total-row"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>}
-          {order.discount > 0 && <div className="total-row"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
+          {order.subtotal > 0 && (
+            <div className="total-row subtotal-row">
+              <span>Parts subtotal</span><span>{order.subtotal.toFixed(2)} MAD</span>
+            </div>
+          )}
+          {order.lineItems.length > 0 && (
+            <>
+              <div className="totals-section-label">Services</div>
+              {order.lineItems.map(item => (
+                <div key={item.id} className="total-row item-row">
+                  <span>{item.label}</span>
+                  <span>{item.amount.toFixed(2)} MAD</span>
+                </div>
+              ))}
+              {order.quotationItems > 0 && (
+                <div className="total-row subtotal-row">
+                  <span>Services subtotal</span><span>{order.quotationItems.toFixed(2)} MAD</span>
+                </div>
+              )}
+            </>
+          )}
+          {order.discount > 0 && (
+            <div className="total-row discount">
+              <span>Discount</span><span>− {order.discount.toFixed(2)} MAD</span>
+            </div>
+          )}
           <div className="total-row grand"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
           <div className="total-row collected"><span>Collected</span><span>{order.collected.toFixed(2)} MAD</span></div>
           {remaining > 0 && <div className="total-row remaining"><span>Remaining</span><span>{remaining.toFixed(2)} MAD</span></div>}
-          {order.quotationRemarks && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8, paddingTop: 8, borderTop: "1px solid #e2e8f0" }}>{order.quotationRemarks}</div>}
+          {order.quotationRemarks && (
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", lineHeight: 1.5 }}>
+              {order.quotationRemarks}
+            </div>
+          )}
         </div>
 
         {/* Signatures */}
