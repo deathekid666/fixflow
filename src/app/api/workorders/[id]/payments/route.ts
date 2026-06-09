@@ -45,12 +45,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   });
 
   const totalCollected = order.payments.reduce((s, p) => s + p.amount, 0) + parseFloat(amount);
-  const autoTotal = order.subtotal + order.quotationItems - order.discount;
+  const calculatedTotal = order.subtotal + order.quotationItems - order.discount;
+  const finalTotal = calculatedTotal > 0 ? calculatedTotal : order.total > 0 ? order.total : totalCollected;
+
   await prisma.workOrder.update({
     where: { id: params.id },
     data: {
       collected: totalCollected,
-      total: autoTotal > 0 ? autoTotal : order.total,
+      total: finalTotal,
       updatedAt: new Date(),
     },
   });
@@ -79,9 +81,17 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   const remaining = await prisma.payment.findMany({ where: { workOrderId: params.id } });
   const totalCollected = remaining.reduce((s, p) => s + p.amount, 0);
+
+  const order = await prisma.workOrder.findUnique({ where: { id: params.id } });
+  const calculatedTotal = (order?.subtotal ?? 0) + (order?.quotationItems ?? 0) - (order?.discount ?? 0);
+  const finalTotal = calculatedTotal > 0 ? calculatedTotal : order?.total ?? 0;
+
   await prisma.workOrder.update({
     where: { id: params.id },
-    data: { collected: totalCollected },
+    data: {
+      collected: totalCollected,
+      total: finalTotal,
+    },
   });
 
   return Response.json({ message: "Deleted" });
