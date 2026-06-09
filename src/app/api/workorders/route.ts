@@ -81,8 +81,17 @@ export async function POST(req: Request) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  // Generate sequential order number per shop per year
+  const year = new Date().getFullYear();
+  const count = await prisma.workOrder.count({
+    where: { shopId: user.shopId },
+  });
+  const seq = String(count + 1).padStart(4, "0");
+  const orderNumber = `wo-${year}-${seq}-${user.shopId.slice(0, 4)}`;
+
   const order = await prisma.workOrder.create({
     data: {
+      orderNumber,
       deviceBrand, deviceModel, serialNumber, imei,
       warrantyStart: warrantyStart ? new Date(warrantyStart) : null,
       warrantyEnd: warrantyEnd ? new Date(warrantyEnd) : null,

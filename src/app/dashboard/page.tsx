@@ -273,7 +273,9 @@ export default function DashboardPage() {
                     className="rounded border-slate-600 bg-slate-800 cursor-pointer" />
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-slate-400">{o.orderNumber.slice(0, 8).toUpperCase()}</span>
+                  <span className="font-mono text-xs text-slate-400">
+                    {o.orderNumber.startsWith("wo-") ? o.orderNumber.toUpperCase() : o.orderNumber.slice(0, 8).toUpperCase()}
+                  </span>
                   {o.isUnderWarranty && <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">W</span>}
                   {o.isOverdue && <span className="ml-1 text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
                 </td>

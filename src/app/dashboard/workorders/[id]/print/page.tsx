@@ -19,6 +19,8 @@ type WorkOrder = {
 };
 
 function formatWO(raw: string, date: string) {
+  // Support both new sequential format and old cuid format
+  if (raw.startsWith("wo-")) return raw.toUpperCase();
   return `WO-${new Date(date).getFullYear()}-${raw.slice(0, 6).toUpperCase()}`;
 }
 
