@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
-  CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
 type RevenueData = {
-  data: { label: string; total: number; collected: number; count: number }[];
-  summary: { totalRevenue: number; totalCollected: number; totalOrders: number; avgOrderValue: number };
+  data: { label: string; total: number; collected: number; count: number; expenses: number; profit: number }[];
+  summary: { totalRevenue: number; totalCollected: number; totalOrders: number; avgOrderValue: number; totalExpenses: number; profit: number };
 };
 
 type Analytics = {
@@ -20,6 +20,27 @@ type Analytics = {
 };
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+
+function downloadChartSVG(containerId: string, filename: string) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const svg = container.querySelector("svg");
+  if (!svg) return;
+  const clone = svg.cloneNode(true) as SVGElement;
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bg.setAttribute("width", "100%");
+  bg.setAttribute("height", "100%");
+  bg.setAttribute("fill", "#0f172a");
+  clone.insertBefore(bg, clone.firstChild);
+  const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -45,6 +66,33 @@ export default function AnalyticsPage() {
     window.open(`/api/export?type=${type}`, "_blank");
   }
 
+  function exportAnalyticsCSV() {
+    if (!revenue) return;
+    const s = revenue.summary;
+    const rows = [
+      ["Analytics Export", `Range: ${dateRange}`, `Period: ${period}`],
+      [],
+      ["Summary"],
+      ["Total Orders", s.totalOrders],
+      ["Total Revenue (MAD)", s.totalRevenue.toFixed(2)],
+      ["Total Collected (MAD)", s.totalCollected.toFixed(2)],
+      ["Total Expenses (MAD)", s.totalExpenses.toFixed(2)],
+      ["Net Profit (MAD)", s.profit.toFixed(2)],
+      ["Avg Order Value (MAD)", s.avgOrderValue.toFixed(2)],
+      [],
+      ["Period", "Revenue (MAD)", "Collected (MAD)", "Expenses (MAD)", "Profit (MAD)", "Orders"],
+      ...revenue.data.map(d => [d.label, d.total.toFixed(2), d.collected.toFixed(2), d.expenses.toFixed(2), d.profit.toFixed(2), d.count]),
+    ];
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `analytics-${dateRange}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (loading) return (
     <div className="p-6 flex items-center justify-center h-64">
       <p className="text-slate-500 text-sm">Loading analytics...</p>
@@ -67,6 +115,9 @@ export default function AnalyticsPage() {
   ].filter(d => d.value > 0);
 
   const activeOrders = analytics.orders.received + analytics.orders.diagnosing + analytics.orders.repairing + analytics.orders.done;
+  const profitMargin = revenue.summary.totalCollected > 0
+    ? Math.round((revenue.summary.profit / revenue.summary.totalCollected) * 100)
+    : 0;
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -75,7 +126,7 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold text-white">Analytics</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Revenue, performance and insights</p>
+          <p className="text-sm text-slate-500 mt-0.5">Revenue, expenses, profit and insights</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {["7d", "30d", "90d", "all"].map(r => (
@@ -85,6 +136,7 @@ export default function AnalyticsPage() {
             </button>
           ))}
           <div className="w-px bg-slate-700 mx-1" />
+          <button onClick={exportAnalyticsCSV} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Analytics CSV</button>
           <button onClick={() => exportCSV("workorders")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Orders</button>
           <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
           <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
@@ -92,30 +144,32 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { label: "Total Orders", value: revenue.summary.totalOrders, sub: `${activeOrders} active`, color: "text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
-          { label: "Total Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`, sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-white", icon: "💰", bg: "bg-slate-900 border-slate-800" },
-          { label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`, sub: `${collectionRate}% collection rate`, color: "text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
-          { label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`, sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-red-400" : "text-slate-400", icon: "⏳", bg: outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-slate-900 border-slate-800" },
+          { label: "Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`, sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-white", icon: "💰", bg: "bg-slate-900 border-slate-800" },
+          { label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`, sub: `${collectionRate}% rate`, color: "text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
+          { label: "Expenses", value: `${revenue.summary.totalExpenses.toFixed(0)} MAD`, sub: "Total costs", color: "text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
+          { label: "Net Profit", value: `${revenue.summary.profit.toFixed(0)} MAD`, sub: `${profitMargin}% margin`, color: revenue.summary.profit >= 0 ? "text-emerald-400" : "text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
+          { label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`, sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-yellow-400" : "text-slate-400", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-slate-900 border-slate-800" },
         ].map(s => (
-          <div key={s.label} className={`border rounded-xl p-5 ${s.bg}`}>
+          <div key={s.label} className={`border rounded-xl p-4 ${s.bg}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-slate-500">{s.label}</p>
-              <span className="text-lg">{s.icon}</span>
+              <span className="text-base">{s.icon}</span>
             </div>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-slate-600 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Revenue chart */}
+      {/* Revenue vs Expenses vs Profit chart */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-slate-200">Revenue Over Time</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Total billed vs collected</p>
+            <h2 className="text-sm font-semibold text-slate-200">Revenue, Expenses & Profit</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Billed vs collected vs expenses vs net profit</p>
           </div>
           <div className="flex gap-2">
             {["daily", "weekly", "monthly"].map(p => (
@@ -124,57 +178,91 @@ export default function AnalyticsPage() {
                 {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
+            <button onClick={() => downloadChartSVG("chart-revenue", `revenue-${dateRange}.svg`)}
+              title="Download chart as SVG"
+              className="px-2 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
+              ⬇
+            </button>
           </div>
         </div>
         {revenue.data.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-8">No data yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={revenue.data}>
-              <defs>
-                <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 11 }} />
-              <YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} />
-              <Area type="monotone" dataKey="total" name="Billed" stroke="#3b82f6" fill="url(#totalGrad)" strokeWidth={2} />
-              <Area type="monotone" dataKey="collected" name="Collected" stroke="#10b981" fill="url(#collectedGrad)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div id="chart-revenue">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={revenue.data}>
+                <defs>
+                  <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="expensesGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                <Area type="monotone" dataKey="total" name="Billed" stroke="#3b82f6" fill="url(#totalGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="collected" name="Collected" stroke="#10b981" fill="url(#collectedGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#ef4444" fill="url(#expensesGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="profit" name="Profit" stroke="#34d399" fill="url(#profitGrad)" strokeWidth={2} strokeDasharray="5 3" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 
       {/* Orders volume + Status breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-200 mb-1">Work Orders Volume</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-slate-200">Work Orders Volume</h2>
+            <button onClick={() => downloadChartSVG("chart-orders", `orders-${dateRange}.svg`)}
+              title="Download chart as SVG"
+              className="px-2 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
+              ⬇
+            </button>
+          </div>
           <p className="text-xs text-slate-500 mb-4">Number of orders per period</p>
           {revenue.data.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">No data yet.</p> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={revenue.data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 11 }} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} />
-                <Line type="monotone" dataKey="count" name="Orders" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: "#8b5cf6", r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div id="chart-orders">
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={revenue.data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 11 }} />
+                  <YAxis tick={{ fill: "#64748b", fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                  <Line type="monotone" dataKey="count" name="Orders" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: "#8b5cf6", r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-200 mb-1">Orders by Status</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-slate-200">Orders by Status</h2>
+            <button onClick={() => downloadChartSVG("chart-status", `status-${dateRange}.svg`)}
+              title="Download chart as SVG"
+              className="px-2 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
+              ⬇
+            </button>
+          </div>
           <p className="text-xs text-slate-500 mb-4">Current distribution</p>
           {pieData.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">No data.</p> : (
-            <div className="flex items-center gap-4">
+            <div id="chart-status" className="flex items-center gap-4">
               <ResponsiveContainer width="60%" height={180}>
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" paddingAngle={3}>
