@@ -173,9 +173,14 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
               <span>Remaining</span><span>{mad(remaining)}</span>
             </div>
           )}
-          {remaining <= 0.01 && order.collected > 0 && (
+          {remaining <= 0.01 && order.collected > 0 && order.collected <= grandTotal + 0.01 && (
             <div className="flex justify-between text-sm text-green-700 font-medium">
               <span>✓ Fully Paid</span><span></span>
+            </div>
+          )}
+          {order.collected > grandTotal + 0.01 && (
+            <div className="flex justify-between text-sm text-orange-600 font-medium">
+              <span>⚠ Overpaid by {mad(order.collected - grandTotal)}</span><span></span>
             </div>
           )}
         </div>
