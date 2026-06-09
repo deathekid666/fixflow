@@ -28,6 +28,7 @@ model User {
   stockAdjustments StockAdjustment[]
   shifts           Shift[]
   payments         Payment[]
+  expenses   Expense[]
 }
 
 model Shop {
@@ -47,6 +48,7 @@ model Shop {
   workOrders WorkOrder[]
   spareParts SparePart[]
   shifts     Shift[]
+  expenses   Expense[]
 }
 
 model WorkOrder {
@@ -317,4 +319,18 @@ model DiagnosisCheck {
   updatedAt   DateTime @updatedAt
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+}
+model Expense {
+  id          String   @id @default(cuid())
+  title       String
+  amount      Float
+  category    String   @default("OTHER")
+  note        String?
+  date        DateTime @default(now())
+  shopId      String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
