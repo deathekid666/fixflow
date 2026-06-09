@@ -108,6 +108,25 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
         {data && config && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
+            {/* Ready for pickup banner */}
+            {data.status === "DONE" && (
+              <div style={{ background: "linear-gradient(135deg, #14532d 0%, #166534 100%)", border: "2px solid #22c55e", borderRadius: 20, padding: "24px 20px", textAlign: "center", boxShadow: "0 0 40px rgba(34,197,94,0.25)" }}>
+                <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
+                <p style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#bbf7d0", letterSpacing: "-0.02em" }}>
+                  Your device is ready for pickup!
+                </p>
+                <p style={{ margin: "0 0 20px", fontSize: 14, color: "#86efac" }}>
+                  Please visit us at your earliest convenience.
+                </p>
+                {data.shop?.phone && (
+                  <a href={`tel:${data.shop.phone}`}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "#22c55e", borderRadius: 99, padding: "12px 28px", color: "white", fontSize: 16, fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 16px rgba(34,197,94,0.4)" }}>
+                    📞 Call us: {data.shop.phone}
+                  </a>
+                )}
+              </div>
+            )}
+
             {/* Status banner */}
             <div style={{ background: config.bg, borderRadius: 16, padding: 20, border: `1px solid ${config.color}30` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
