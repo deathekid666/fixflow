@@ -79,7 +79,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", label: "Work Orders", icon: "📋" },
     { href: "/dashboard/spareparts", label: "Spare Parts", icon: "🔧" },
     { href: "/dashboard/customers", label: "Customers", icon: "👤" },
-    { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
     { href: "/dashboard/ratings", label: "Satisfaction", icon: "⭐" },
     { href: "/dashboard/csv", label: "CSV Import", icon: "📂" },
     ...(user.role === "ADMIN" ? [
