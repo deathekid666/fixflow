@@ -99,6 +99,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", label: "Orders", icon: "📋" },
     { href: "/dashboard/spareparts", label: "Parts", icon: "🔧" },
     { href: "/dashboard/customers", label: "Customers", icon: "👤" },
+    { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
     { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
   ];
 
@@ -199,22 +200,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
 
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-30 flex">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 z-30 flex items-stretch pb-safe">
           {bottomNav.map((item) => {
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
-                className={`flex-1 flex flex-col items-center justify-center py-2 text-xs transition-colors ${active ? "text-blue-400" : "text-slate-500 hover:text-slate-300"}`}>
-                <span className="text-lg mb-0.5">{item.icon}</span>
-                <span>{item.label}</span>
+                className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors">
+                <span className={`flex items-center justify-center w-10 h-7 rounded-xl text-lg transition-all ${active ? "bg-blue-600/20" : ""}`}>
+                  {item.icon}
+                </span>
+                <span className={`text-[10px] font-medium leading-none transition-colors ${active ? "text-blue-400" : "text-slate-500"}`}>
+                  {item.label}
+                </span>
               </Link>
             );
           })}
-          <button onClick={() => setSidebarOpen(true)}
-            className="flex-1 flex flex-col items-center justify-center py-2 text-xs text-slate-500 hover:text-slate-300">
-            <span className="text-lg mb-0.5">☰</span>
-            <span>More</span>
-          </button>
         </nav>
       </div>
     </div>
