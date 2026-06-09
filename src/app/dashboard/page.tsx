@@ -138,12 +138,12 @@ export default function DashboardPage() {
   const overdue = orders.filter(o => o.isOverdue).length;
 
   const stats = [
-    { label: "Total Orders", value: orders.length, sub: `${active.length} active`, color: "text-white", icon: "📋" },
-    { label: "Received", value: orders.filter(o => o.status === "RECEIVED").length, sub: "awaiting diagnosis", color: "text-blue-400", icon: "📥" },
-    { label: "In Progress", value: orders.filter(o => ["DIAGNOSING", "REPAIRING"].includes(o.status)).length, sub: `${overdue} overdue`, color: overdue > 0 ? "text-orange-400" : "text-yellow-400", icon: "🔧" },
-    { label: "Ready", value: orders.filter(o => o.status === "DONE").length, sub: "awaiting pickup", color: "text-green-400", icon: "✅" },
-    { label: "Revenue", value: `${totalRevenue.toFixed(0)} MAD`, sub: `${pendingPayment.toFixed(0)} pending`, color: "text-emerald-400", icon: "💰" },
-    { label: "Delivered", value: orders.filter(o => o.status === "DELIVERED").length, sub: "this period", color: "text-slate-400", icon: "📦" },
+    { label: "Total Orders", value: orders.length, sub: `${active.length} active`, color: "text-white", icon: "📋", filter: "" },
+    { label: "Received", value: orders.filter(o => o.status === "RECEIVED").length, sub: "awaiting diagnosis", color: "text-blue-400", icon: "📥", filter: "RECEIVED" },
+    { label: "In Progress", value: orders.filter(o => ["DIAGNOSING", "REPAIRING"].includes(o.status)).length, sub: `${overdue} overdue`, color: overdue > 0 ? "text-orange-400" : "text-yellow-400", icon: "🔧", filter: "DIAGNOSING" },
+    { label: "Ready", value: orders.filter(o => o.status === "DONE").length, sub: "awaiting pickup", color: "text-green-400", icon: "✅", filter: "DONE" },
+    { label: "Revenue", value: `${totalRevenue.toFixed(0)} MAD`, sub: `${pendingPayment.toFixed(0)} pending`, color: "text-emerald-400", icon: "💰", filter: "DELIVERED" },
+    { label: "Delivered", value: orders.filter(o => o.status === "DELIVERED").length, sub: "this period", color: "text-slate-400", icon: "📦", filter: "DELIVERED" },
   ];
 
   const emptyState = (colSpan: number) => (
@@ -190,14 +190,19 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
         {stats.map((s) => (
-          <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-3 md:p-4 space-y-1">
+          <button key={s.label} onClick={() => setStatusFilter(s.filter)}
+            className={`bg-slate-900 border rounded-xl p-3 md:p-4 space-y-1 text-left w-full cursor-pointer transition-all hover:bg-slate-800/60 active:scale-[0.98] ${
+              statusFilter === s.filter
+                ? "border-blue-500/60 ring-1 ring-blue-500/30"
+                : "border-slate-800 hover:border-slate-600"
+            }`}>
             <div className="flex items-center justify-between">
               <p className="text-xs text-slate-500 leading-tight">{s.label}</p>
               <span className="text-sm md:text-base">{s.icon}</span>
             </div>
             <p className={`text-lg md:text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-slate-600 hidden sm:block">{s.sub}</p>
-          </div>
+          </button>
         ))}
       </div>
 

@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     where: {
       shopId: user.shopId ?? undefined,
       ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
-      ...(status ? { status } : {}),
+      ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
       ...(search ? {
         OR: [
           { customerName: { contains: search, mode: "insensitive" } },

@@ -8,6 +8,9 @@ type SparePart = {
   description: string; unitPrice: number; stock: number;
 };
 
+type AlertPart = { id: string; name: string; partNumber: string; stock: number; unitPrice: number };
+type AlertData = { outOfStock: AlertPart[]; lowStock: AlertPart[]; total: number };
+
 const LOW_STOCK_THRESHOLD = 5;
 
 export default function SparePartsPage() {
@@ -25,6 +28,15 @@ export default function SparePartsPage() {
   const [adjReason, setAdjReason] = useState("");
   const [adjPrice, setAdjPrice] = useState("");
   const [savingAdj, setSavingAdj] = useState(false);
+  const [alertData, setAlertData] = useState<AlertData | null>(null);
+  const [alertDismissed, setAlertDismissed] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/spareparts/alert", { credentials: "include" })
+      .then(r => r.json())
+      .then((d: AlertData) => { if (d.total > 0) setAlertData(d); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
@@ -129,29 +141,55 @@ export default function SparePartsPage() {
         )}
       </div>
 
-      {/* Low stock alert */}
-      {(outOfStock.length > 0 || lowStock.length > 0) && (
-        <div className="bg-orange-950/30 border border-orange-800/50 rounded-xl p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-orange-400 text-lg">⚠️</span>
-            <h2 className="text-sm font-semibold text-orange-400">Stock Alerts</h2>
+      {/* Reorder Reminder — fetched from /api/spareparts/alert */}
+      {alertData && !alertDismissed && (
+        <div className="bg-orange-950/30 border border-orange-700/50 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔔</span>
+              <div>
+                <h2 className="text-sm font-semibold text-orange-300">Reorder Reminder</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {alertData.total} part{alertData.total !== 1 ? "s" : ""} need restocking
+                </p>
+              </div>
+            </div>
+            <button onClick={() => setAlertDismissed(true)}
+              className="text-slate-600 hover:text-slate-400 text-sm leading-none mt-0.5 flex-shrink-0">✕</button>
           </div>
-          {outOfStock.length > 0 && (
-            <div>
-              <p className="text-xs text-red-400 font-semibold mb-1">Out of Stock ({outOfStock.length})</p>
-              <div className="flex flex-wrap gap-2">
-                {outOfStock.map(p => <span key={p.id} className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-lg">{p.name}</span>)}
+
+          <div className="mt-3 space-y-2">
+            {alertData.outOfStock.length > 0 && (
+              <div>
+                <p className="text-xs text-red-400 font-semibold mb-1.5">Out of Stock ({alertData.outOfStock.length})</p>
+                <div className="flex flex-wrap gap-2">
+                  {alertData.outOfStock.map(p => (
+                    <button key={p.id} onClick={() => setStockFilter("out")}
+                      className="text-xs bg-red-500/15 border border-red-700/40 text-red-400 px-2.5 py-1 rounded-lg hover:bg-red-500/25 transition-colors text-left">
+                      <span className="font-medium">{p.name}</span>
+                      {p.partNumber && <span className="text-red-500/70 ml-1">#{p.partNumber}</span>}
+                      <span className="ml-1.5 text-red-500">· 0 left</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          {lowStock.length > 0 && (
-            <div>
-              <p className="text-xs text-yellow-400 font-semibold mb-1">Low Stock ({lowStock.length})</p>
-              <div className="flex flex-wrap gap-2">
-                {lowStock.map(p => <span key={p.id} className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">{p.name} ({p.stock} left)</span>)}
+            )}
+            {alertData.lowStock.length > 0 && (
+              <div>
+                <p className="text-xs text-yellow-400 font-semibold mb-1.5">Low Stock ({alertData.lowStock.length})</p>
+                <div className="flex flex-wrap gap-2">
+                  {alertData.lowStock.map(p => (
+                    <button key={p.id} onClick={() => setStockFilter("low")}
+                      className="text-xs bg-yellow-500/15 border border-yellow-700/40 text-yellow-400 px-2.5 py-1 rounded-lg hover:bg-yellow-500/25 transition-colors text-left">
+                      <span className="font-medium">{p.name}</span>
+                      {p.partNumber && <span className="text-yellow-500/70 ml-1">#{p.partNumber}</span>}
+                      <span className="ml-1.5 text-yellow-500">· {p.stock} left</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
