@@ -42,8 +42,12 @@ export async function POST(req: Request) {
   const items = body.items as { sparePartId: string; quantity: number; unitCost: number }[];
   const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
 
+  const count = await prisma.purchaseOrder.count({ where: { shopId: user.shopId } });
+  const orderNumber = `PO-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
+
   const order = await prisma.purchaseOrder.create({
     data: {
+      orderNumber,
       supplierId: body.supplierId,
       shopId: user.shopId,
       userId: user.id,

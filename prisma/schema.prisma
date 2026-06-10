@@ -385,6 +385,7 @@ model Supplier {
 
 model PurchaseOrder {
   id          String   @id @default(cuid())
+  orderNumber String?  @unique
   supplierId  String
   shopId      String
   userId      String
