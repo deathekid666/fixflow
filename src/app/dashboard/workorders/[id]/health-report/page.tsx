@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type CheckItem = { id: string; item: string; status: string; note: string | null };
 type Part = { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } };
@@ -69,6 +70,7 @@ function statusStyle(status: string | null): StatusStyle {
 }
 
 export default function HealthReportPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -190,7 +192,7 @@ export default function HealthReportPage({ params }: { params: { id: string } })
 
       {/* Control bar (hidden on print) */}
       <div className="no-print">
-        <button className="btn-back" onClick={() => window.history.back()}>← Back</button>
+        <button className="btn-back" onClick={() => router.back()}>← Back</button>
         <span className="no-print-title">Device Health Report — {woNumber}</span>
         <button className="btn-print" onClick={() => window.print()}>🖨️ Print / Save PDF</button>
       </div>
