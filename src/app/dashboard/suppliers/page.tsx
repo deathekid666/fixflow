@@ -41,6 +41,11 @@ export default function SuppliersPage() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
   const [saving, setSaving] = useState(false);
 
+  // Edit supplier
+  const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
+  const [savingSupplier, setSavingSupplier] = useState(false);
+
   // Create PO
   const [creatingPO, setCreatingPO] = useState<string | null>(null);
   const [poItems, setPOItems] = useState<POItem[]>([{ sparePartId: "", quantity: "1", unitCost: "" }]);
@@ -87,6 +92,26 @@ export default function SuppliersPage() {
       setShowAdd(false);
     }
     setSaving(false);
+  }
+
+  function openEditSupplier(s: Supplier) {
+    setEditingSupplier(s.id);
+    setEditForm({ name: s.name, phone: s.phone ?? "", email: s.email ?? "", address: s.address ?? "", notes: s.notes ?? "" });
+  }
+
+  async function saveEditSupplier() {
+    if (!editingSupplier || !editForm.name.trim()) return;
+    setSavingSupplier(true);
+    const res = await fetch(`/api/suppliers/${editingSupplier}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify(editForm),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSuppliers(prev => prev.map(s => s.id === editingSupplier ? updated : s).sort((a, b) => a.name.localeCompare(b.name)));
+      setEditingSupplier(null);
+    }
+    setSavingSupplier(false);
   }
 
   async function deleteSupplier(id: string) {
@@ -344,15 +369,60 @@ export default function SuppliersPage() {
                       <p className="text-xs text-slate-400 mt-0.5">{s._count.purchaseOrders} purchase order{s._count.purchaseOrders !== 1 ? "s" : ""}</p>
                     </div>
                   </div>
-                  <button onClick={() => deleteSupplier(s.id)} className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 text-sm transition-colors flex-shrink-0">🗑</button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => editingSupplier === s.id ? setEditingSupplier(null) : openEditSupplier(s)}
+                      className={`text-sm transition-colors ${editingSupplier === s.id ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`} title="Edit supplier">✏️</button>
+                    <button onClick={() => deleteSupplier(s.id)} className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 text-sm transition-colors" title="Delete supplier">🗑</button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {s.phone && <div className="flex items-center gap-1.5 text-slate-500"><span>📞</span>{s.phone}</div>}
-                  {s.email && <div className="flex items-center gap-1.5 text-slate-500 truncate"><span>✉️</span><span className="truncate">{s.email}</span></div>}
-                  {s.address && <div className="flex items-center gap-1.5 text-slate-500 col-span-2"><span>📍</span>{s.address}</div>}
-                  {s.notes && <div className="col-span-2 text-slate-400 italic">{s.notes}</div>}
-                </div>
+                {editingSupplier !== s.id && (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {s.phone && <div className="flex items-center gap-1.5 text-slate-500"><span>📞</span>{s.phone}</div>}
+                    {s.email && <div className="flex items-center gap-1.5 text-slate-500 truncate"><span>✉️</span><span className="truncate">{s.email}</span></div>}
+                    {s.address && <div className="flex items-center gap-1.5 text-slate-500 col-span-2"><span>📍</span>{s.address}</div>}
+                    {s.notes && <div className="col-span-2 text-slate-400 italic">{s.notes}</div>}
+                  </div>
+                )}
+
+                {editingSupplier === s.id && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Name *</label>
+                        <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Phone</label>
+                        <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Email</label>
+                        <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Address</label>
+                        <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-xs text-slate-500 mb-1 block">Notes</label>
+                        <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={editForm.notes} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={saveEditSupplier} disabled={savingSupplier || !editForm.name.trim()}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+                        {savingSupplier ? "Saving..." : "Save"}
+                      </button>
+                      <button onClick={() => setEditingSupplier(null)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => creatingPO === s.id ? setCreatingPO(null) : openCreatePO(s.id)}
