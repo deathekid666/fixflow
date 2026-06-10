@@ -29,6 +29,11 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [search, setSearch] = useState("");
 
+  // Edit
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", amount: "", category: "OTHER", note: "", date: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+
   useEffect(() => { load(); }, [categoryFilter]);
 
   async function load() {
@@ -56,6 +61,34 @@ export default function ExpensesPage() {
       await load();
     }
     setSaving(false);
+  }
+
+  function openEdit(e: Expense) {
+    setEditingId(e.id);
+    setEditForm({
+      title: e.title,
+      amount: String(e.amount),
+      category: e.category,
+      note: e.note ?? "",
+      date: e.date.split("T")[0],
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.title || !editForm.amount) return;
+    setSavingEdit(true);
+    const res = await fetch(`/api/expenses/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(editForm),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setExpenses(prev => prev.map(e => e.id === editingId ? updated : e));
+      setEditingId(null);
+    }
+    setSavingEdit(false);
   }
 
   async function handleDelete(id: string) {
@@ -257,24 +290,75 @@ export default function ExpensesPage() {
               </td></tr>
             )}
             {filtered.map((e, i) => (
-              <tr key={e.id} className="fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
-                style={{ animationDelay: `${i * 30}ms` }}>
-                <td className="px-4 py-3 text-slate-400 text-xs">{new Date(e.date).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{e.title}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CATEGORY_COLORS[e.category] ?? CATEGORY_COLORS.OTHER}`}>
-                    {e.category.replace("_", " ")}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-red-600 dark:text-red-400 font-medium">{e.amount.toFixed(2)} MAD</td>
-                <td className="px-4 py-3 text-slate-500 text-xs">{e.note || "—"}</td>
-                <td className="px-4 py-3 text-slate-500 text-xs">{e.user.name}</td>
-                <td className="px-4 py-3">
-                  {user?.role === "ADMIN" && (
-                    <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300 transition-colors">Delete</button>
-                  )}
-                </td>
-              </tr>
+              <>
+                <tr key={e.id} className="fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                  style={{ animationDelay: `${i * 30}ms` }}>
+                  <td className="px-4 py-3 text-slate-400 text-xs">{new Date(e.date).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{e.title}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CATEGORY_COLORS[e.category] ?? CATEGORY_COLORS.OTHER}`}>
+                      {e.category.replace("_", " ")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-red-600 dark:text-red-400 font-medium">{e.amount.toFixed(2)} MAD</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{e.note || "—"}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{e.user.name}</td>
+                  <td className="px-4 py-3">
+                    {user?.role === "ADMIN" && (
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => editingId === e.id ? setEditingId(null) : openEdit(e)}
+                          className={`text-xs transition-colors ${editingId === e.id ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300 transition-colors">Delete</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                {editingId === e.id && (
+                  <tr key={`edit-${e.id}`} className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
+                    <td colSpan={7} className="px-4 py-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div className="md:col-span-2">
+                          <label className="text-xs text-slate-400 mb-1 block">Title *</label>
+                          <input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">Amount (MAD) *</label>
+                          <input type="number" min="0" value={editForm.amount} onChange={e => setEditForm(p => ({ ...p, amount: e.target.value }))}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">Category</label>
+                          <select value={editForm.category} onChange={e => setEditForm(p => ({ ...p, category: e.target.value }))}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                            {CATEGORIES.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">Date</label>
+                          <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">Note</label>
+                          <input value={editForm.note} onChange={e => setEditForm(p => ({ ...p, note: e.target.value }))}
+                            placeholder="Optional"
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={saveEdit} disabled={savingEdit || !editForm.title || !editForm.amount}
+                          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+                          {savingEdit ? "Saving..." : "Save Changes"}
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="px-4 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
