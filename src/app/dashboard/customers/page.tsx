@@ -19,6 +19,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("totalOrders");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [tierFilter, setTierFilter] = useState<"bronze" | "silver" | "gold" | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
@@ -58,6 +59,13 @@ export default function CustomersPage() {
   const silverCount = customers.filter(c => c.totalOrders >= 3 && c.totalOrders <= 5).length;
   const goldCount   = customers.filter(c => c.totalOrders >= 6).length;
 
+  const displayed = sorted.filter(c => {
+    if (!tierFilter) return true;
+    if (tierFilter === "bronze") return c.totalOrders >= 1 && c.totalOrders <= 2;
+    if (tierFilter === "silver") return c.totalOrders >= 3 && c.totalOrders <= 5;
+    return c.totalOrders >= 6;
+  });
+
   function SortIcon({ k }: { k: SortKey }) {
     if (sortBy !== k) return <span className="text-slate-700 ml-1">↕</span>;
     return <span className="text-blue-400 ml-1">{sortDir === "desc" ? "↓" : "↑"}</span>;
@@ -92,31 +100,46 @@ export default function CustomersPage() {
       </div>
 
       {/* Loyalty tiers */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-orange-600/8 border border-orange-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl leading-none">🥉</span>
-            <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Bronze</p>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{bronzeCount}</p>
-          <p className="text-xs text-slate-500 mt-1">1–2 orders</p>
+      <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-3">
+          {([
+            { key: "bronze" as const, emoji: "🥉", label: "Bronze", count: bronzeCount, range: "1–2 orders", base: "bg-orange-600/8 border-orange-500/20", text: "text-orange-700 dark:text-orange-400" },
+            { key: "silver" as const, emoji: "🥈", label: "Silver", count: silverCount, range: "3–5 orders", base: "bg-slate-400/8 border-slate-400/25",   text: "text-slate-500 dark:text-slate-300" },
+            { key: "gold"   as const, emoji: "🥇", label: "Gold",   count: goldCount,   range: "6+ orders",  base: "bg-yellow-500/10 border-yellow-500/20", text: "text-yellow-600 dark:text-yellow-400" },
+          ]).map(({ key, emoji, label, count, range, base, text }) => {
+            const isActive = tierFilter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTierFilter(isActive ? null : key)}
+                className={`text-left w-full rounded-xl p-4 border transition-all duration-150 ${base} ${
+                  isActive
+                    ? "ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-950 brightness-105"
+                    : "hover:brightness-95 dark:hover:brightness-110"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl leading-none">{emoji}</span>
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${text}`}>{label}</p>
+                  </div>
+                  {isActive && <span className="text-blue-500 text-xs font-bold">✓</span>}
+                </div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{count}</p>
+                <p className="text-xs text-slate-500 mt-1">{range}</p>
+              </button>
+            );
+          })}
         </div>
-        <div className="bg-slate-400/8 border border-slate-400/25 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl leading-none">🥈</span>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide">Silver</p>
+        {tierFilter && (
+          <div className="flex items-center gap-2 text-xs text-slate-500 pt-0.5">
+            <span>Filtering by <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{tierFilter}</span></span>
+            <span>·</span>
+            <button onClick={() => setTierFilter(null)} className="text-blue-500 hover:text-blue-400 transition-colors font-medium">
+              All customers
+            </button>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{silverCount}</p>
-          <p className="text-xs text-slate-500 mt-1">3–5 orders</p>
-        </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl leading-none">🥇</span>
-            <p className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 uppercase tracking-wide">Gold</p>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{goldCount}</p>
-          <p className="text-xs text-slate-500 mt-1">6+ orders</p>
-        </div>
+        )}
       </div>
 
       {/* Search */}
@@ -145,14 +168,20 @@ export default function CustomersPage() {
             </div>
           </div>
         ))}
-        {!loading && sorted.length === 0 && (
+        {!loading && displayed.length === 0 && (
           <div className="py-12 text-center">
             <p className="text-4xl mb-3">👤</p>
-            <p className="text-slate-400 font-medium">{search ? "No customers match your search" : "No customers yet"}</p>
-            <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search" : "Customers appear automatically when you create work orders"}</p>
+            <p className="text-slate-400 font-medium">
+              {tierFilter ? `No ${tierFilter} customers` : search ? "No customers match your search" : "No customers yet"}
+            </p>
+            {tierFilter ? (
+              <button onClick={() => setTierFilter(null)} className="text-blue-400 hover:text-blue-300 transition-colors text-sm mt-1">Show all customers</button>
+            ) : (
+              <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search" : "Customers appear automatically when you create work orders"}</p>
+            )}
           </div>
         )}
-        {sorted.map((c, i) => {
+        {displayed.map((c, i) => {
           const badge = loyaltyTier(c.totalOrders);
           const due = c.totalSpent - c.totalCollected;
           return (
@@ -244,16 +273,22 @@ export default function CustomersPage() {
                 <td className="px-4 py-3.5"><div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" /></td>
               </tr>
             ))}
-            {!loading && sorted.length === 0 && (
+            {!loading && displayed.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center">
                   <p className="text-4xl mb-3">👤</p>
-                  <p className="text-slate-400 font-medium">{search ? "No customers match your search" : "No customers yet"}</p>
-                  <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search" : "Customers appear automatically when you create work orders"}</p>
+                  <p className="text-slate-400 font-medium">
+                    {tierFilter ? `No ${tierFilter} customers` : search ? "No customers match your search" : "No customers yet"}
+                  </p>
+                  {tierFilter ? (
+                    <button onClick={() => setTierFilter(null)} className="text-blue-400 hover:text-blue-300 transition-colors text-sm mt-1">Show all customers</button>
+                  ) : (
+                    <p className="text-slate-600 text-sm mt-1">{search ? "Try a different search" : "Customers appear automatically when you create work orders"}</p>
+                  )}
                 </td>
               </tr>
             )}
-            {sorted.map((c, i) => {
+            {displayed.map((c, i) => {
               const badge = loyaltyTier(c.totalOrders);
               const due = c.totalSpent - c.totalCollected;
               return (
