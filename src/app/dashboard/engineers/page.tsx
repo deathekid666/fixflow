@@ -29,6 +29,12 @@ export default function EngineersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Edit engineer
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", password: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
+
   useEffect(() => { load(); }, []);
 
   async function load() {
@@ -69,6 +75,29 @@ export default function EngineersPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function openEdit(eng: EngineerWithStats) {
+    setEditingId(eng.id);
+    setEditForm({ name: eng.name, email: eng.email, password: "" });
+    setEditError("");
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.name.trim()) return;
+    setSavingEdit(true);
+    setEditError("");
+    const res = await fetch(`/api/users/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(editForm),
+    });
+    const data = await res.json();
+    if (!res.ok) { setEditError(data.error || "Failed to save"); setSavingEdit(false); return; }
+    setEngineers(prev => prev.map(e => e.id === editingId ? { ...e, name: data.name, email: data.email } : e));
+    setEditingId(null);
+    setSavingEdit(false);
   }
 
   async function handleCreate() {
@@ -155,6 +184,10 @@ export default function EngineersPage() {
                         ? "bg-purple-500/20 text-purple-600 dark:text-purple-400"
                         : "bg-blue-500/20 text-blue-600 dark:text-blue-400"
                     }`}>{e.role}</span>
+                    <button onClick={() => editingId === e.id ? setEditingId(null) : openEdit(e)}
+                      className={`text-xs transition-colors ${editingId === e.id ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`}>
+                      {editingId === e.id ? "✕ Close" : "✏ Edit"}
+                    </button>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{e.email}</p>
                 </div>
@@ -163,6 +196,38 @@ export default function EngineersPage() {
                   <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{e.stats.revenue.toFixed(0)} MAD</p>
                 </div>
               </div>
+
+              {/* Inline edit form */}
+              {editingId === e.id && (
+                <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  {editError && <p className="text-red-500 dark:text-red-400 text-xs">{editError}</p>}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Name *</label>
+                      <input value={editForm.name} onChange={ev => setEditForm(p => ({ ...p, name: ev.target.value }))}
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Email</label>
+                      <input value={editForm.email} onChange={ev => setEditForm(p => ({ ...p, email: ev.target.value }))}
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">New Password <span className="text-slate-500">(leave blank to keep)</span></label>
+                      <input type="password" value={editForm.password} onChange={ev => setEditForm(p => ({ ...p, password: ev.target.value }))}
+                        placeholder="••••••••"
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+                      {savingEdit ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                  </div>
+                </div>
+              )}
 
               {/* Stats grid */}
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
