@@ -10,6 +10,7 @@ type SparePart = {
 
 type AlertPart = { id: string; name: string; partNumber: string; stock: number; unitPrice: number };
 type AlertData = { outOfStock: AlertPart[]; lowStock: AlertPart[]; total: number };
+type Supplier = { id: string; name: string };
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -30,12 +31,21 @@ export default function SparePartsPage() {
   const [savingAdj, setSavingAdj] = useState(false);
   const [alertData, setAlertData] = useState<AlertData | null>(null);
   const [alertDismissed, setAlertDismissed] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [reorderSupplierId, setReorderSupplierId] = useState("");
+  const [reorderQty, setReorderQty] = useState("10");
+  const [reorderCost, setReorderCost] = useState("");
+  const [reorderNotes, setReorderNotes] = useState("");
+  const [submittingReorder, setSubmittingReorder] = useState(false);
 
   useEffect(() => {
     fetch("/api/spareparts/alert", { credentials: "include" })
       .then(r => r.json())
       .then((d: AlertData) => { if (d.total > 0) setAlertData(d); })
       .catch(() => {});
+    fetch("/api/suppliers", { credentials: "include" })
+      .then(r => r.json()).then(d => setSuppliers(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -114,6 +124,30 @@ export default function SparePartsPage() {
     setAdjQuantity(""); setAdjType("ADD"); setAdjReason(""); setAdjPrice("");
     await load();
     setSavingAdj(false);
+  }
+
+  function openReorder(p: SparePart) {
+    setReorderingId(p.id);
+    setReorderQty("10");
+    setReorderCost(p.unitPrice.toFixed(2));
+    setReorderSupplierId("");
+    setReorderNotes("");
+  }
+
+  async function submitReorder(p: SparePart) {
+    if (!reorderSupplierId || !reorderQty || !reorderCost) return;
+    setSubmittingReorder(true);
+    await fetch("/api/purchase-orders", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        supplierId: reorderSupplierId,
+        notes: reorderNotes || null,
+        items: [{ sparePartId: p.id, quantity: parseInt(reorderQty), unitCost: parseFloat(reorderCost) }],
+      }),
+    });
+    setReorderingId(null);
+    setSubmittingReorder(false);
   }
 
   const outOfStock = parts.filter(p => p.stock === 0);
@@ -251,7 +285,7 @@ export default function SparePartsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
-              {["Name", "Part #", "Unit Price", "Stock", "Status", ""].map(h => (
+              {["Name", "Part #", "Unit Price", "Stock", "Status", "Actions"].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
@@ -312,14 +346,79 @@ export default function SparePartsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {user?.role === "ADMIN" && (
-                      <button onClick={() => adjustingId === p.id ? setAdjustingId(null) : openAdjust(p)}
-                        className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${adjustingId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-blue-600/20 hover:bg-blue-600/40 text-blue-600 dark:text-blue-400"}`}>
-                        {adjustingId === p.id ? "✕ Close" : "✏ Edit"}
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {user?.role === "ADMIN" && (
+                        <button onClick={() => adjustingId === p.id ? setAdjustingId(null) : openAdjust(p)}
+                          className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${adjustingId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-blue-600/20 hover:bg-blue-600/40 text-blue-600 dark:text-blue-400"}`}>
+                          {adjustingId === p.id ? "✕ Close" : "✏ Edit"}
+                        </button>
+                      )}
+                      {(p.stock === 0 || p.stock < LOW_STOCK_THRESHOLD) && (
+                        <button onClick={() => reorderingId === p.id ? setReorderingId(null) : openReorder(p)}
+                          className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${reorderingId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-orange-500/20 hover:bg-orange-500/40 text-orange-600 dark:text-orange-400"}`}>
+                          {reorderingId === p.id ? "✕ Cancel" : "📦 Reorder"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
+
+                {/* Inline Reorder row */}
+                {reorderingId === p.id && (
+                  <tr key={`reorder-${p.id}`} className="border-b border-orange-200 dark:border-orange-800/30 bg-orange-50 dark:bg-orange-950/10">
+                    <td colSpan={6} className="px-4 py-4">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">Quick Reorder — {p.name}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Supplier *</label>
+                            <select
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                              value={reorderSupplierId} onChange={e => setReorderSupplierId(e.target.value)}>
+                              <option value="">Select supplier...</option>
+                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                            {suppliers.length === 0 && (
+                              <p className="text-xs text-slate-400 mt-1">No suppliers — <a href="/dashboard/suppliers" className="text-blue-500 underline">add one first</a></p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Quantity</label>
+                            <input type="number" min="1"
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                              value={reorderQty} onChange={e => setReorderQty(e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Unit Cost (MAD)</label>
+                            <input type="number" min="0" step="0.01"
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                              value={reorderCost} onChange={e => setReorderCost(e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Notes</label>
+                            <input
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                              placeholder="Optional" value={reorderNotes} onChange={e => setReorderNotes(e.target.value)} />
+                          </div>
+                        </div>
+                        {reorderQty && reorderCost && (
+                          <p className="text-xs text-slate-500">
+                            Total: <strong className="text-slate-900 dark:text-white">{(parseInt(reorderQty || "0") * parseFloat(reorderCost || "0")).toFixed(2)} MAD</strong>
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <button onClick={() => submitReorder(p)} disabled={submittingReorder || !reorderSupplierId || !reorderQty || !reorderCost}
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                            {submittingReorder ? "Creating..." : "Create Draft Purchase Order"}
+                          </button>
+                          <button onClick={() => setReorderingId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
 
                 {/* Inline edit/adjust row */}
                 {adjustingId === p.id && (

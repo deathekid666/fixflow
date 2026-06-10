@@ -30,6 +30,7 @@ model User {
   payments         Payment[]
   expenses         Expense[]
   customerNotes    CustomerNote[]
+  purchaseOrders   PurchaseOrder[]
 }
 
 model Shop {
@@ -45,12 +46,14 @@ model Shop {
   onboardingComplete Boolean  @default(false)
   createdAt          DateTime @default(now())
 
-  users         User[]
-  workOrders    WorkOrder[]
-  spareParts    SparePart[]
-  shifts        Shift[]
-  expenses      Expense[]
-  customerNotes CustomerNote[]
+  users          User[]
+  workOrders     WorkOrder[]
+  spareParts     SparePart[]
+  shifts         Shift[]
+  expenses       Expense[]
+  customerNotes  CustomerNote[]
+  suppliers      Supplier[]
+  purchaseOrders PurchaseOrder[]
 }
 
 model WorkOrder {
@@ -176,8 +179,9 @@ model SparePart {
 
   shopId      String
   shop        Shop              @relation(fields: [shopId], references: [id])
-  usages      WorkOrderPart[]
-  adjustments StockAdjustment[]
+  usages             WorkOrderPart[]
+  adjustments        StockAdjustment[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -363,4 +367,47 @@ model Expense {
 
   shop Shop @relation(fields: [shopId], references: [id])
   user User @relation(fields: [userId], references: [id])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  shopId    String
+  createdAt DateTime @default(now())
+
+  shop           Shop            @relation(fields: [shopId], references: [id])
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  supplierId  String
+  shopId      String
+  userId      String
+  status      String   @default("DRAFT")
+  notes       String?
+  totalAmount Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  supplier Supplier           @relation(fields: [supplierId], references: [id])
+  shop     Shop               @relation(fields: [shopId], references: [id])
+  creator  User               @relation(fields: [userId], references: [id])
+  items    PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  sparePartId     String
+  quantity        Int
+  unitCost        Float
+  totalCost       Float
+  createdAt       DateTime @default(now())
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  sparePart     SparePart     @relation(fields: [sparePartId], references: [id])
 }
