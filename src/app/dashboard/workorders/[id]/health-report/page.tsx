@@ -40,7 +40,7 @@ export default function HealthReportPage({ params }: { params: { id: string } })
     <div className="min-h-screen bg-slate-950 p-6">
       {/* Action buttons - hidden on print */}
       <div className="flex gap-3 mb-6 print:hidden">
-        <button onClick={() => router.back()}
+        <button onClick={() => window.history.back()}
           className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
           ← Back
         </button>
