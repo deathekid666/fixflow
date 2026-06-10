@@ -39,6 +39,11 @@ export default function SparePartsPage() {
   const [reorderNotes, setReorderNotes] = useState("");
   const [submittingReorder, setSubmittingReorder] = useState(false);
 
+  // Edit part details
+  const [editingPartId, setEditingPartId] = useState<string | null>(null);
+  const [editPartForm, setEditPartForm] = useState({ name: "", partNumber: "", description: "", unitPrice: "" });
+  const [savingPart, setSavingPart] = useState(false);
+
   useEffect(() => {
     fetch("/api/spareparts/alert", { credentials: "include" })
       .then(r => r.json())
@@ -124,6 +129,33 @@ export default function SparePartsPage() {
     setAdjQuantity(""); setAdjType("ADD"); setAdjReason(""); setAdjPrice("");
     await load();
     setSavingAdj(false);
+  }
+
+  function openEditPart(p: SparePart) {
+    setEditingPartId(p.id);
+    setEditPartForm({ name: p.name, partNumber: p.partNumber ?? "", description: p.description ?? "", unitPrice: p.unitPrice.toFixed(2) });
+  }
+
+  async function saveEditPart() {
+    if (!editingPartId || !editPartForm.name.trim() || !editPartForm.unitPrice) return;
+    setSavingPart(true);
+    const res = await fetch(`/api/spareparts/${editingPartId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name: editPartForm.name.trim(),
+        partNumber: editPartForm.partNumber.trim() || null,
+        description: editPartForm.description.trim() || null,
+        unitPrice: parseFloat(editPartForm.unitPrice),
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setParts(prev => prev.map(p => p.id === editingPartId ? { ...p, ...updated } : p));
+      setEditingPartId(null);
+    }
+    setSavingPart(false);
   }
 
   function openReorder(p: SparePart) {
@@ -348,10 +380,16 @@ export default function SparePartsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {user?.role === "ADMIN" && (
-                        <button onClick={() => adjustingId === p.id ? setAdjustingId(null) : openAdjust(p)}
-                          className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${adjustingId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-blue-600/20 hover:bg-blue-600/40 text-blue-600 dark:text-blue-400"}`}>
-                          {adjustingId === p.id ? "✕ Close" : "✏ Edit"}
-                        </button>
+                        <>
+                          <button onClick={() => editingPartId === p.id ? setEditingPartId(null) : openEditPart(p)}
+                            className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${editingPartId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-slate-200/80 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300"}`}>
+                            {editingPartId === p.id ? "✕ Close" : "✏ Edit"}
+                          </button>
+                          <button onClick={() => adjustingId === p.id ? setAdjustingId(null) : openAdjust(p)}
+                            className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${adjustingId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-blue-600/20 hover:bg-blue-600/40 text-blue-600 dark:text-blue-400"}`}>
+                            {adjustingId === p.id ? "✕ Close" : "Adjust Stock"}
+                          </button>
+                        </>
                       )}
                       {(p.stock === 0 || p.stock < LOW_STOCK_THRESHOLD) && (
                         <button onClick={() => reorderingId === p.id ? setReorderingId(null) : openReorder(p)}
@@ -362,6 +400,48 @@ export default function SparePartsPage() {
                     </div>
                   </td>
                 </tr>
+
+                {/* Inline Edit row */}
+                {editingPartId === p.id && (
+                  <tr key={`edit-${p.id}`} className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
+                    <td colSpan={6} className="px-4 py-4">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Edit Part — {p.name}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="md:col-span-2">
+                            <label className="text-xs text-slate-500 mb-1 block">Name *</label>
+                            <input value={editPartForm.name} onChange={e => setEditPartForm(prev => ({ ...prev, name: e.target.value }))}
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Part Number</label>
+                            <input value={editPartForm.partNumber} onChange={e => setEditPartForm(prev => ({ ...prev, partNumber: e.target.value }))}
+                              placeholder="e.g. SCR-AN10D"
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 mb-1 block">Unit Price (MAD) *</label>
+                            <input type="number" min="0" step="0.01" value={editPartForm.unitPrice} onChange={e => setEditPartForm(prev => ({ ...prev, unitPrice: e.target.value }))}
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                          </div>
+                          <div className="md:col-span-4">
+                            <label className="text-xs text-slate-500 mb-1 block">Description</label>
+                            <input value={editPartForm.description} onChange={e => setEditPartForm(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="Optional description"
+                              className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={saveEditPart} disabled={savingPart || !editPartForm.name.trim() || !editPartForm.unitPrice}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                            {savingPart ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button onClick={() => setEditingPartId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
 
                 {/* Inline Reorder row */}
                 {reorderingId === p.id && (
