@@ -221,7 +221,71 @@ export default function WarrantiesPage() {
         </div>
       )}
 
-      {loading && <div className="py-16 text-center text-slate-500 text-sm">Loading warranties...</div>}
+      {loading && (
+        <>
+          {/* Skeleton stats */}
+          <div className="grid grid-cols-3 gap-3 animate-pulse">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2">
+                <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded" />
+                <div className="h-7 w-10 bg-slate-200 dark:bg-slate-700 rounded" />
+                <div className="h-2 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+              </div>
+            ))}
+          </div>
+          {/* Skeleton tab bar */}
+          <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 animate-pulse pb-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className={`h-8 bg-slate-200 dark:bg-slate-700 rounded-lg ${["w-20","w-28","w-20"][i]}`} />
+            ))}
+          </div>
+          {/* Skeleton cards (mobile) */}
+          <div className="md:hidden space-y-3 animate-pulse">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+                <div className="flex justify-between gap-2">
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className={`h-4 bg-slate-200 dark:bg-slate-700 rounded ${["w-28","w-32","w-24"][i]}`} />
+                    <div className="h-2 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                  <div className="h-5 w-12 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                </div>
+                <div className="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-14 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+                  <div className="h-14 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Skeleton table (desktop) */}
+          <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  {["Order #","Customer","Device","Warranty Period","Remaining","Assigned",""].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(4)].map((_, i) => (
+                  <tr key={i} className="border-b border-slate-200/50 dark:border-slate-800/50 animate-pulse">
+                    <td className="px-4 py-3"><div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="px-4 py-3 space-y-1.5"><div className={`h-3 bg-slate-200 dark:bg-slate-700 rounded ${["w-28","w-32","w-24","w-30"][i]}`} /><div className="h-2 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="px-4 py-3 space-y-1.5"><div className={`h-3 bg-slate-200 dark:bg-slate-800 rounded ${["w-20","w-24","w-16","w-22"][i]}`} /><div className="h-2 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-3 w-32 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {!loading && data && (
         <>
