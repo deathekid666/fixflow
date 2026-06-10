@@ -45,6 +45,18 @@ export default function CustomersPage() {
     setEditForm({ name: c.name, email: c.email ?? "" });
   }
 
+  async function handleDelete(phone: string, name: string, ev: React.MouseEvent) {
+    ev.stopPropagation();
+    if (!confirm(`Delete ${name} and all their work order history? This cannot be undone.`)) return;
+    const res = await fetch("/api/customers", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ phone }),
+    });
+    if (res.ok) setCustomers(prev => prev.filter(c => c.phone !== phone));
+  }
+
   async function saveEdit(e: React.MouseEvent) {
     e.stopPropagation();
     if (!editingPhone || !editForm.name.trim()) return;
@@ -234,6 +246,8 @@ export default function CustomersPage() {
                     className={`text-xs transition-colors ${isEditing ? "text-blue-500 font-medium" : "text-slate-400 hover:text-blue-500"}`}>
                     {isEditing ? "✕" : "Edit"}
                   </button>
+                  <button onClick={e => handleDelete(c.phone, c.name, e)}
+                    className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
                   <span className="text-xs text-blue-400" onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}>View →</span>
                 </div>
               </div>
@@ -387,6 +401,8 @@ export default function CustomersPage() {
                           className={`text-xs transition-colors ${isEditing ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`}>
                           Edit
                         </button>
+                        <button onClick={e => handleDelete(c.phone, c.name, e)}
+                          className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
                         <button onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}
                           className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View →</button>
                       </div>
