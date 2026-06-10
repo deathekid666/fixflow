@@ -43,6 +43,12 @@ export default function NewWorkOrderPage() {
   const [intakePhotos, setIntakePhotos] = useState<{ file: File; preview: string }[]>([]);
   const [photoError, setPhotoError] = useState(false);
 
+  type AiEstimate = { duration: string; parts: string[]; costRange: string; successRate: number };
+  const [aiEstimate, setAiEstimate] = useState<AiEstimate | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const aiTimer = useRef<NodeJS.Timeout | null>(null);
+
   const [form, setForm] = useState({
     deviceBrand: "", deviceModel: "", serialNumber: "", imei: "",
     warrantyStart: "", warrantyEnd: "", isUnderWarranty: false,
@@ -80,6 +86,29 @@ export default function NewWorkOrderPage() {
     phoneTimer.current = setTimeout(() => lookupCustomer(form.customerPhone), 600);
     return () => { if (phoneTimer.current) clearTimeout(phoneTimer.current); };
   }, [form.customerPhone]);
+
+  useEffect(() => {
+    if (aiTimer.current) clearTimeout(aiTimer.current);
+    if (!form.deviceBrand.trim() || !form.deviceModel.trim() || form.faultDescription.trim().length < 10) {
+      setAiEstimate(null); setAiLoading(false); setAiError(""); return;
+    }
+    setAiEstimate(null); setAiLoading(true); setAiError("");
+    aiTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/ai/repair-estimate", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ brand: form.deviceBrand, model: form.deviceModel, faultDescription: form.faultDescription }),
+        });
+        if (res.status === 503) { setAiLoading(false); return; }
+        const data = await res.json();
+        if (!res.ok) { setAiError("Estimate unavailable"); setAiLoading(false); return; }
+        setAiEstimate(data);
+      } catch { setAiError("Could not reach AI"); }
+      finally { setAiLoading(false); }
+    }, 900);
+    return () => { if (aiTimer.current) clearTimeout(aiTimer.current); };
+  }, [form.deviceBrand, form.deviceModel, form.faultDescription]);
 
   async function lookupCustomer(phone: string) {
     setLookingUp(true);
@@ -379,6 +408,75 @@ export default function NewWorkOrderPage() {
             className={INPUT + " resize-none"}
             value={form.faultDescription} onChange={e => set("faultDescription", e.target.value)} />
         </div>
+
+        {/* AI Repair Estimate */}
+        {(aiLoading || aiEstimate || aiError) && (
+          <div className="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50/60 dark:bg-blue-950/20 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">✨</span>
+                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">AI Repair Estimate</span>
+              </div>
+              <span className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-500 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">beta</span>
+            </div>
+            {aiLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="h-2.5 w-20 bg-blue-200 dark:bg-blue-800/60 rounded animate-pulse" />
+                    <div className="h-4 bg-blue-200 dark:bg-blue-800/60 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : aiError ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500">Estimate unavailable — {aiError}</p>
+            ) : aiEstimate ? (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Est. Duration</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">⏱ {aiEstimate.duration}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Cost Range</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">💰 {aiEstimate.costRange}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Likely Parts</p>
+                    {aiEstimate.parts.length === 0 ? (
+                      <p className="text-xs text-slate-400">None expected</p>
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {aiEstimate.parts.map((p, i) => (
+                          <li key={i} className="text-xs text-slate-700 dark:text-slate-300">🔧 {p}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">Success Rate</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-blue-200 dark:bg-blue-900/60 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            aiEstimate.successRate >= 80 ? "bg-green-500" :
+                            aiEstimate.successRate >= 60 ? "bg-yellow-500" : "bg-orange-500"
+                          }`}
+                          style={{ width: `${aiEstimate.successRate}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 w-9 text-right">{aiEstimate.successRate}%</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/30">
+                  AI estimates are indicative only and may vary based on actual device condition.
+                </p>
+              </>
+            ) : null}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="Appearance" value={form.appearance} onChange={v => set("appearance", v)} placeholder="e.g. Good, Scratched" />
           <Field label="Repair Type" value={form.repairType} onChange={v => set("repairType", v)} placeholder="e.g. Screen Replacement" />
