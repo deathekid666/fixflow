@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type TrackData = {
   id: string;
@@ -43,6 +43,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   const [chatMessages, setChatMessages] = useState<{ id: string; message: string; senderType: string; createdAt: string }[]>([]);
   const [newMsg, setNewMsg] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
@@ -54,12 +55,39 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
       .finally(() => setLoading(false));
   }, []);
 
+  // Poll status every 3 seconds
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
+        .then(r => r.json())
+        .then(d => { if (!d.error) setData(d); });
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Load messages once data.id is known
   useEffect(() => {
     if (!data?.id) return;
     fetch(`/api/workorders/${data.id}/messages`)
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setChatMessages(d); });
   }, [data?.id]);
+
+  // Poll messages every 3 seconds
+  useEffect(() => {
+    if (!data?.id) return;
+    const id = setInterval(() => {
+      fetch(`/api/workorders/${data.id}/messages`)
+        .then(r => r.json())
+        .then(d => { if (Array.isArray(d)) setChatMessages(d); });
+    }, 3000);
+    return () => clearInterval(id);
+  }, [data?.id]);
+
+  // Auto-scroll chat on new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   async function sendChat() {
     if (!newMsg.trim() || !data?.id) return;
@@ -231,25 +259,6 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
               </div>
             )}
 
-            {/* Timeline */}
-            {data.logs && data.logs.length > 0 && (
-              <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
-                <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Timeline</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {data.logs.map((log, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6", marginTop: 5, flexShrink: 0 }} />
-                      <div>
-                        <p style={{ margin: 0, fontSize: 13, color: "white", fontWeight: 500 }}>{log.action.replace(/_/g, " ")}</p>
-                        {log.description && <p style={{ margin: "2px 0 0", fontSize: 12, color: "#94a3b8" }}>{log.description}</p>}
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#475569" }}>{new Date(log.createdAt).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Rating */}
             {data.status === "DELIVERED" && !data.rating && !submitted && (
               <div style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 16, padding: 20 }}>
@@ -315,47 +324,66 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
             )}
 
             {/* Chat with shop */}
-            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
-              <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Messages</p>
-              {chatMessages.length === 0 ? (
-                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#64748b" }}>No messages yet. Send us a message below.</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14, maxHeight: 240, overflowY: "auto" }}>
-                  {chatMessages.map(msg => {
-                    const isShop = msg.senderType === "SHOP";
-                    return (
-                      <div key={msg.id} style={{ display: "flex", justifyContent: isShop ? "flex-start" : "flex-end" }}>
-                        <div style={{
-                          maxWidth: "80%",
-                          background: isShop ? "rgba(37,99,235,0.25)" : "rgba(255,255,255,0.1)",
-                          border: isShop ? "1px solid rgba(37,99,235,0.4)" : "1px solid rgba(255,255,255,0.15)",
-                          borderRadius: 12,
-                          padding: "8px 12px",
-                        }}>
-                          <p style={{ margin: 0, fontSize: 13, color: "white" }}>{msg.message}</p>
-                          <p style={{ margin: "4px 0 0", fontSize: 10, color: "#64748b" }}>
-                            {isShop ? "Shop" : "You"} · {new Date(msg.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, overflow: "hidden" }}>
+              {/* Chat header */}
+              <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(37,99,235,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔧</div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "white" }}>{data.shop?.name ?? "Repair Shop"}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#22c55e" }}>● online</p>
                 </div>
-              )}
-              <div style={{ display: "flex", gap: 8 }}>
+              </div>
+
+              {/* Messages area */}
+              <div style={{ height: 280, overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 8, background: "rgba(0,0,0,0.2)" }}>
+                {chatMessages.length === 0 && (
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <p style={{ fontSize: 13, color: "#475569", textAlign: "center" }}>
+                      No messages yet.{"\n"}Send us a message below!
+                    </p>
+                  </div>
+                )}
+                {chatMessages.map(msg => {
+                  const isCustomer = msg.senderType === "CUSTOMER";
+                  const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <div key={msg.id} style={{ display: "flex", justifyContent: isCustomer ? "flex-end" : "flex-start" }}>
+                      <div style={{
+                        maxWidth: "78%",
+                        background: isCustomer ? "#2563eb" : "rgba(255,255,255,0.1)",
+                        borderRadius: isCustomer ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                        padding: "9px 13px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                      }}>
+                        {!isCustomer && (
+                          <p style={{ margin: "0 0 3px", fontSize: 11, color: "#60a5fa", fontWeight: 600 }}>{data.shop?.name ?? "Shop"}</p>
+                        )}
+                        <p style={{ margin: 0, fontSize: 14, color: "white", lineHeight: 1.45, wordBreak: "break-word" }}>{msg.message}</p>
+                        <p style={{ margin: "4px 0 0", fontSize: 10, color: isCustomer ? "rgba(255,255,255,0.55)" : "#475569", textAlign: "right" }}>
+                          {time} {isCustomer && "✓"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input */}
+              <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8, alignItems: "center", background: "rgba(0,0,0,0.15)" }}>
                 <input
                   value={newMsg}
                   onChange={e => setNewMsg(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                   placeholder="Type a message..."
                   style={{
                     flex: 1,
-                    background: "rgba(255,255,255,0.07)",
+                    background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 10,
-                    padding: "10px 12px",
+                    borderRadius: 24,
+                    padding: "10px 16px",
                     color: "white",
-                    fontSize: 13,
+                    fontSize: 14,
                     outline: "none",
                   }}
                 />
@@ -363,17 +391,22 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                   onClick={sendChat}
                   disabled={sendingMsg || !newMsg.trim()}
                   style={{
-                    padding: "10px 18px",
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
                     background: sendingMsg || !newMsg.trim() ? "rgba(37,99,235,0.4)" : "#2563eb",
                     border: "none",
-                    borderRadius: 10,
                     color: "white",
-                    fontSize: 13,
-                    fontWeight: 600,
+                    fontSize: 18,
                     cursor: sendingMsg || !newMsg.trim() ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "background 0.15s",
                   }}
                 >
-                  {sendingMsg ? "..." : "Send"}
+                  {sendingMsg ? "·" : "↑"}
                 </button>
               </div>
             </div>
