@@ -1,9 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/context/ThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
-import type { Lang } from "@/context/LanguageContext";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -21,14 +19,12 @@ type Notification = {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, refresh } = useAuth();
-  const { theme, toggle } = useTheme();
-  const { lang, setLang, t } = useLanguage();
+  const { lang, t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   useEffect(() => { refresh(); }, []);
 
@@ -54,27 +50,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user]);
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
-
-  useEffect(() => {
-    function handleBeforeInstall(e: Event) {
-      e.preventDefault();
-      setInstallPrompt(e);
-    }
-    function handleInstalled() { setInstallPrompt(null); }
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-    window.addEventListener("appinstalled", handleInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      window.removeEventListener("appinstalled", handleInstalled);
-    };
-  }, []);
-
-  async function handleInstall() {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === "accepted") setInstallPrompt(null);
-  }
 
   async function loadNotifications() {
     const res = await fetch("/api/notifications", { credentials: "include" });
@@ -132,7 +107,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const unread = notifications.filter(n => !n.read).length;
 
-  // Sidebar slides in from left in LTR, from right in RTL
   const slideClass = sidebarOpen
     ? "translate-x-0"
     : lang === "ar"
@@ -151,7 +125,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar — left in LTR, right in RTL */}
+      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50
         w-56 flex-shrink-0 bg-white dark:bg-slate-900
@@ -160,10 +134,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ${slideClass}
       `}>
         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
+          <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity">
             <div className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">FixFlow</div>
             <div className="text-xs text-slate-500 mt-0.5">{user.name}</div>
-          </div>
+          </button>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none">✕</button>
         </div>
 
@@ -185,39 +159,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1">
-          {/* Language switcher */}
-          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg mb-2">
-            {(["en", "fr", "ar"] as Lang[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                className={`flex-1 text-xs py-1 rounded-md font-medium transition-colors ${
-                  lang === l
-                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                {l === "en" ? "EN" : l === "fr" ? "FR" : "ع"}
-              </button>
-            ))}
-          </div>
-
           <button onClick={() => setShowNotifications(!showNotifications)}
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <div className="flex items-center gap-3"><span>🔔</span>{t("notifications")}</div>
             {unread > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>}
           </button>
-          <button onClick={toggle}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <span>{theme === "dark" ? "☀️" : "🌙"}</span>
-            {theme === "dark" ? t("lightMode") : t("darkMode")}
-          </button>
-          {installPrompt && (
-            <button onClick={handleInstall}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-              <span>⬇️</span>{t("installApp")}
-            </button>
-          )}
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span>🚪</span>{t("logout")}
@@ -235,15 +181,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
           <span className="text-slate-900 dark:text-white font-semibold text-sm">FixFlow</span>
           <div className="flex items-center gap-1">
-            {installPrompt && (
-              <button onClick={handleInstall}
-                className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors">
-                <span>⬇</span> {t("installApp")}
-              </button>
-            )}
-            <button onClick={toggle} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-base leading-none">
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
             <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white relative p-1">
               <span className="text-lg">🔔</span>
               {unread > 0 && (

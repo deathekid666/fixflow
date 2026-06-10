@@ -1,8 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
+import { useLanguage } from "@/context/LanguageContext";
+import type { Lang } from "@/context/LanguageContext";
 
-type Tab = "profile" | "shop" | "security";
+type Tab = "profile" | "shop" | "security" | "preferences";
 
 type Shop = {
   id: string; name: string; phone: string | null;
@@ -24,6 +27,8 @@ function Alert({ type, msg }: { type: "success" | "error"; msg: string }) {
 
 export default function SettingsPage() {
   const { user, refresh } = useAuth();
+  const { theme, toggle } = useTheme();
+  const { lang, setLang } = useLanguage();
   const logoRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("profile");
 
@@ -126,6 +131,7 @@ export default function SettingsPage() {
     { key: "profile", label: "Profile", icon: "👤" },
     { key: "shop", label: "Shop", icon: "🏪" },
     { key: "security", label: "Security", icon: "🔒" },
+    { key: "preferences", label: "Preferences", icon: "🎨" },
   ];
 
   return (
@@ -168,13 +174,13 @@ export default function SettingsPage() {
       <div className="flex gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
               tab === t.key
                 ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             }`}>
             <span className="text-base">{t.icon}</span>
-            <span>{t.label}</span>
+            <span className="hidden sm:inline">{t.label}</span>
           </button>
         ))}
       </div>
@@ -263,6 +269,53 @@ export default function SettingsPage() {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* Preferences tab */}
+      {tab === "preferences" && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-6">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Preferences</h2>
+
+          {/* Dark mode toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">Dark Mode</p>
+              <p className="text-xs text-slate-500 mt-0.5">{theme === "dark" ? "Dark theme is on" : "Light theme is on"}</p>
+            </div>
+            <button
+              onClick={toggle}
+              role="switch"
+              aria-checked={theme === "dark"}
+              className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                theme === "dark" ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
+              }`}
+            >
+              <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                theme === "dark" ? "translate-x-5" : "translate-x-0"
+              }`} />
+            </button>
+          </div>
+
+          {/* Language switcher */}
+          <div>
+            <p className="text-sm font-medium text-slate-900 dark:text-white mb-3">Language</p>
+            <div className="grid grid-cols-3 gap-2">
+              {([["en", "English"], ["fr", "Français"], ["ar", "العربية"]] as [Lang, string][]).map(([l, label]) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className={`py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                    lang === l
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
