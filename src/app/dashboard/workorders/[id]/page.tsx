@@ -111,6 +111,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     load();
     loadMessages();
     fetch("/api/users", { credentials: "include" }).then(r => r.json()).then(setEngineers).catch(() => {});
@@ -124,10 +125,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [order?.startedAt, order?.completedAt]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   useEffect(() => {
     const pollId = setInterval(loadMessages, 3000);
@@ -152,7 +149,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setNewMessage("");
     await loadMessages();
     setSendingMessage(false);
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
   async function load() {
