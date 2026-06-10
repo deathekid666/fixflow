@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo] = useState({ limit: 50, current: 50 });
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => { setPage(1); }, [search, statusFilter]);
   useEffect(() => {
@@ -53,7 +54,15 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch("/api/users", { credentials: "include" })
       .then(r => r.json()).then(d => setEngineers(Array.isArray(d) ? d : [])).catch(() => {});
+    loadUnread();
+    const pollUnread = setInterval(loadUnread, 15000);
+    return () => clearInterval(pollUnread);
   }, []);
+
+  async function loadUnread() {
+    const res = await fetch("/api/messages/unread", { credentials: "include" });
+    if (res.ok) setUnreadCounts(await res.json());
+  }
 
   async function load() {
     setLoading(true);
@@ -319,6 +328,11 @@ export default function DashboardPage() {
                   <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
                   {o.isUnderWarranty && <span className="ml-1.5 text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
                   {o.isOverdue && <span className="ml-1 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
+                  {unreadCounts[o.id] > 0 && (
+                    <span className="ml-1.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                      {unreadCounts[o.id]}
+                    </span>
+                  )}
                 </div>
               </div>
               <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${STATUS_COLORS[o.status]}`}>{o.status}</span>
@@ -395,9 +409,16 @@ export default function DashboardPage() {
                     className="rounded border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-pointer" />
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
-                  {o.isUnderWarranty && <span className="ml-2 text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
-                  {o.isOverdue && <span className="ml-1 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
+                    {o.isUnderWarranty && <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
+                    {o.isOverdue && <span className="text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
+                    {unreadCounts[o.id] > 0 && (
+                      <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                        💬 {unreadCounts[o.id]}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="text-slate-900 dark:text-white font-medium">{o.customerName}</div>

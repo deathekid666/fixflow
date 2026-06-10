@@ -4,6 +4,22 @@ import { requireAuth } from "@/lib/requireAuth";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+  const user = requireAuth(req);
+
+  if (user) {
+    // Shop is reading — mark all CUSTOMER messages as read
+    await prisma.customerMessage.updateMany({
+      where: { workOrderId: params.id, senderType: "CUSTOMER", read: false },
+      data: { read: true },
+    });
+  } else {
+    // Customer is reading — mark all SHOP messages as read
+    await prisma.customerMessage.updateMany({
+      where: { workOrderId: params.id, senderType: "SHOP", read: false },
+      data: { read: true },
+    });
+  }
+
   const messages = await prisma.customerMessage.findMany({
     where: { workOrderId: params.id },
     orderBy: { createdAt: "asc" },

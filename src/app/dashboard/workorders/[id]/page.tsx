@@ -11,7 +11,7 @@ type Attachment = { id: string; filename: string; path: string; tag: string; cre
 type Bounce = { id: string; reason: string; scenario: string; createdAt: string };
 type Payment = { id: string; amount: number; method: string; note: string | null; createdAt: string; collector: { name: string } };
 type CheckItem = { id: string; item: string; status: string; note: string | null };
-type CustomerMessage = { id: string; message: string; senderType: string; createdAt: string };
+type CustomerMessage = { id: string; message: string; senderType: string; read: boolean; createdAt: string };
 
 type WorkOrder = {
   id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
@@ -682,73 +682,95 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           {/* Customer Messages */}
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-900">
-              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm flex-shrink-0">👤</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none">{order.customerName}</p>
-                <p className="text-xs text-slate-400 mt-0.5">Customer · {order.customerPhone}</p>
-              </div>
-              {messages.length > 0 && <span className="text-xs text-slate-400 flex-shrink-0">{messages.length} msg{messages.length !== 1 ? "s" : ""}</span>}
-            </div>
-
-            {/* Messages */}
-            <div className="h-80 overflow-y-auto flex flex-col gap-1.5 px-4 py-4 bg-slate-50 dark:bg-[#0d1117]">
-              {messages.length === 0 && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
-                  <span className="text-2xl">💬</span>
-                  <p className="text-xs text-slate-400">No messages yet.</p>
-                  <p className="text-xs text-slate-500">Send a message to the customer below.</p>
-                </div>
-              )}
-              {messages.map((msg, i) => {
-                const isShop = msg.senderType === "SHOP";
-                const time = new Date(msg.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
-                const prevSame = i > 0 && messages[i - 1].senderType === msg.senderType;
-                return (
-                  <div key={msg.id} className={`flex flex-col ${isShop ? "items-end" : "items-start"} ${prevSame ? "mt-0.5" : "mt-3"}`}>
-                    {!prevSame && (
-                      <span className={`text-[10px] font-semibold mb-1 px-1 ${isShop ? "text-blue-500 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`}>
-                        {isShop ? "You" : "Customer"}
-                      </span>
-                    )}
-                    <div className={`max-w-[72%] px-3.5 py-2 text-sm leading-relaxed break-words shadow-sm ${
-                      isShop
-                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
-                        : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm"
-                    }`}>
-                      {msg.message}
+          {(() => {
+            const unreadFromCustomer = messages.filter(m => m.senderType === "CUSTOMER" && !m.read).length;
+            return (
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-900">
+                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm flex-shrink-0">👤</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none">Customer Messages</p>
+                      {unreadFromCustomer > 0 && (
+                        <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                          {unreadFromCustomer} new
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[9px] text-slate-400 mt-0.5 px-1">{time}</span>
+                    <p className="text-xs text-slate-400 mt-0.5">{order.customerName} · {order.customerPhone}</p>
                   </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
+                  {messages.length > 0 && <span className="text-xs text-slate-400 flex-shrink-0">{messages.length} total</span>}
+                </div>
 
-            {/* Input */}
-            <div className="px-3 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900">
-              <input
-                className="flex-1 bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500 rounded-full px-4 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
-                placeholder="Message customer..."
-                value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={sendingMessage || !newMessage.trim()}
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-white text-base disabled:opacity-30 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-500 active:scale-95"
-              >
-                {sendingMessage ? (
-                  <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <svg className="w-4 h-4 translate-x-px" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                )}
-              </button>
-            </div>
-          </section>
+                {/* Messages */}
+                <div className="h-80 overflow-y-auto flex flex-col gap-1.5 px-4 py-4 bg-slate-50 dark:bg-[#0d1117]">
+                  {messages.length === 0 && (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
+                      <span className="text-2xl">💬</span>
+                      <p className="text-xs text-slate-400">No messages yet.</p>
+                      <p className="text-xs text-slate-500">Send a message to the customer below.</p>
+                    </div>
+                  )}
+                  {messages.map((msg, i) => {
+                    const isShop = msg.senderType === "SHOP";
+                    const time = new Date(msg.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+                    const prevSame = i > 0 && messages[i - 1].senderType === msg.senderType;
+                    const isUnreadCustomer = !isShop && !msg.read;
+                    return (
+                      <div key={msg.id} className={`flex flex-col ${isShop ? "items-end" : "items-start"} ${prevSame ? "mt-0.5" : "mt-3"}`}>
+                        {!prevSame && (
+                          <span className={`text-[10px] font-semibold mb-1 px-1 ${isShop ? "text-blue-500 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`}>
+                            {isShop ? "You" : "Customer"}
+                          </span>
+                        )}
+                        <div className={`max-w-[72%] px-3.5 py-2 text-sm leading-relaxed break-words shadow-sm ${
+                          isShop
+                            ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
+                            : isUnreadCustomer
+                              ? "bg-blue-50 dark:bg-blue-950/40 text-slate-900 dark:text-white border border-blue-300 dark:border-blue-700 rounded-2xl rounded-tl-sm"
+                              : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm"
+                        }`}>
+                          {msg.message}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5 px-1">
+                          <span className="text-[9px] text-slate-400">{time}</span>
+                          {isShop && (
+                            <span className={`text-[10px] font-medium ${msg.read ? "text-blue-500 dark:text-blue-400" : "text-slate-400"}`}>
+                              {msg.read ? "✓✓" : "✓"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input */}
+                <div className="px-3 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900">
+                  <input
+                    className="flex-1 bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500 rounded-full px-4 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
+                    placeholder="Message customer..."
+                    value={newMessage}
+                    onChange={e => setNewMessage(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={sendingMessage || !newMessage.trim()}
+                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-white disabled:opacity-30 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-500 active:scale-95"
+                  >
+                    {sendingMessage ? (
+                      <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-4 h-4 translate-x-px" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    )}
+                  </button>
+                </div>
+              </section>
+            );
+          })()}
 
           {/* Bounce history */}
           {order.bounces.length > 0 && (

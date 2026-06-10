@@ -123,6 +123,7 @@ model CustomerMessage {
   id         String   @id @default(cuid())
   message    String
   senderType String   // "SHOP" or "CUSTOMER"
+  read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   workOrderId String
