@@ -2,6 +2,8 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useLanguage } from "@/context/LanguageContext";
+import type { Lang } from "@/context/LanguageContext";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -20,6 +22,7 @@ type Notification = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, refresh } = useAuth();
   const { theme, toggle } = useTheme();
+  const { lang, setLang, t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -57,14 +60,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       e.preventDefault();
       setInstallPrompt(e);
     }
-    function handleInstalled() {
-      setInstallPrompt(null);
-    }
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    window.addEventListener('appinstalled', handleInstalled);
+    function handleInstalled() { setInstallPrompt(null); }
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-      window.removeEventListener('appinstalled', handleInstalled);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleInstalled);
     };
   }, []);
 
@@ -72,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!installPrompt) return;
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') setInstallPrompt(null);
+    if (outcome === "accepted") setInstallPrompt(null);
   }
 
   async function loadNotifications() {
@@ -102,48 +103,61 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const nav = [
-    { href: "/dashboard", label: "Work Orders", icon: "📋" },
-    { href: "/dashboard/spareparts", label: "Spare Parts", icon: "🔧" },
-    { href: "/dashboard/customers", label: "Customers", icon: "👤" },
-    { href: "/dashboard/warranties", label: "Warranties", icon: "🛡️" },
-    { href: "/dashboard/ratings", label: "Satisfaction", icon: "⭐" },
-    { href: "/dashboard/csv", label: "CSV Import", icon: "📂" },
+    { href: "/dashboard", label: t("workOrders"), icon: "📋" },
+    { href: "/dashboard/spareparts", label: t("spareParts"), icon: "🔧" },
+    { href: "/dashboard/customers", label: t("customers"), icon: "👤" },
+    { href: "/dashboard/warranties", label: t("warranties"), icon: "🛡️" },
+    { href: "/dashboard/ratings", label: t("satisfaction"), icon: "⭐" },
+    { href: "/dashboard/csv", label: t("csvImport"), icon: "📂" },
     ...(user.role === "ADMIN" ? [
-      { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
-      { href: "/dashboard/engineers", label: "Engineers", icon: "👥" },
-      { href: "/dashboard/reports", label: "Reports", icon: "📈" },
-      { href: "/dashboard/templates", label: "Templates", icon: "🗂️" },
+      { href: "/dashboard/analytics", label: t("analytics"), icon: "📊" },
+      { href: "/dashboard/engineers", label: t("engineers"), icon: "👥" },
+      { href: "/dashboard/reports", label: t("reports"), icon: "📈" },
+      { href: "/dashboard/templates", label: t("templates"), icon: "🗂️" },
       ...(user.isSuperAdmin ? [
-        { href: "/dashboard/shops", label: "Shops", icon: "🏪" },
+        { href: "/dashboard/shops", label: t("shops"), icon: "🏪" },
       ] : []),
-      { href: "/dashboard/expenses", label: "Expenses", icon: "💸" },
+      { href: "/dashboard/expenses", label: t("expenses"), icon: "💸" },
     ] : []),
-    { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+    { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
   ];
 
   const bottomNav = [
-    { href: "/dashboard", label: "Orders", icon: "📋" },
-    { href: "/dashboard/spareparts", label: "Parts", icon: "🔧" },
-    { href: "/dashboard/customers", label: "Customers", icon: "👤" },
-    { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
-    { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+    { href: "/dashboard", label: t("orders"), icon: "📋" },
+    { href: "/dashboard/spareparts", label: t("parts"), icon: "🔧" },
+    { href: "/dashboard/customers", label: t("customers"), icon: "👤" },
+    { href: "/dashboard/analytics", label: t("analytics"), icon: "📊" },
+    { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
   ];
 
   const unread = notifications.filter(n => !n.read).length;
 
+  // Sidebar slides in from left in LTR, from right in RTL
+  const slideClass = sidebarOpen
+    ? "translate-x-0"
+    : lang === "ar"
+      ? "translate-x-full lg:translate-x-0"
+      : "-translate-x-full lg:translate-x-0";
+
+  const fontFamily = lang === "ar"
+    ? "'Tajawal', 'DM Sans', sans-serif"
+    : "'DM Sans', sans-serif";
+
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100" style={{ fontFamily }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" />
 
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
+      {/* Sidebar — left in LTR, right in RTL */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-56 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col
-        transform transition-transform duration-200 ease-in-out
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        fixed lg:static inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50
+        w-56 flex-shrink-0 bg-white dark:bg-slate-900
+        border-r border-slate-200 dark:border-slate-800 rtl:border-r-0 rtl:border-l
+        flex flex-col transform transition-transform duration-200 ease-in-out
+        ${slideClass}
       `}>
         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div>
@@ -152,6 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none">✕</button>
         </div>
+
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {nav.map((item) => {
             const active = pathname === item.href;
@@ -168,31 +183,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
+
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1">
+          {/* Language switcher */}
+          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg mb-2">
+            {(["en", "fr", "ar"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`flex-1 text-xs py-1 rounded-md font-medium transition-colors ${
+                  lang === l
+                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                {l === "en" ? "EN" : l === "fr" ? "FR" : "ع"}
+              </button>
+            ))}
+          </div>
+
           <button onClick={() => setShowNotifications(!showNotifications)}
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <div className="flex items-center gap-3"><span>🔔</span>Notifications</div>
+            <div className="flex items-center gap-3"><span>🔔</span>{t("notifications")}</div>
             {unread > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>}
           </button>
           <button onClick={toggle}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span>{theme === "dark" ? "☀️" : "🌙"}</span>
-            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            {theme === "dark" ? t("lightMode") : t("darkMode")}
           </button>
           {installPrompt && (
             <button onClick={handleInstall}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-              <span>⬇️</span> Install App
+              <span>⬇️</span>{t("installApp")}
             </button>
           )}
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <span>🚪</span> Logout
+            <span>🚪</span>{t("logout")}
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <button onClick={() => setSidebarOpen(true)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +238,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {installPrompt && (
               <button onClick={handleInstall}
                 className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors">
-                <span>⬇</span> Install
+                <span>⬇</span> {t("installApp")}
               </button>
             )}
             <button onClick={toggle} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-base leading-none">
@@ -213,7 +247,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white relative p-1">
               <span className="text-lg">🔔</span>
               {unread > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unread}</span>
+                <span className="absolute -top-1 -right-1 rtl:right-auto rtl:-left-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unread}</span>
               )}
             </button>
           </div>
@@ -223,16 +257,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <main className="flex-1 overflow-auto relative pb-16 lg:pb-0">
           {showNotifications && (
-            <div className="absolute top-0 right-0 w-full sm:w-96 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+            <div className="absolute top-0 right-0 rtl:right-auto rtl:left-0 w-full sm:w-96 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 rtl:border-l-0 rtl:border-r z-50 flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
-                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Notifications</h2>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("notifications")}</h2>
                 <div className="flex items-center gap-3">
-                  {unread > 0 && <button onClick={markAllRead} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">Mark all read</button>}
+                  {unread > 0 && (
+                    <button onClick={markAllRead} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
+                      {t("markAllRead")}
+                    </button>
+                  )}
                   <button onClick={() => setShowNotifications(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">✕</button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {notifications.length === 0 && <p className="text-sm text-slate-500 text-center mt-8">No notifications</p>}
+                {notifications.length === 0 && (
+                  <p className="text-sm text-slate-500 text-center mt-8">{t("noNotifications")}</p>
+                )}
                 {notifications.map(n => (
                   <div key={n.id}
                     className={`p-3 rounded-lg text-xs cursor-pointer transition-colors ${
@@ -254,6 +294,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
 
+        {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 z-30 flex items-stretch pb-safe">
           {bottomNav.map((item) => {
             const active = pathname === item.href;

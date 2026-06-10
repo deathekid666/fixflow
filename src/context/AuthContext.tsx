@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
 const WARN_BEFORE_MS = 5 * 60 * 1000;              // warn 5 min before logout
@@ -34,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [warningSecondsLeft, setWarningSecondsLeft] = useState<number | null>(null);
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       const stored = localStorage.getItem(ACTIVITY_KEY);
       const lastActivity = stored ? parseInt(stored, 10) : Date.now();
       const remaining = INACTIVITY_TIMEOUT_MS - (Date.now() - lastActivity);
@@ -106,12 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (remaining <= WARN_BEFORE_MS) {
         setWarningSecondsLeft(Math.ceil(remaining / 1000));
       } else {
-        // Activity happened in another tab — dismiss warning
+        // Activity in another tab reset the timer — dismiss warning
         setWarningSecondsLeft(null);
       }
     }, 1000);
 
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [warningSecondsLeft]);
 
   async function doLogout() {
@@ -128,6 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const mins = warningSecondsLeft !== null ? Math.floor(warningSecondsLeft / 60) : 0;
   const secs = warningSecondsLeft !== null ? String(warningSecondsLeft % 60).padStart(2, "0") : "00";
+  const countdown = `${mins}:${secs}`;
+  const warningParts = t("sessionWarningBody").split("{time}");
 
   return (
     <AuthContext.Provider value={{ user, loading, refresh: loadUser }}>
@@ -139,13 +143,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             <div className="flex items-start gap-3">
               <span className="text-2xl leading-none mt-0.5">⏱️</span>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">Session expiring soon</p>
+                <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                  {t("sessionExpiring")}
+                </p>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                  You&apos;ll be signed out in{" "}
-                  <span className="font-mono font-semibold text-amber-500">
-                    {mins}:{secs}
-                  </span>{" "}
-                  due to inactivity.
+                  {warningParts[0]}
+                  <span className="font-mono font-semibold text-amber-500">{countdown}</span>
+                  {warningParts[1]}
                 </p>
               </div>
             </div>
@@ -154,13 +158,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 onClick={stayLoggedIn}
                 className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
               >
-                Stay logged in
+                {t("stayLoggedIn")}
               </button>
               <button
                 onClick={doLogout}
                 className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors"
               >
-                Log out
+                {t("logout")}
               </button>
             </div>
           </div>
