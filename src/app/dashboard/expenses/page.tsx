@@ -239,10 +239,21 @@ export default function ExpensesPage() {
               </tr>
             ))}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-12 text-center">
-                <p className="text-4xl mb-3">💸</p>
-                <p className="text-slate-400 font-medium">{search ? "No matching expenses" : "No expenses yet"}</p>
-                <p className="text-slate-400 text-sm mt-1">{search ? "Try a different search term" : "Add your first expense to start tracking"}</p>
+              <tr><td colSpan={7}>
+                <div className="py-16 flex flex-col items-center gap-3">
+                  <span className="text-5xl">💸</span>
+                  <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">
+                    {search ? "No matching expenses" : "No expenses yet"}
+                  </p>
+                  <p className="text-slate-400 text-sm text-center max-w-xs">
+                    {search ? "Try a different search or category filter." : "Track rent, salaries, supplies and more to get a clear picture of your shop's costs."}
+                  </p>
+                  {!search && user?.role === "ADMIN" && (
+                    <button onClick={() => setShowForm(true)} className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+                      + Add First Expense
+                    </button>
+                  )}
+                </div>
               </td></tr>
             )}
             {filtered.map((e, i) => (

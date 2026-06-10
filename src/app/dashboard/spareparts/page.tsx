@@ -267,7 +267,24 @@ export default function SparePartsPage() {
                 <td className="px-4 py-3.5"><div className="h-6 w-12 bg-slate-200 dark:bg-slate-800 rounded-lg" /></td>
               </tr>
             ))}
-            {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No parts found.</td></tr>}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={6}>
+                <div className="py-16 flex flex-col items-center gap-3">
+                  <span className="text-5xl">🔩</span>
+                  <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">
+                    {search || stockFilter !== "all" ? "No parts match your filters" : "No spare parts yet"}
+                  </p>
+                  <p className="text-slate-400 text-sm text-center max-w-xs">
+                    {search || stockFilter !== "all" ? "Try adjusting your search or filter." : "Add parts to track inventory, costs, and usage across work orders."}
+                  </p>
+                  {!search && stockFilter === "all" && user?.role === "ADMIN" && (
+                    <button onClick={() => setShowForm(true)} className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+                      + Add First Part
+                    </button>
+                  )}
+                </div>
+              </td></tr>
+            )}
             {filtered.map((p, i) => (
               <>
                 <tr key={p.id} className={`fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-50 dark:bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-50 dark:bg-yellow-950/10" : ""}`}

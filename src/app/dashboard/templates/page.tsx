@@ -290,10 +290,19 @@ export default function TemplatesPage() {
 
       {/* Templates grid */}
       {loading ? <p className="text-slate-400 text-sm">Loading...</p> : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <p className="text-4xl mb-3">🗂️</p>
-          <p className="text-slate-400 text-sm">No templates yet.</p>
-          {isAdmin && <p className="text-slate-400 text-xs mt-1">Create your first template to speed up work order creation.</p>}
+        <div className="py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center gap-3">
+          <span className="text-5xl">🗂️</span>
+          <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">
+            {filterCategory ? `No templates in "${filterCategory}"` : "No templates yet"}
+          </p>
+          <p className="text-slate-400 text-sm text-center max-w-xs">
+            {filterCategory ? "Try a different category or clear the filter." : "Templates let you pre-fill common repairs — brand, fault, parts, and pricing in one click."}
+          </p>
+          {!filterCategory && isAdmin && (
+            <button onClick={() => setShowForm(true)} className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+              + Create First Template
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -87,13 +87,23 @@ function WarrantyCard({ o, tab }: { o: WarrantyOrder; tab: Tab }) {
 }
 
 function EmptyState({ tab }: { tab: Tab }) {
+  const icon = tab === "active" ? "🛡️" : tab === "expiringSoon" ? "⏳" : "📁";
+  const title = tab === "active" ? "No active warranties" : tab === "expiringSoon" ? "Nothing expiring soon" : "No expired warranties";
+  const desc = tab === "active"
+    ? "Warranties appear here once a work order has a warranty end date set."
+    : tab === "expiringSoon"
+    ? "You're all clear — no warranties expiring within the next 30 days."
+    : "Expired warranties will show up here once they pass their end date.";
   return (
-    <div className="py-12 text-center">
-      <p className="text-3xl mb-3">{tab === "active" ? "🛡️" : tab === "expiringSoon" ? "⏳" : "📁"}</p>
-      <p className="text-slate-400 font-medium">
-        {tab === "active" ? "No active warranties" : tab === "expiringSoon" ? "None expiring within 30 days" : "No expired warranties"}
-      </p>
-      <p className="text-xs text-slate-400 mt-1">Warranties are set when creating or editing a work order</p>
+    <div className="py-16 flex flex-col items-center gap-3">
+      <span className="text-5xl">{icon}</span>
+      <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">{title}</p>
+      <p className="text-slate-400 text-sm text-center max-w-xs">{desc}</p>
+      {tab === "active" && (
+        <a href="/dashboard/workorders/new" className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+          + New Work Order
+        </a>
+      )}
     </div>
   );
 }
