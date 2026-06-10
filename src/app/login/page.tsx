@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -10,6 +10,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "timeout") setTimedOut(true);
+  }, []);
 
   async function handleLogin() {
     setError("");
@@ -47,6 +53,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-white">FixFlow</h1>
           <p className="text-sm text-slate-500 mt-1">Sign in to your account</p>
         </div>
+
+        {timedOut && (
+          <div className="mb-4 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm px-4 py-3 rounded-xl text-center">
+            You were signed out after 2 hours of inactivity.
+          </div>
+        )}
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-5">
           <div className="space-y-3">
