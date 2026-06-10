@@ -11,6 +11,7 @@ type Attachment = { id: string; filename: string; path: string; tag: string; cre
 type Bounce = { id: string; reason: string; scenario: string; createdAt: string };
 type Payment = { id: string; amount: number; method: string; note: string | null; createdAt: string; collector: { name: string } };
 type CheckItem = { id: string; item: string; status: string; note: string | null };
+type CustomerMessage = { id: string; message: string; senderType: string; createdAt: string };
 
 type WorkOrder = {
   id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
@@ -104,9 +105,14 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [newCheckItem, setNewCheckItem] = useState("");
   const [addingCheck, setAddingCheck] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [messages, setMessages] = useState<CustomerMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     load();
+    loadMessages();
     fetch("/api/users", { credentials: "include" }).then(r => r.json()).then(setEngineers).catch(() => {});
     fetch("/api/spareparts", { credentials: "include" }).then(r => r.json()).then(setSpareParts).catch(() => {});
   }, []);
@@ -118,6 +124,27 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [order?.startedAt, order?.completedAt]);
+
+  async function loadMessages() {
+    const res = await fetch(`/api/workorders/${params.id}/messages`, { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      setMessages(Array.isArray(data) ? data : []);
+    }
+  }
+
+  async function sendMessage() {
+    if (!newMessage.trim()) return;
+    setSendingMessage(true);
+    await fetch(`/api/workorders/${params.id}/messages`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ message: newMessage }),
+    });
+    setNewMessage("");
+    await loadMessages();
+    setSendingMessage(false);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  }
 
   async function load() {
     const res = await fetch(`/api/workorders/${params.id}`, { credentials: "include" });
@@ -643,6 +670,42 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </div>
               </div>
             )}
+          </section>
+
+          {/* Customer Messages */}
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Customer Messages</h2>
+            <div className="space-y-2 max-h-64 overflow-y-auto mb-3">
+              {messages.length === 0 && (
+                <p className="text-xs text-slate-500">No messages yet. Send a message to the customer below.</p>
+              )}
+              {messages.map(msg => {
+                const isShop = msg.senderType === "SHOP";
+                return (
+                  <div key={msg.id} className={`flex ${isShop ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[80%] rounded-xl px-3 py-2 text-xs ${isShop ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"}`}>
+                      <p>{msg.message}</p>
+                      <p className={`mt-1 text-[10px] ${isShop ? "text-blue-200" : "text-slate-400"}`}>
+                        {isShop ? "You" : "Customer"} · {new Date(msg.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                placeholder="Send a message to the customer..."
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              />
+              <button onClick={sendMessage} disabled={sendingMessage || !newMessage.trim()} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg whitespace-nowrap">
+                {sendingMessage ? "..." : "Send"}
+              </button>
+            </div>
           </section>
 
           {/* Bounce history */}

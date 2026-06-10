@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 type TrackData = {
+  id: string;
   orderNumber: string;
   deviceBrand: string;
   deviceModel: string;
@@ -39,6 +40,9 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ id: string; message: string; senderType: string; createdAt: string }[]>([]);
+  const [newMsg, setNewMsg] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   useEffect(() => {
     fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
@@ -49,6 +53,28 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!data?.id) return;
+    fetch(`/api/workorders/${data.id}/messages`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setChatMessages(d); });
+  }, [data?.id]);
+
+  async function sendChat() {
+    if (!newMsg.trim() || !data?.id) return;
+    setSendingMsg(true);
+    await fetch(`/api/workorders/${data.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: newMsg }),
+    });
+    setNewMsg("");
+    const res = await fetch(`/api/workorders/${data.id}/messages`);
+    const msgs = await res.json();
+    if (Array.isArray(msgs)) setChatMessages(msgs);
+    setSendingMsg(false);
+  }
 
   async function submitRating() {
     if (!selectedStar || !data) return;
@@ -287,6 +313,70 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                 )}
               </div>
             )}
+
+            {/* Chat with shop */}
+            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
+              <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Messages</p>
+              {chatMessages.length === 0 ? (
+                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#64748b" }}>No messages yet. Send us a message below.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14, maxHeight: 240, overflowY: "auto" }}>
+                  {chatMessages.map(msg => {
+                    const isShop = msg.senderType === "SHOP";
+                    return (
+                      <div key={msg.id} style={{ display: "flex", justifyContent: isShop ? "flex-start" : "flex-end" }}>
+                        <div style={{
+                          maxWidth: "80%",
+                          background: isShop ? "rgba(37,99,235,0.25)" : "rgba(255,255,255,0.1)",
+                          border: isShop ? "1px solid rgba(37,99,235,0.4)" : "1px solid rgba(255,255,255,0.15)",
+                          borderRadius: 12,
+                          padding: "8px 12px",
+                        }}>
+                          <p style={{ margin: 0, fontSize: 13, color: "white" }}>{msg.message}</p>
+                          <p style={{ margin: "4px 0 0", fontSize: 10, color: "#64748b" }}>
+                            {isShop ? "Shop" : "You"} · {new Date(msg.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={newMsg}
+                  onChange={e => setNewMsg(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
+                  placeholder="Type a message..."
+                  style={{
+                    flex: 1,
+                    background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    color: "white",
+                    fontSize: 13,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  onClick={sendChat}
+                  disabled={sendingMsg || !newMsg.trim()}
+                  style={{
+                    padding: "10px 18px",
+                    background: sendingMsg || !newMsg.trim() ? "rgba(37,99,235,0.4)" : "#2563eb",
+                    border: "none",
+                    borderRadius: 10,
+                    color: "white",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: sendingMsg || !newMsg.trim() ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {sendingMsg ? "..." : "Send"}
+                </button>
+              </div>
+            </div>
 
             {/* Contact shop */}
             {data.shop?.phone && (

@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const order = await prisma.workOrder.findFirst({
     where: { orderNumber: { startsWith: orderNumber.toLowerCase() } },
     select: {
+      id: true,
       orderNumber: true,
       deviceBrand: true,
       deviceModel: true,
