@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   useEffect(() => { refresh(); }, []);
 
@@ -50,6 +51,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user]);
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    function handleBeforeInstall(e: Event) {
+      e.preventDefault();
+      setInstallPrompt(e);
+    }
+    function handleInstalled() {
+      setInstallPrompt(null);
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
+  }, []);
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') setInstallPrompt(null);
+  }
 
   async function loadNotifications() {
     const res = await fetch("/api/notifications", { credentials: "include" });
@@ -155,6 +179,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span>{theme === "dark" ? "☀️" : "🌙"}</span>
             {theme === "dark" ? "Light Mode" : "Dark Mode"}
           </button>
+          {installPrompt && (
+            <button onClick={handleInstall}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+              <span>⬇️</span> Install App
+            </button>
+          )}
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span>🚪</span> Logout
@@ -171,6 +201,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
           <span className="text-slate-900 dark:text-white font-semibold text-sm">FixFlow</span>
           <div className="flex items-center gap-1">
+            {installPrompt && (
+              <button onClick={handleInstall}
+                className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors">
+                <span>⬇</span> Install
+              </button>
+            )}
             <button onClick={toggle} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-base leading-none">
               {theme === "dark" ? "☀️" : "🌙"}
             </button>
