@@ -20,6 +20,36 @@ const STEPS = [
   { num: "03", title: "Deliver & get paid", desc: "Mark as done, collect payment, send a delivery notification, and log the warranty end date." },
 ];
 
+const PAIN_POINTS = [
+  { icon: "📱", title: "WhatsApp chaos", desc: "Tracking repairs across multiple group chats, losing important messages." },
+  { icon: "📄", title: "Paper receipts", desc: "Hand-written notes that get lost, smudged, or impossible to search through." },
+  { icon: "🗃️", title: "Spreadsheet hell", desc: "A different Excel file for orders, inventory, and expenses — always out of sync." },
+  { icon: "📞", title: "Constant calls", desc: "Customers calling every hour asking 'Is my phone ready yet?'" },
+  { icon: "💸", title: "No revenue clarity", desc: "No idea how much the shop actually made or spent this month." },
+  { icon: "⚠️", title: "Missed warranties", desc: "Warranty end dates written on stickers that fall off or get thrown away." },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "Before FixFlow I had three WhatsApp groups and a notebook to track repairs. Now everything is in one place and I can see my full day in 10 seconds.",
+    name: "Karim B.",
+    shop: "ElectroFix, Casablanca",
+    initials: "KB",
+  },
+  {
+    quote: "Our customers love the QR tracking link. We went from 20 'is my phone ready?' calls per day to almost zero. It's a game changer.",
+    name: "Sara M.",
+    shop: "TechRepair, Rabat",
+    initials: "SM",
+  },
+  {
+    quote: "I finally know exactly how much revenue my shop makes, which engineers are fastest, and what parts I'm running low on — without doing any manual work.",
+    name: "Ahmed R.",
+    shop: "iRepair, Marrakech",
+    initials: "AR",
+  },
+];
+
 type ComparisonRow = { feature: string; free: boolean | string; pro: boolean | string };
 const COMPARISON: ComparisonRow[] = [
   { feature: "Work orders",           free: "Up to 50 / month",     pro: "Unlimited" },
@@ -40,11 +70,11 @@ const COMPARISON: ComparisonRow[] = [
 const FAQS = [
   {
     q: "Is there a free trial?",
-    a: "Yes — every new shop gets 14 days of full access with no credit card required. You can explore every feature and decide if FixFlow is right for you before committing to anything.",
+    a: "Yes — every new shop gets 14 days of full access with no credit card required. You can explore every feature and decide if FixFlow is right for you before committing.",
   },
   {
     q: "Can I use it on mobile?",
-    a: "Absolutely. FixFlow is fully responsive and works great on any phone or tablet. You can also install it as a PWA directly from your browser for a native app experience, including offline support when your connection drops.",
+    a: "Absolutely. FixFlow is fully responsive and works great on any phone or tablet — no app download needed. Just open it in your mobile browser and it works like a native app.",
   },
   {
     q: "How many users can I add?",
@@ -52,7 +82,15 @@ const FAQS = [
   },
   {
     q: "Is my data secure?",
-    a: "Yes. All data is encrypted in transit (HTTPS) and at rest. Authentication uses signed JWT tokens, and each shop's data is completely isolated — no other shop can ever access your information.",
+    a: "Yes. All data is encrypted in transit (HTTPS) and at rest. Each shop's data is completely isolated — no other shop can ever access your information.",
+  },
+  {
+    q: "Can I import my existing data?",
+    a: "Yes. FixFlow supports CSV import for customers, work orders, and spare parts inventory. You can migrate from a spreadsheet in minutes.",
+  },
+  {
+    q: "What happens after the trial ends?",
+    a: "You can choose to upgrade to Pro or stay on a limited free plan. Your data is never deleted — you'll always have access to your history.",
   },
 ];
 
@@ -62,7 +100,6 @@ function Check({ pro }: { pro?: boolean }) {
 function Dash() {
   return <span className="text-slate-700 text-lg">—</span>;
 }
-
 function CellValue({ val, pro }: { val: boolean | string; pro?: boolean }) {
   if (typeof val === "boolean") return val ? <Check pro={pro} /> : <Dash />;
   return <span className={`text-sm ${pro ? "text-blue-300" : "text-slate-400"}`}>{val}</span>;
@@ -71,51 +108,53 @@ function CellValue({ val, pro }: { val: boolean | string; pro?: boolean }) {
 function DashboardMockup() {
   return (
     <div className="relative w-full max-w-xl mx-auto lg:mx-0">
-      <div className="absolute -inset-4 bg-blue-600/10 rounded-3xl blur-2xl" />
-      <div className="relative bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl shadow-black/50">
-        <div className="bg-slate-800/80 px-4 py-2.5 flex items-center gap-2 border-b border-slate-700">
+      <div className="absolute -inset-6 bg-blue-600/10 rounded-3xl blur-3xl" />
+      <div className="absolute -inset-2 bg-blue-500/5 rounded-3xl blur-xl" />
+      <div className="relative bg-slate-900 rounded-2xl border border-slate-700/80 overflow-hidden shadow-2xl shadow-black/60">
+        {/* Browser chrome */}
+        <div className="bg-slate-800/80 px-4 py-2.5 flex items-center gap-2 border-b border-slate-700/60">
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
           </div>
-          <div className="flex-1 mx-3 bg-slate-700/60 rounded-md h-5 flex items-center px-2.5">
+          <div className="flex-1 mx-3 bg-slate-700/50 rounded-md h-5 flex items-center px-2.5">
             <span className="text-slate-500 text-xs">fixflow.app/dashboard</span>
           </div>
         </div>
-        <div className="flex h-56 sm:h-64">
-          <div className="w-28 sm:w-36 bg-slate-900 border-r border-slate-800 p-2.5 flex-shrink-0">
+        <div className="flex h-60 sm:h-72">
+          <div className="w-28 sm:w-36 bg-slate-900 border-r border-slate-800/80 p-2.5 flex-shrink-0">
             <div className="text-xs font-semibold text-white mb-3 px-2">FixFlow</div>
-            {[["📋","Work Orders",true],["👤","Customers",false],["🔧","Parts",false],["📊","Analytics",false]].map(([icon,label,active]) => (
+            {[["📋","Work Orders",true],["👤","Customers",false],["🔧","Parts",false],["📊","Analytics",false],["⚙️","Settings",false]].map(([icon,label,active]) => (
               <div key={label as string} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs mb-0.5 ${active ? "bg-blue-600 text-white" : "text-slate-500"}`}>
                 <span className="text-sm">{icon}</span>
                 <span className="truncate hidden sm:block">{label}</span>
               </div>
             ))}
           </div>
-          <div className="flex-1 p-3 space-y-2.5 overflow-hidden bg-slate-950/50">
+          <div className="flex-1 p-3 space-y-2.5 overflow-hidden bg-slate-950/40">
             <div className="grid grid-cols-3 gap-2">
-              {[["Active","23","text-blue-400"],["Revenue","48.5k","text-emerald-400"],["Done","12","text-green-400"]].map(([l,v,c]) => (
-                <div key={l} className="bg-slate-800/80 rounded-lg p-2">
+              {[["Active","23","text-blue-400","bg-blue-500/10"],["Revenue","48.5k","text-emerald-400","bg-emerald-500/10"],["Done Today","12","text-green-400","bg-green-500/10"]].map(([l,v,c,bg]) => (
+                <div key={l} className={`${bg} rounded-lg p-2 border border-white/5`}>
                   <p className="text-slate-500 text-xs leading-none mb-1">{l}</p>
                   <p className={`font-bold text-sm ${c}`}>{v}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-slate-800/60 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-slate-700">
-                {["Order #","Customer","Status"].map(h => <span key={h} className="text-slate-500 text-xs">{h}</span>)}
+            <div className="bg-slate-800/50 rounded-xl overflow-hidden border border-slate-700/40">
+              <div className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-slate-700/50 bg-slate-800/50">
+                {["Order #","Customer","Status"].map(h => <span key={h} className="text-slate-500 text-xs font-medium">{h}</span>)}
               </div>
               {[
-                ["WO-0091","Ahmed K.","REPAIRING","text-orange-400"],
-                ["WO-0090","Sara M.","DONE","text-green-400"],
-                ["WO-0089","Karim B.","RECEIVED","text-blue-400"],
-                ["WO-0088","Nadia R.","DELIVERED","text-slate-400"],
+                ["WO-0091","Ahmed K.","REPAIRING","text-orange-400 bg-orange-500/10"],
+                ["WO-0090","Sara M.","DONE","text-green-400 bg-green-500/10"],
+                ["WO-0089","Karim B.","RECEIVED","text-blue-400 bg-blue-500/10"],
+                ["WO-0088","Nadia R.","DELIVERED","text-slate-400 bg-slate-500/10"],
               ].map(([num,name,status,color]) => (
-                <div key={num} className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-slate-800/50">
+                <div key={num} className="grid grid-cols-3 gap-2 px-3 py-2 border-b border-slate-800/40">
                   <span className="font-mono text-xs text-slate-400">{num}</span>
                   <span className="text-xs text-white truncate">{name}</span>
-                  <span className={`text-xs font-medium ${color}`}>{status}</span>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-md inline-block leading-none ${color}`}>{status}</span>
                 </div>
               ))}
             </div>
@@ -135,22 +174,21 @@ export default function LandingPage() {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-white tracking-tight">FixFlow</span>
-            <span className="hidden sm:block text-xs bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">Beta</span>
+            <span className="hidden sm:block text-xs bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-medium">Beta</span>
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
-            <a href="#demo" className="hover:text-white transition-colors">Demo</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </div>
           <div className="hidden md:flex items-center gap-3">
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5">Sign in</Link>
-            <Link href="/register" className="text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors">
+            <Link href="/register" className="text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors shadow-lg shadow-blue-600/20">
               Start Free Trial
             </Link>
           </div>
@@ -164,14 +202,12 @@ export default function LandingPage() {
         </div>
         {menuOpen && (
           <div className="md:hidden border-t border-slate-800 bg-slate-950 px-5 py-4 space-y-3">
-            <a href="#features" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-400 hover:text-white">Features</a>
-            <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-400 hover:text-white">How it works</a>
-            <a href="#demo" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-400 hover:text-white">Demo</a>
-            <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-400 hover:text-white">Pricing</a>
-            <a href="#faq" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-400 hover:text-white">FAQ</a>
+            {[["#features","Features"],["#how-it-works","How it works"],["#pricing","Pricing"],["#faq","FAQ"]].map(([href, label]) => (
+              <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block text-sm text-slate-400 hover:text-white py-0.5">{label}</a>
+            ))}
             <div className="flex gap-3 pt-2 border-t border-slate-800">
               <Link href="/login" className="flex-1 text-center text-sm text-slate-300 border border-slate-700 py-2 rounded-lg hover:border-slate-500 transition-colors">Sign in</Link>
-              <Link href="/register" className="flex-1 text-center text-sm font-medium bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-500 transition-colors">Free Trial</Link>
+              <Link href="/register" className="flex-1 text-center text-sm font-semibold bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-500 transition-colors">Free Trial</Link>
             </div>
           </div>
         )}
@@ -179,36 +215,41 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(59,130,246,0.12),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(59,130,246,0.15),transparent)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-6xl mx-auto px-5 pt-20 pb-24 lg:pt-28">
           <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-10">
-            <div className="flex-1 text-center lg:text-left space-y-6 max-w-xl mx-auto lg:mx-0">
-              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-3 py-1.5 rounded-full">
+            <div className="flex-1 text-center lg:text-left space-y-7 max-w-xl mx-auto lg:mx-0">
+              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-3.5 py-1.5 rounded-full font-medium">
                 <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
-                Built for repair shops
+                Built for repair shops · Made in Morocco
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold leading-[1.15] tracking-tight">
-                The repair shop OS<br />
-                <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">built to scale</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold leading-[1.12] tracking-tight">
+                Stop managing repairs<br className="hidden sm:block" />
+                {" "}with{" "}
+                <span className="relative">
+                  <span className="text-slate-600 line-through decoration-red-500/60 decoration-2">WhatsApp</span>
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent">Use FixFlow instead</span>
               </h1>
               <p className="text-slate-400 text-lg leading-relaxed">
-                Manage work orders, track repairs, collect payments, and grow your repair business — all in one place.
+                Work orders, customer tracking, spare parts, payments, and analytics — one clean dashboard that replaces the spreadsheets, sticky notes, and group chats.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                 <Link href="/register"
-                  className="w-full sm:w-auto px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors text-base shadow-lg shadow-blue-600/20">
-                  Start Free Trial →
+                  className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all text-base shadow-xl shadow-blue-600/25 hover:shadow-blue-600/40 hover:scale-[1.02]">
+                  Start Free — 14 Days →
                 </Link>
-                <a href="#demo"
-                  className="w-full sm:w-auto px-7 py-3 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-medium rounded-xl transition-colors text-base flex items-center justify-center gap-2">
-                  <span className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs">▶</span>
-                  Watch demo
+                <a href="#how-it-works"
+                  className="w-full sm:w-auto px-8 py-3.5 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-medium rounded-xl transition-colors text-base flex items-center justify-center gap-2">
+                  See how it works
                 </a>
               </div>
               <div className="flex items-center justify-center lg:justify-start gap-5 text-xs text-slate-600 pt-1">
-                <span className="flex items-center gap-1.5"><span className="text-green-400">✓</span> 14-day free trial</span>
-                <span className="flex items-center gap-1.5"><span className="text-green-400">✓</span> No credit card</span>
-                <span className="flex items-center gap-1.5"><span className="text-green-400">✓</span> Cancel anytime</span>
+                <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> No credit card</span>
+                <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 14-day free trial</span>
+                <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Cancel anytime</span>
               </div>
             </div>
             <div className="flex-1 w-full">
@@ -219,7 +260,7 @@ export default function LandingPage() {
       </section>
 
       {/* Stats strip */}
-      <div className="border-y border-slate-800 bg-slate-900/40">
+      <div className="border-y border-slate-800 bg-slate-900/30">
         <div className="max-w-4xl mx-auto px-5 py-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
             { value: "500+", label: "Work orders tracked" },
@@ -235,32 +276,60 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Features */}
-      <section id="features" className="max-w-6xl mx-auto px-5 py-24 scroll-mt-16">
+      {/* Pain points */}
+      <section className="max-w-6xl mx-auto px-5 py-24 scroll-mt-16">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">Features</p>
-          <h2 className="text-3xl sm:text-4xl font-bold">Everything your shop needs</h2>
-          <p className="text-slate-400 mt-3 max-w-xl mx-auto">One platform to replace the spreadsheets, WhatsApp notes, and paper receipts.</p>
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-widest mb-3">Sound familiar?</p>
+          <h2 className="text-3xl sm:text-4xl font-bold">This is how most shops run today</h2>
+          <p className="text-slate-400 mt-3 max-w-lg mx-auto">Managing a repair shop shouldn't feel like this — but for most shops, it does.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FEATURES.map(f => (
-            <div key={f.title} className="group bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 space-y-3 transition-all hover:bg-slate-900/80">
-              <div className="w-10 h-10 bg-slate-800 group-hover:bg-slate-700 rounded-xl flex items-center justify-center text-xl transition-colors">
-                {f.icon}
+          {PAIN_POINTS.map(p => (
+            <div key={p.title} className="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
+                {p.icon}
               </div>
-              <h3 className="font-semibold text-white">{f.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+              <div>
+                <h3 className="font-semibold text-slate-200 text-sm">{p.title}</h3>
+                <p className="text-sm text-slate-500 mt-1 leading-relaxed">{p.desc}</p>
+              </div>
             </div>
           ))}
+        </div>
+        <div className="text-center mt-10">
+          <p className="text-slate-400 text-sm">FixFlow replaces all of that. <a href="#features" className="text-blue-400 hover:text-blue-300 transition-colors">See how →</a></p>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="bg-slate-900/30 border-y border-slate-800 scroll-mt-16">
+        <div className="max-w-6xl mx-auto px-5 py-24">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">Features</p>
+            <h2 className="text-3xl sm:text-4xl font-bold">Everything your shop needs</h2>
+            <p className="text-slate-400 mt-3 max-w-xl mx-auto">One platform to replace the spreadsheets, WhatsApp notes, and paper receipts.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {FEATURES.map(f => (
+              <div key={f.title} className="group bg-slate-900 border border-slate-800 hover:border-blue-500/30 rounded-2xl p-6 space-y-3 transition-all duration-200 hover:bg-slate-900/80 hover:shadow-lg hover:shadow-blue-500/5">
+                <div className="w-10 h-10 bg-slate-800 group-hover:bg-blue-600/20 rounded-xl flex items-center justify-center text-xl transition-colors duration-200">
+                  {f.icon}
+                </div>
+                <h3 className="font-semibold text-white">{f.title}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="bg-slate-900/30 border-y border-slate-800 scroll-mt-16">
+      <section id="how-it-works" className="scroll-mt-16">
         <div className="max-w-5xl mx-auto px-5 py-24">
           <div className="text-center mb-14">
             <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">How it works</p>
             <h2 className="text-3xl sm:text-4xl font-bold">Up and running in minutes</h2>
+            <p className="text-slate-400 mt-3">No training required. Most shops are live within 15 minutes.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {STEPS.map((step, i) => (
@@ -281,6 +350,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="bg-slate-900/30 border-y border-slate-800">
+        <div className="max-w-5xl mx-auto px-5 py-24">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">Testimonials</p>
+            <h2 className="text-3xl sm:text-4xl font-bold">Shops love it</h2>
+            <p className="text-slate-400 mt-3">Real feedback from real repair shop owners.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col gap-5">
+                {/* Stars */}
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-amber-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed flex-1">"{t.quote}"</p>
+                <div className="flex items-center gap-3 border-t border-slate-800 pt-4">
+                  <div className="w-9 h-9 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-400 flex-shrink-0">
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{t.name}</p>
+                    <p className="text-xs text-slate-500">{t.shop}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Demo video */}
       <section id="demo" className="max-w-5xl mx-auto px-5 py-24 scroll-mt-16">
         <div className="text-center mb-12">
@@ -289,23 +391,10 @@ export default function LandingPage() {
           <p className="text-slate-400 mt-3">Watch how a repair shop handles a full day end-to-end.</p>
         </div>
         <div className="relative group cursor-pointer rounded-2xl overflow-hidden border border-slate-700/80 shadow-2xl shadow-black/60 aspect-video bg-slate-950">
-          {/* Layered background */}
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950/50" />
-          {/* Faint grid */}
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
-          {/* Fake UI chrome in background */}
-          <div className="absolute inset-8 opacity-[0.07] rounded-xl border border-white overflow-hidden">
-            <div className="h-6 bg-white/20 border-b border-white/10 flex items-center px-3 gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-white/40" />
-              <div className="w-2 h-2 rounded-full bg-white/40" />
-              <div className="w-2 h-2 rounded-full bg-white/40" />
-            </div>
-          </div>
-          {/* Glow */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(59,130,246,0.08),transparent)]" />
-          {/* Overlay darkens on hover */}
-          <div className="absolute inset-0 bg-slate-950/50 group-hover:bg-slate-950/30 transition-colors duration-300" />
-          {/* Play button + label */}
+          <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors duration-300" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
             <div className="w-20 h-20 rounded-full border-2 border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:scale-110 transition-all duration-200 shadow-2xl shadow-black/40">
               <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
@@ -317,7 +406,6 @@ export default function LandingPage() {
               <p className="text-slate-500 text-sm mt-1">No sign-up required</p>
             </div>
           </div>
-          {/* Duration badge */}
           <div className="absolute bottom-4 right-4 text-xs text-slate-400 bg-slate-900/80 backdrop-blur px-2 py-1 rounded font-mono border border-slate-700/50">2:14</div>
         </div>
       </section>
@@ -333,12 +421,8 @@ export default function LandingPage() {
 
           <div className="overflow-x-auto">
             <div className="min-w-[520px]">
-              {/* Column headers */}
               <div className="grid grid-cols-[1fr_160px_180px] border border-slate-800 rounded-t-2xl overflow-hidden">
-                {/* Empty feature col */}
                 <div className="bg-slate-900/60 px-6 py-6 border-r border-slate-800" />
-
-                {/* Free Trial */}
                 <div className="bg-slate-900/60 px-6 py-6 text-center border-r border-slate-800">
                   <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">Free Trial</p>
                   <p className="text-3xl font-bold text-white leading-none">0</p>
@@ -348,8 +432,6 @@ export default function LandingPage() {
                     Start Free Trial
                   </Link>
                 </div>
-
-                {/* Pro */}
                 <div className="relative bg-blue-950/30 px-6 py-6 text-center">
                   <div className="absolute -top-px left-0 right-0 h-0.5 bg-blue-500" />
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -367,19 +449,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Feature rows */}
               <div className="border-x border-b border-slate-800 rounded-b-2xl overflow-hidden divide-y divide-slate-800/70">
                 {COMPARISON.map((row, i) => (
                   <div key={row.feature} className={`grid grid-cols-[1fr_160px_180px] ${i % 2 === 1 ? "bg-slate-900/20" : ""}`}>
-                    <div className="px-6 py-3.5 text-sm text-slate-400 border-r border-slate-800">
-                      {row.feature}
-                    </div>
-                    <div className="px-6 py-3.5 text-center border-r border-slate-800">
-                      <CellValue val={row.free} />
-                    </div>
-                    <div className="px-6 py-3.5 text-center bg-blue-950/10">
-                      <CellValue val={row.pro} pro />
-                    </div>
+                    <div className="px-6 py-3.5 text-sm text-slate-400 border-r border-slate-800">{row.feature}</div>
+                    <div className="px-6 py-3.5 text-center border-r border-slate-800"><CellValue val={row.free} /></div>
+                    <div className="px-6 py-3.5 text-center bg-blue-950/10"><CellValue val={row.pro} pro /></div>
                   </div>
                 ))}
               </div>
@@ -387,7 +462,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-slate-600 mt-8">
-            Questions? Email us at{" "}
+            Questions?{" "}
             <a href="mailto:support@fixflow.ma" className="text-slate-400 hover:text-white transition-colors">
               support@fixflow.ma
             </a>
@@ -400,13 +475,16 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">FAQ</p>
           <h2 className="text-3xl sm:text-4xl font-bold">Common questions</h2>
-          <p className="text-slate-400 mt-3">Can't find what you're looking for? Email us at <a href="mailto:support@fixflow.ma" className="text-blue-400 hover:text-blue-300 transition-colors">support@fixflow.ma</a></p>
+          <p className="text-slate-400 mt-3">
+            Can't find your answer?{" "}
+            <a href="mailto:support@fixflow.ma" className="text-blue-400 hover:text-blue-300 transition-colors">Email us</a>
+          </p>
         </div>
         <div className="space-y-2">
           {FAQS.map((faq, i) => {
             const open = faqOpen === i;
             return (
-              <div key={i} className={`border rounded-xl overflow-hidden transition-colors ${open ? "border-slate-700 bg-slate-900/50" : "border-slate-800 hover:border-slate-700"}`}>
+              <div key={i} className={`border rounded-xl overflow-hidden transition-colors ${open ? "border-slate-700 bg-slate-900/60" : "border-slate-800 hover:border-slate-700"}`}>
                 <button
                   onClick={() => setFaqOpen(open ? null : i)}
                   className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
@@ -430,12 +508,21 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-t border-slate-800">
-        <div className="max-w-3xl mx-auto px-5 py-24 text-center space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-bold">Ready to run a smarter shop?</h2>
-          <p className="text-slate-400 text-lg">Join repair shops already using FixFlow to manage their operations.</p>
+      <section className="relative overflow-hidden border-t border-slate-800">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(59,130,246,0.08),transparent)]" />
+        <div className="relative max-w-3xl mx-auto px-5 py-28 text-center space-y-7">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-3.5 py-1.5 rounded-full font-medium">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            Free for 14 days · No card required
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-bold leading-tight">
+            Run a smarter<br />repair shop today
+          </h2>
+          <p className="text-slate-400 text-lg max-w-md mx-auto leading-relaxed">
+            Join repair shops that replaced their WhatsApp groups and spreadsheets with FixFlow.
+          </p>
           <Link href="/register"
-            className="inline-block px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors text-lg shadow-xl shadow-blue-600/20">
+            className="inline-block px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all text-lg shadow-xl shadow-blue-600/25 hover:shadow-blue-600/40 hover:scale-[1.02]">
             Start Your Free Trial →
           </Link>
           <p className="text-xs text-slate-600">14 days free · No credit card required · Cancel anytime</p>
@@ -453,7 +540,7 @@ export default function LandingPage() {
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Product</p>
             <div className="space-y-2.5">
-              {[["#features","Features"],["#how-it-works","How it works"],["#demo","Demo"],["#pricing","Pricing"],["#faq","FAQ"]].map(([href,label]) => (
+              {[["#features","Features"],["#how-it-works","How it works"],["#pricing","Pricing"],["#faq","FAQ"]].map(([href,label]) => (
                 <a key={label} href={href} className="block text-sm text-slate-500 hover:text-white transition-colors">{label}</a>
               ))}
             </div>
