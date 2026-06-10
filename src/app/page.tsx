@@ -50,23 +50,6 @@ const TESTIMONIALS = [
   },
 ];
 
-type ComparisonRow = { feature: string; free: boolean | string; pro: boolean | string };
-const COMPARISON: ComparisonRow[] = [
-  { feature: "Work orders",           free: "Up to 50 / month",     pro: "Unlimited" },
-  { feature: "Team members",          free: "1 admin + 3 engineers", pro: "Unlimited" },
-  { feature: "Customer portal",       free: true,  pro: true },
-  { feature: "Spare parts inventory", free: true,  pro: true },
-  { feature: "Repair templates",      free: true,  pro: true },
-  { feature: "Diagnosis checklists",  free: true,  pro: true },
-  { feature: "Basic analytics",       free: true,  pro: true },
-  { feature: "Advanced analytics",    free: false, pro: true },
-  { feature: "Expense tracking",      free: false, pro: true },
-  { feature: "Warranty tracking",     free: false, pro: true },
-  { feature: "SMS notifications",     free: false, pro: true },
-  { feature: "Custom shop branding",  free: false, pro: true },
-  { feature: "Support",               free: "Email", pro: "Priority" },
-];
-
 const FAQS = [
   {
     q: "Is there a free trial?",
@@ -94,16 +77,8 @@ const FAQS = [
   },
 ];
 
-function Check({ pro }: { pro?: boolean }) {
-  return <span className={`text-lg ${pro ? "text-emerald-400" : "text-emerald-500"}`}>✓</span>;
-}
-function Dash() {
-  return <span className="text-slate-700 text-lg">—</span>;
-}
-function CellValue({ val, pro }: { val: boolean | string; pro?: boolean }) {
-  if (typeof val === "boolean") return val ? <Check pro={pro} /> : <Dash />;
-  return <span className={`text-sm ${pro ? "text-blue-300" : "text-slate-400"}`}>{val}</span>;
-}
+
+
 
 function DashboardMockup() {
   return (
@@ -383,85 +358,106 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Demo video */}
-      <section id="demo" className="max-w-5xl mx-auto px-5 py-24 scroll-mt-16">
-        <div className="text-center mb-12">
-          <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">Demo</p>
-          <h2 className="text-3xl sm:text-4xl font-bold">See FixFlow in action</h2>
-          <p className="text-slate-400 mt-3">Watch how a repair shop handles a full day end-to-end.</p>
-        </div>
-        <div className="relative group cursor-pointer rounded-2xl overflow-hidden border border-slate-700/80 shadow-2xl shadow-black/60 aspect-video bg-slate-950">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950/50" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(59,130,246,0.08),transparent)]" />
-          <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors duration-300" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-            <div className="w-20 h-20 rounded-full border-2 border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:scale-110 transition-all duration-200 shadow-2xl shadow-black/40">
-              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <p className="text-white font-semibold text-base">Watch 2-min demo</p>
-              <p className="text-slate-500 text-sm mt-1">No sign-up required</p>
-            </div>
-          </div>
-          <div className="absolute bottom-4 right-4 text-xs text-slate-400 bg-slate-900/80 backdrop-blur px-2 py-1 rounded font-mono border border-slate-700/50">2:14</div>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section id="pricing" className="bg-slate-900/30 border-y border-slate-800 scroll-mt-16">
-        <div className="max-w-4xl mx-auto px-5 py-24">
+        <div className="max-w-5xl mx-auto px-5 py-24">
           <div className="text-center mb-14">
             <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">Pricing</p>
             <h2 className="text-3xl sm:text-4xl font-bold">Simple, honest pricing</h2>
             <p className="text-slate-400 mt-3">Start free. Upgrade when your shop grows.</p>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[520px]">
-              <div className="grid grid-cols-[1fr_160px_180px] border border-slate-800 rounded-t-2xl overflow-hidden">
-                <div className="bg-slate-900/60 px-6 py-6 border-r border-slate-800" />
-                <div className="bg-slate-900/60 px-6 py-6 text-center border-r border-slate-800">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">Free Trial</p>
-                  <p className="text-3xl font-bold text-white leading-none">0</p>
-                  <p className="text-slate-500 text-xs mt-1">MAD · 14 days</p>
-                  <Link href="/register"
-                    className="mt-5 block w-full text-center py-2 border border-slate-700 hover:border-blue-500 hover:text-blue-400 text-slate-300 text-xs font-semibold rounded-lg transition-colors">
-                    Start Free Trial
-                  </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Free Trial card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col">
+              <div className="mb-6">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Free Trial</p>
+                <div className="flex items-end gap-2 mt-4">
+                  <span className="text-5xl font-bold text-white leading-none">0</span>
+                  <span className="text-slate-400 text-base mb-1">MAD</span>
                 </div>
-                <div className="relative bg-blue-950/30 px-6 py-6 text-center">
-                  <div className="absolute -top-px left-0 right-0 h-0.5 bg-blue-500" />
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="bg-blue-600 text-white text-[10px] px-3 py-1 rounded-full font-bold tracking-wide shadow-lg shadow-blue-600/30">
-                      Most Popular
+                <p className="text-slate-500 text-sm mt-2">14 days · No credit card required</p>
+              </div>
+              <div className="h-px bg-slate-800 mb-6" />
+              <ul className="space-y-3.5 flex-1">
+                {[
+                  "50 work orders / month",
+                  "1 admin + 3 engineers",
+                  "Customer portal & QR tracking",
+                  "Spare parts inventory",
+                  "Repair templates",
+                  "Diagnosis checklists",
+                  "Basic analytics",
+                ].map(f => (
+                  <li key={f} className="flex items-center gap-3">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                      </svg>
                     </span>
-                  </div>
-                  <p className="text-xs text-blue-400 uppercase tracking-wider font-semibold mb-3">Pro</p>
-                  <p className="text-3xl font-bold text-white leading-none">299</p>
-                  <p className="text-slate-400 text-xs mt-1">MAD / month</p>
-                  <a href="mailto:support@fixflow.ma"
-                    className="mt-5 block w-full text-center py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors shadow-md shadow-blue-600/20">
-                    Get Pro →
-                  </a>
-                </div>
-              </div>
-
-              <div className="border-x border-b border-slate-800 rounded-b-2xl overflow-hidden divide-y divide-slate-800/70">
-                {COMPARISON.map((row, i) => (
-                  <div key={row.feature} className={`grid grid-cols-[1fr_160px_180px] ${i % 2 === 1 ? "bg-slate-900/20" : ""}`}>
-                    <div className="px-6 py-3.5 text-sm text-slate-400 border-r border-slate-800">{row.feature}</div>
-                    <div className="px-6 py-3.5 text-center border-r border-slate-800"><CellValue val={row.free} /></div>
-                    <div className="px-6 py-3.5 text-center bg-blue-950/10"><CellValue val={row.pro} pro /></div>
-                  </div>
+                    <span className="text-sm text-slate-300">{f}</span>
+                  </li>
                 ))}
+              </ul>
+              <Link
+                href="/register"
+                className="mt-8 block w-full text-center py-3.5 border border-slate-700 hover:border-blue-500 hover:text-blue-400 text-slate-300 font-semibold rounded-xl transition-all duration-200 text-sm"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+
+            {/* Pro card */}
+            <div className="relative bg-slate-900 border border-blue-500/60 rounded-2xl p-8 flex flex-col shadow-2xl shadow-blue-600/10">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/8 via-transparent to-transparent rounded-2xl pointer-events-none" />
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap">
+                <span className="bg-blue-600 text-white text-xs px-4 py-1.5 rounded-full font-bold tracking-wide shadow-lg shadow-blue-600/40">
+                  Most Popular
+                </span>
               </div>
+              <div className="mb-6 relative">
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Pro</p>
+                <div className="flex items-end gap-2 mt-4">
+                  <span className="text-5xl font-bold text-white leading-none">299</span>
+                  <span className="text-slate-400 text-base mb-1">MAD</span>
+                </div>
+                <p className="text-slate-500 text-sm mt-2">per month · Cancel anytime</p>
+              </div>
+              <div className="h-px bg-blue-500/20 mb-5" />
+              <div className="relative flex-1">
+                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-4">Everything in Free Trial, plus:</p>
+                <ul className="space-y-3.5">
+                  {[
+                    "Unlimited work orders",
+                    "Unlimited team members",
+                    "Advanced analytics & reports",
+                    "Expense tracking",
+                    "Warranty tracking",
+                    "SMS notifications",
+                    "Custom shop branding",
+                    "Priority support",
+                  ].map(f => (
+                    <li key={f} className="flex items-center gap-3">
+                      <span className="w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/40 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                        </svg>
+                      </span>
+                      <span className="text-sm text-slate-200">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <a
+                href="mailto:support@fixflow.ma"
+                className="relative mt-8 block w-full text-center py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all duration-200 text-sm shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 hover:scale-[1.02]"
+              >
+                Upgrade to Pro →
+              </a>
             </div>
           </div>
 
-          <p className="text-center text-xs text-slate-600 mt-8">
+          <p className="text-center text-xs text-slate-600 mt-10">
             Questions?{" "}
             <a href="mailto:support@fixflow.ma" className="text-slate-400 hover:text-white transition-colors">
               support@fixflow.ma
