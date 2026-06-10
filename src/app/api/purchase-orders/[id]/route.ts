@@ -32,6 +32,35 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
+  if (Array.isArray(body.items)) {
+    const items = body.items as { sparePartId: string; quantity: number; unitCost: number }[];
+    const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
+
+    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: params.id } });
+
+    const updated = await prisma.purchaseOrder.update({
+      where: { id: params.id },
+      data: {
+        notes: body.notes !== undefined ? body.notes || null : order.notes,
+        totalAmount,
+        items: {
+          create: items.map(i => ({
+            sparePartId: i.sparePartId,
+            quantity: i.quantity,
+            unitCost: i.unitCost,
+            totalCost: i.quantity * i.unitCost,
+          })),
+        },
+      },
+      include: {
+        supplier: true,
+        items: { include: { sparePart: { select: { name: true, partNumber: true } } } },
+        creator: { select: { name: true } },
+      },
+    });
+    return Response.json(updated);
+  }
+
   const updated = await prisma.purchaseOrder.update({
     where: { id: params.id },
     data: {

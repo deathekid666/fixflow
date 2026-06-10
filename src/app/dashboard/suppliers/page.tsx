@@ -15,7 +15,7 @@ type POItem = { sparePartId: string; quantity: string; unitCost: string };
 type PurchaseOrder = {
   id: string; orderNumber: string | null; status: string; totalAmount: number; notes: string | null; createdAt: string;
   supplier: { id: string; name: string };
-  items: { id: string; quantity: number; unitCost: number; totalCost: number; sparePart: { name: string; partNumber: string } }[];
+  items: { id: string; sparePartId: string; quantity: number; unitCost: number; totalCost: number; sparePart: { name: string; partNumber: string } }[];
   creator: { name: string };
 };
 
@@ -49,6 +49,12 @@ export default function SuppliersPage() {
 
   // Update PO status
   const [updatingPO, setUpdatingPO] = useState<string | null>(null);
+
+  // Edit PO
+  const [editingPO, setEditingPO] = useState<string | null>(null);
+  const [editItems, setEditItems] = useState<POItem[]>([]);
+  const [editNotes, setEditNotes] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -143,6 +149,52 @@ export default function SuppliersPage() {
       setTab("orders");
     }
     setSubmittingPO(false);
+  }
+
+  function openEditPO(order: PurchaseOrder) {
+    setEditingPO(order.id);
+    setEditItems(order.items.map(i => ({
+      sparePartId: i.sparePartId,
+      quantity: String(i.quantity),
+      unitCost: String(i.unitCost),
+    })));
+    setEditNotes(order.notes ?? "");
+  }
+
+  function updateEditItem(i: number, field: keyof POItem, value: string) {
+    setEditItems(prev => prev.map((item, idx) => {
+      if (idx !== i) return item;
+      if (field === "sparePartId") {
+        const part = parts.find(p => p.id === value);
+        return { ...item, sparePartId: value, unitCost: part ? part.unitPrice.toFixed(2) : item.unitCost };
+      }
+      return { ...item, [field]: value };
+    }));
+  }
+
+  async function saveEditPO() {
+    if (!editingPO) return;
+    const validItems = editItems.filter(i => i.sparePartId && i.quantity && i.unitCost);
+    if (validItems.length === 0) return;
+    setSavingEdit(true);
+    const res = await fetch(`/api/purchase-orders/${editingPO}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        notes: editNotes || null,
+        items: validItems.map(i => ({
+          sparePartId: i.sparePartId,
+          quantity: parseInt(i.quantity),
+          unitCost: parseFloat(i.unitCost),
+        })),
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setOrders(prev => prev.map(o => o.id === editingPO ? updated : o));
+      setEditingPO(null);
+    }
+    setSavingEdit(false);
   }
 
   async function deletePO(id: string) {
@@ -423,6 +475,10 @@ export default function SuppliersPage() {
                         Mark Received
                       </button>
                     )}
+                    <button onClick={() => editingPO === o.id ? setEditingPO(null) : openEditPO(o)}
+                      className={`text-xs px-2 py-1.5 transition-colors ${editingPO === o.id ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`} title="Edit order">
+                      ✏️
+                    </button>
                     <button onClick={() => deletePO(o.id)}
                       className="text-xs px-2 py-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Delete order">
                       🗑
@@ -456,7 +512,61 @@ export default function SuppliersPage() {
                   </table>
                 </div>
 
-                {o.notes && <p className="text-xs text-slate-400 italic">Note: {o.notes}</p>}
+                {o.notes && !editingPO && <p className="text-xs text-slate-400 italic">Note: {o.notes}</p>}
+
+                {editingPO === o.id && (
+                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Edit Purchase Order</p>
+
+                    {editItems.map((item, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <div className="flex-1 min-w-0">
+                          <select
+                            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                            value={item.sparePartId}
+                            onChange={e => updateEditItem(i, "sparePartId", e.target.value)}>
+                            <option value="">Select part...</option>
+                            {parts.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}{p.partNumber ? ` (${p.partNumber})` : ""} — Stock: {p.stock}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <input type="number" min="1" placeholder="Qty"
+                          className="w-16 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={item.quantity} onChange={e => updateEditItem(i, "quantity", e.target.value)} />
+                        <input type="number" min="0" step="0.01" placeholder="Cost"
+                          className="w-20 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                          value={item.unitCost} onChange={e => updateEditItem(i, "unitCost", e.target.value)} />
+                        {editItems.length > 1 && (
+                          <button onClick={() => setEditItems(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-500 text-xs pt-1.5 flex-shrink-0">✕</button>
+                        )}
+                      </div>
+                    ))}
+
+                    <button onClick={() => setEditItems(prev => [...prev, { sparePartId: "", quantity: "1", unitCost: "" }])}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors">
+                      + Add another part
+                    </button>
+
+                    <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      placeholder="Notes (optional)" value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">
+                        Total: <strong className="text-slate-900 dark:text-white">
+                          {editItems.reduce((sum, i) => sum + (parseInt(i.quantity) || 0) * (parseFloat(i.unitCost) || 0), 0).toFixed(2)} MAD
+                        </strong>
+                      </span>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingPO(null)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                        <button onClick={saveEditPO} disabled={savingEdit || editItems.every(i => !i.sparePartId)}
+                          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+                          {savingEdit ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
