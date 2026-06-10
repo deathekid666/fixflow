@@ -336,6 +336,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 Print</a>
+          {(order.status === "DONE" || order.status === "DELIVERED") && (
+            <a href={`/dashboard/workorders/${params.id}/health-report`} target="_blank" className="text-xs px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-700 dark:text-emerald-400 rounded-lg transition-colors font-medium">🩺 Health Report</a>
+          )}
           <button onClick={() => router.push(`/dashboard/workorders/${params.id}/edit`)} className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">✏️ Edit</button>
           <button onClick={() => setShowBounceForm(!showBounceForm)} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-600 dark:text-red-400 rounded-lg transition-colors">Report Bounce</button>
           {isAdmin && !showDeleteConfirm && <button onClick={() => setShowDeleteConfirm(true)} className="text-xs px-3 py-1.5 bg-red-700/40 hover:bg-red-700/70 text-red-600 dark:text-red-400 rounded-lg transition-colors">🗑 Delete</button>}
