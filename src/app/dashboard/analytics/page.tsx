@@ -134,33 +134,33 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-white">Analytics</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Analytics</h1>
           <p className="text-sm text-slate-500 mt-0.5">Revenue, expenses, profit and insights</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {["7d", "30d", "90d", "all"].map(r => (
             <button key={r} onClick={() => setDateRange(r)}
-              className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${dateRange === r ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${dateRange === r ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}>
               {r === "7d" ? "7 days" : r === "30d" ? "30 days" : r === "90d" ? "90 days" : "All time"}
             </button>
           ))}
-          <div className="w-px bg-slate-700 mx-1" />
-          <button onClick={exportAnalyticsCSV} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Analytics CSV</button>
-          <button onClick={() => exportCSV("workorders")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Orders</button>
-          <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
-          <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
+          <div className="w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+          <button onClick={exportAnalyticsCSV} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Analytics CSV</button>
+          <button onClick={() => exportCSV("workorders")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Orders</button>
+          <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
+          <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
         </div>
       </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: "Total Orders", value: revenue.summary.totalOrders, sub: `${activeOrders} active`, color: "text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
-          { label: "Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`, sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-white", icon: "💰", bg: "bg-slate-900 border-slate-800" },
-          { label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`, sub: `${collectionRate}% rate`, color: "text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
-          { label: "Expenses", value: `${revenue.summary.totalExpenses.toFixed(0)} MAD`, sub: "Total costs", color: "text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
-          { label: "Net Profit", value: `${revenue.summary.profit.toFixed(0)} MAD`, sub: `${profitMargin}% margin`, color: revenue.summary.profit >= 0 ? "text-emerald-400" : "text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
-          { label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`, sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-yellow-400" : "text-slate-400", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-slate-900 border-slate-800" },
+          { label: "Total Orders", value: revenue.summary.totalOrders, sub: `${activeOrders} active`, color: "text-slate-900 dark:text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
+          { label: "Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`, sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-slate-900 dark:text-white", icon: "💰", bg: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
+          { label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`, sub: `${collectionRate}% rate`, color: "text-green-600 dark:text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
+          { label: "Expenses", value: `${revenue.summary.totalExpenses.toFixed(0)} MAD`, sub: "Total costs", color: "text-red-600 dark:text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
+          { label: "Net Profit", value: `${revenue.summary.profit.toFixed(0)} MAD`, sub: `${profitMargin}% margin`, color: revenue.summary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
+          { label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`, sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
         ].map(s => (
           <div key={s.label} className={`border rounded-xl p-4 ${s.bg}`}>
             <div className="flex items-center justify-between mb-2">
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
               <span className="text-base">{s.icon}</span>
             </div>
             <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-slate-600 mt-1">{s.sub}</p>
+            <p className="text-xs text-slate-400 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
@@ -185,9 +185,9 @@ export default function AnalyticsPage() {
         function DeltaBadge({ curr, prev, invert = false }: { curr: number; prev: number; invert?: boolean }) {
           const pct = delta(curr, prev);
           const positive = invert ? pct < 0 : pct >= 0;
-          if (curr === 0 && prev === 0) return <span className="text-xs text-slate-600">—</span>;
+          if (curr === 0 && prev === 0) return <span className="text-xs text-slate-400">—</span>;
           return (
-            <span className={`text-xs font-medium ${positive ? "text-emerald-400" : "text-red-400"}`}>
+            <span className={`text-xs font-medium ${positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
               {pct >= 0 ? "▲" : "▼"} {Math.abs(pct)}%
             </span>
           );
@@ -236,28 +236,28 @@ export default function AnalyticsPage() {
         ];
 
         return (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-semibold text-slate-200">Month-over-Month</h2>
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Month-over-Month</h2>
                 <p className="text-xs text-slate-500 mt-0.5">{thisMonthName} vs {lastMonthName}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {metrics.map(m => (
-                <div key={m.label} className="bg-slate-800/50 rounded-xl p-3 space-y-2">
+                <div key={m.label} className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-500">{m.label}</span>
                     <span className="text-sm">{m.icon}</span>
                   </div>
                   <div>
-                    <p className={`text-lg font-bold ${m.label === "Net Profit" ? (m.curr >= 0 ? "text-emerald-400" : "text-red-400") : m.label === "Expenses" ? "text-red-400" : "text-white"}`}>
+                    <p className={`text-lg font-bold ${m.label === "Net Profit" ? (m.curr >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400") : m.label === "Expenses" ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
                       {m.fmt(m.curr)}
                     </p>
                     <DeltaBadge curr={m.curr} prev={m.prev} invert={m.invert} />
                   </div>
-                  <div className="pt-1 border-t border-slate-700/50">
-                    <p className="text-xs text-slate-600">{lastMonthName.slice(0, 3)}: <span className="text-slate-400">{m.fmt(m.prev)}</span></p>
+                  <div className="pt-1 border-t border-slate-200 dark:border-slate-700/50">
+                    <p className="text-xs text-slate-500">{lastMonthName.slice(0, 3)}: <span className="text-slate-400">{m.fmt(m.prev)}</span></p>
                   </div>
                 </div>
               ))}
@@ -267,22 +267,22 @@ export default function AnalyticsPage() {
       })()}
 
       {/* Revenue vs Expenses vs Profit chart */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-slate-200">Revenue, Expenses & Profit</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Revenue, Expenses & Profit</h2>
             <p className="text-xs text-slate-500 mt-0.5">Billed vs collected vs expenses vs net profit</p>
           </div>
           <div className="flex gap-2">
             {["daily", "weekly", "monthly"].map(p => (
               <button key={p} onClick={() => setPeriod(p)}
-                className={`px-3 py-1 text-xs rounded-lg transition-colors ${period === p ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>
+                className={`px-3 py-1 text-xs rounded-lg transition-colors ${period === p ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}>
                 {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
             <button onClick={() => downloadChartSVG("chart-revenue", `revenue-${dateRange}.svg`)}
               title="Download chart as SVG"
-              className="px-2 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
+              className="px-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               ⬇
             </button>
           </div>
@@ -328,12 +328,12 @@ export default function AnalyticsPage() {
 
       {/* Orders volume + Status breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-slate-200">Work Orders Volume</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Work Orders Volume</h2>
             <button onClick={() => downloadChartSVG("chart-orders", `orders-${dateRange}.svg`)}
               title="Download chart as SVG"
-              className="px-2 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
+              className="px-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               ⬇
             </button>
           </div>
@@ -353,12 +353,12 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-slate-200">Orders by Status</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Orders by Status</h2>
             <button onClick={() => downloadChartSVG("chart-status", `status-${dateRange}.svg`)}
               title="Download chart as SVG"
-              className="px-2 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
+              className="px-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               ⬇
             </button>
           </div>
@@ -378,9 +378,9 @@ export default function AnalyticsPage() {
                   <div key={d.name} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
-                      <span className="text-slate-400">{d.name}</span>
+                      <span className="text-slate-500 dark:text-slate-400">{d.name}</span>
                     </div>
-                    <span className="text-white font-medium">{d.value}</span>
+                    <span className="text-slate-900 dark:text-white font-medium">{d.value}</span>
                   </div>
                 ))}
               </div>
@@ -390,8 +390,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Engineer leaderboard */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-slate-200 mb-1">Engineer Leaderboard</h2>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Engineer Leaderboard</h2>
         <p className="text-xs text-slate-500 mb-4">Performance ranked by completed orders</p>
         {analytics.engineerStats.length === 0 ? (
           <p className="text-sm text-slate-500">No engineers yet.</p>
@@ -401,23 +401,23 @@ export default function AnalyticsPage() {
               const rate = e.total > 0 ? Math.round((e.completed / e.total) * 100) : 0;
               return (
                 <div key={e.id} className="flex items-center gap-4">
-                  <span className={`text-sm font-bold w-6 text-center ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-orange-400" : "text-slate-600"}`}>
+                  <span className={`text-sm font-bold w-6 text-center ${i === 0 ? "text-yellow-500 dark:text-yellow-400" : i === 1 ? "text-slate-400 dark:text-slate-300" : i === 2 ? "text-orange-600 dark:text-orange-400" : "text-slate-400"}`}>
                     {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-white font-medium truncate">{e.name}</span>
-                      <div className="flex items-center gap-3 text-xs text-slate-400 flex-shrink-0 ml-2">
-                        <span className="text-green-400 font-medium">{e.completed} done</span>
+                      <span className="text-sm text-slate-900 dark:text-white font-medium truncate">{e.name}</span>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-shrink-0 ml-2">
+                        <span className="text-green-600 dark:text-green-400 font-medium">{e.completed} done</span>
                         <span>{e.total} total</span>
-                        {e.bounces > 0 && <span className="text-red-400">{e.bounces} bounce{e.bounces > 1 ? "s" : ""}</span>}
+                        {e.bounces > 0 && <span className="text-red-600 dark:text-red-400">{e.bounces} bounce{e.bounces > 1 ? "s" : ""}</span>}
                         {e.avgTat > 0 && <span>TAT: {e.avgTat}d</span>}
                       </div>
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                       <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${rate}%` }} />
                     </div>
-                    <p className="text-xs text-slate-600 mt-0.5">{rate}% completion</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{rate}% completion</p>
                   </div>
                 </div>
               );
@@ -428,22 +428,22 @@ export default function AnalyticsPage() {
 
       {/* Top parts + Low stock */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-200 mb-1">Top Spare Parts Used</h2>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Top Spare Parts Used</h2>
           <p className="text-xs text-slate-500 mb-4">Most used parts this period</p>
           {analytics.topParts.length === 0 ? <p className="text-sm text-slate-500">No parts data yet.</p> : (
             <div className="space-y-3">
               {analytics.topParts.slice(0, 6).map((p, i) => (
                 <div key={p.sparePartId} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-600 w-4">#{i + 1}</span>
+                  <span className="text-xs text-slate-400 w-4">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-0.5">
-                      <span className="text-xs text-slate-300 truncate">{p.part?.name}</span>
-                      <span className="text-xs text-white font-medium ml-2 flex-shrink-0">{p._sum.quantity} used</span>
+                      <span className="text-xs text-slate-600 dark:text-slate-300 truncate">{p.part?.name}</span>
+                      <span className="text-xs text-slate-900 dark:text-white font-medium ml-2 flex-shrink-0">{p._sum.quantity} used</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-600 font-mono">{p.part?.partNumber || "—"}</span>
-                      <span className="text-xs text-green-400">{p._sum.total?.toFixed(0)} MAD</span>
+                      <span className="text-xs text-slate-400 font-mono">{p.part?.partNumber || "—"}</span>
+                      <span className="text-xs text-green-600 dark:text-green-400">{p._sum.total?.toFixed(0)} MAD</span>
                     </div>
                   </div>
                 </div>
@@ -452,8 +452,8 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        <div className={`border rounded-xl p-5 ${analytics.lowStock.length > 0 ? "bg-orange-950/20 border-orange-800/30" : "bg-slate-900 border-slate-800"}`}>
-          <h2 className={`text-sm font-semibold mb-1 ${analytics.lowStock.length > 0 ? "text-orange-400" : "text-slate-200"}`}>
+        <div className={`border rounded-xl p-5 ${analytics.lowStock.length > 0 ? "bg-orange-50 dark:bg-orange-950/20 border-orange-300 dark:border-orange-800/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+          <h2 className={`text-sm font-semibold mb-1 ${analytics.lowStock.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-slate-700 dark:text-slate-200"}`}>
             {analytics.lowStock.length > 0 ? `⚠️ Low Stock (${analytics.lowStock.length})` : "Stock Status"}
           </h2>
           <p className="text-xs text-slate-500 mb-4">Parts below 5 units</p>
@@ -467,11 +467,11 @@ export default function AnalyticsPage() {
               {analytics.lowStock.map(p => (
                 <div key={p.id} className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-white truncate">{p.name}</p>
+                    <p className="text-xs text-slate-900 dark:text-white truncate">{p.name}</p>
                     <p className="text-xs text-slate-500 font-mono">{p.partNumber || "—"}</p>
                   </div>
                   <div className="text-right ml-3 flex-shrink-0">
-                    <span className={`text-sm font-bold ${p.stock === 0 ? "text-red-400" : "text-yellow-400"}`}>{p.stock}</span>
+                    <span className={`text-sm font-bold ${p.stock === 0 ? "text-red-600 dark:text-red-400" : "text-yellow-600 dark:text-yellow-400"}`}>{p.stock}</span>
                     <p className="text-xs text-slate-500">units</p>
                   </div>
                 </div>

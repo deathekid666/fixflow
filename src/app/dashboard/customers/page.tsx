@@ -69,34 +69,34 @@ export default function CustomersPage() {
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white">Customers</h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Customers</h1>
         <p className="text-sm text-slate-500 mt-0.5">Customer profiles and repair history</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Total Customers</p>
-          <p className="text-2xl font-bold text-white">{totalCustomers}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalCustomers}</p>
         </div>
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Loyal (3+ orders)</p>
-          <p className="text-2xl font-bold text-amber-400">{loyalCustomers}</p>
-          <p className="text-xs text-slate-600 mt-1">{totalCustomers > 0 ? Math.round((loyalCustomers / totalCustomers) * 100) : 0}% of base</p>
+          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{loyalCustomers}</p>
+          <p className="text-xs text-slate-400 mt-1">{totalCustomers > 0 ? Math.round((loyalCustomers / totalCustomers) * 100) : 0}% of base</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Total Billed</p>
-          <p className="text-2xl font-bold text-white">{totalRevenue.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalRevenue.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
         </div>
-        <div className={`border rounded-xl p-4 ${outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-slate-900 border-slate-800"}`}>
+        <div className={`border rounded-xl p-4 ${outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
           <p className="text-xs text-slate-500 mb-1">Outstanding</p>
-          <p className={`text-2xl font-bold ${outstanding > 0 ? "text-red-400" : "text-slate-400"}`}>{outstanding.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
+          <p className={`text-2xl font-bold ${outstanding > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500"}`}>{outstanding.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
         </div>
       </div>
 
       {/* Search */}
       <input
-        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
         placeholder="Search by name, phone or email..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -105,18 +105,18 @@ export default function CustomersPage() {
       {/* ── Mobile card list ── */}
       <div className="md:hidden space-y-3">
         {loading && [...Array(4)].map((_, i) => (
-          <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 animate-pulse">
+          <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 animate-pulse">
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1.5">
-                <div className={`h-4 bg-slate-700 rounded ${["w-32","w-28","w-36","w-24"][i]}`} />
-                <div className={`h-3 bg-slate-800 rounded ${["w-24","w-20","w-28","w-20"][i]}`} />
+                <div className={`h-4 bg-slate-200 dark:bg-slate-700 rounded ${["w-32","w-28","w-36","w-24"][i]}`} />
+                <div className={`h-3 bg-slate-200 dark:bg-slate-800 rounded ${["w-24","w-20","w-28","w-20"][i]}`} />
               </div>
-              <div className="h-3 w-10 bg-slate-800 rounded" />
+              <div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <div className="h-12 bg-slate-800/60 rounded-lg" />
-              <div className="h-12 bg-slate-800/60 rounded-lg" />
-              <div className="h-12 bg-slate-800/60 rounded-lg" />
+              <div className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+              <div className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+              <div className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
             </div>
           </div>
         ))}
@@ -133,13 +133,13 @@ export default function CustomersPage() {
           return (
             <div key={c.phone}
               onClick={() => router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}
-              className="fade-in bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-800 cursor-pointer"
+              className="fade-in bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-50 dark:active:bg-slate-800 cursor-pointer"
               style={{ animationDelay: `${i * 40}ms` }}>
               {/* Name + badge */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-white font-medium">{c.name}</span>
+                    <span className="text-slate-900 dark:text-white font-medium">{c.name}</span>
                     {badge && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
                     )}
@@ -150,16 +150,16 @@ export default function CustomersPage() {
               </div>
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-slate-800/50 rounded-lg py-2">
-                  <p className="text-base font-bold text-white">{c.totalOrders}</p>
+                <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
+                  <p className="text-base font-bold text-slate-900 dark:text-white">{c.totalOrders}</p>
                   <p className="text-xs text-slate-500">visits</p>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg py-2">
-                  <p className="text-base font-bold text-slate-200">{c.totalSpent.toFixed(0)}</p>
+                <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
+                  <p className="text-base font-bold text-slate-700 dark:text-slate-200">{c.totalSpent.toFixed(0)}</p>
                   <p className="text-xs text-slate-500">MAD spent</p>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg py-2">
-                  <p className="text-base font-bold text-slate-300">{new Date(c.lastVisit).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</p>
+                <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
+                  <p className="text-base font-bold text-slate-600 dark:text-slate-300">{new Date(c.lastVisit).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</p>
                   <p className="text-xs text-slate-500">last visit</p>
                 </div>
               </div>
@@ -176,29 +176,29 @@ export default function CustomersPage() {
       </div>
 
       {/* ── Desktop table ── */}
-      <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800">
+            <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">
-                <button onClick={() => toggleSort("name")} className="flex items-center hover:text-slate-300 transition-colors">
+                <button onClick={() => toggleSort("name")} className="flex items-center hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                   Customer <SortIcon k="name" />
                 </button>
               </th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Phone</th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">
-                <button onClick={() => toggleSort("totalOrders")} className="flex items-center hover:text-slate-300 transition-colors">
+                <button onClick={() => toggleSort("totalOrders")} className="flex items-center hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                   Visits <SortIcon k="totalOrders" />
                 </button>
               </th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">
-                <button onClick={() => toggleSort("totalSpent")} className="flex items-center hover:text-slate-300 transition-colors">
+                <button onClick={() => toggleSort("totalSpent")} className="flex items-center hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                   Total Spent <SortIcon k="totalSpent" />
                 </button>
               </th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Collected</th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">
-                <button onClick={() => toggleSort("lastVisit")} className="flex items-center hover:text-slate-300 transition-colors">
+                <button onClick={() => toggleSort("lastVisit")} className="flex items-center hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                   Last Visit <SortIcon k="lastVisit" />
                 </button>
               </th>
@@ -208,15 +208,15 @@ export default function CustomersPage() {
           </thead>
           <tbody>
             {loading && [...Array(6)].map((_, i) => (
-              <tr key={i} className="border-b border-slate-800/50 animate-pulse">
-                <td className="px-4 py-3.5 space-y-1.5"><div className={`h-3 bg-slate-700 rounded ${["w-28","w-32","w-24","w-36","w-28","w-30"][i]}`} /><div className="h-2 w-20 bg-slate-800 rounded" /></td>
-                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded ${["w-24","w-28","w-20","w-24","w-28","w-20"][i]}`} /></td>
-                <td className="px-4 py-3.5"><div className="h-3 w-8 bg-slate-800 rounded" /></td>
-                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-800 rounded ${["w-20","w-16","w-24","w-18","w-20","w-16"][i]}`} /></td>
-                <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-800 rounded" /></td>
-                <td className="px-4 py-3.5"><div className="h-3 w-20 bg-slate-800 rounded" /></td>
-                <td className="px-4 py-3.5"><div className="h-5 w-14 bg-slate-800 rounded-full" /></td>
-                <td className="px-4 py-3.5"><div className="h-3 w-10 bg-slate-800 rounded" /></td>
+              <tr key={i} className="border-b border-slate-200/50 dark:border-slate-800/50 animate-pulse">
+                <td className="px-4 py-3.5 space-y-1.5"><div className={`h-3 bg-slate-200 dark:bg-slate-700 rounded ${["w-28","w-32","w-24","w-36","w-28","w-30"][i]}`} /><div className="h-2 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-200 dark:bg-slate-800 rounded ${["w-24","w-28","w-20","w-24","w-28","w-20"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-8 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className={`h-3 bg-slate-200 dark:bg-slate-800 rounded ${["w-20","w-16","w-24","w-18","w-20","w-16"][i]}`} /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" /></td>
               </tr>
             ))}
             {!loading && sorted.length === 0 && (
@@ -232,23 +232,23 @@ export default function CustomersPage() {
               const badge = loyaltyTier(c.totalOrders);
               const due = c.totalSpent - c.totalCollected;
               return (
-                <tr key={c.phone} className="fade-in border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                <tr key={c.phone} className="fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
                   style={{ animationDelay: `${i * 30}ms` }}
                   onClick={() => router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}>
                   <td className="px-4 py-3">
-                    <div className="text-white font-medium">{c.name}</div>
+                    <div className="text-slate-900 dark:text-white font-medium">{c.name}</div>
                     <div className="text-xs text-slate-500">{c.email || "—"}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-300 text-sm">{c.phone}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-sm">{c.phone}</td>
                   <td className="px-4 py-3">
-                    <span className="text-white font-semibold">{c.totalOrders}</span>
+                    <span className="text-slate-900 dark:text-white font-semibold">{c.totalOrders}</span>
                     <span className="text-xs text-slate-500 ml-1">visit{c.totalOrders !== 1 ? "s" : ""}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-white font-medium">{c.totalSpent.toFixed(2)} MAD</span>
-                    {due > 0.01 && <div className="text-xs text-red-400 mt-0.5">{due.toFixed(0)} due</div>}
+                    <span className="text-slate-900 dark:text-white font-medium">{c.totalSpent.toFixed(2)} MAD</span>
+                    {due > 0.01 && <div className="text-xs text-red-600 dark:text-red-400 mt-0.5">{due.toFixed(0)} due</div>}
                   </td>
-                  <td className="px-4 py-3 text-green-400 font-medium">{c.totalCollected.toFixed(2)} MAD</td>
+                  <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{c.totalCollected.toFixed(2)} MAD</td>
                   <td className="px-4 py-3 text-slate-400 text-xs">{new Date(c.lastVisit).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     {badge ? (

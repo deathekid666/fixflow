@@ -60,8 +60,8 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
         body { font-family: Arial, sans-serif; }
       `}</style>
 
-      <div className="no-print p-4 bg-slate-900 flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
+      <div className="no-print p-4 bg-slate-100 dark:bg-slate-900 flex items-center gap-3">
+        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
         <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg">🖨 Print / Save PDF</button>
       </div>
 

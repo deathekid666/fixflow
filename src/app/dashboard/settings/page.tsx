@@ -10,14 +10,14 @@ type Shop = {
   logoUrl: string | null; plan: string; status: string; trialEndsAt: string | null;
 };
 
-const INPUT = "w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
+const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
 
 function Alert({ type, msg }: { type: "success" | "error"; msg: string }) {
   return (
     <div className={`text-sm px-4 py-3 rounded-lg border ${
       type === "success"
-        ? "bg-green-500/10 border-green-500/30 text-green-400"
-        : "bg-red-500/10 border-red-500/30 text-red-400"
+        ? "bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400"
+        : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
     }`}>{msg}</div>
   );
 }
@@ -131,7 +131,7 @@ export default function SettingsPage() {
   return (
     <div className="p-6 space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-xl font-semibold text-white">Settings</h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Settings</h1>
         <p className="text-sm text-slate-500 mt-0.5">Manage your account and shop</p>
       </div>
 
@@ -139,18 +139,18 @@ export default function SettingsPage() {
       {shop && (
         <div className={`border rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 ${
           shop.status === "TRIAL" && daysLeft !== null && daysLeft <= 3
-            ? "bg-red-950/20 border-red-800/50"
-            : "bg-slate-900 border-slate-800"
+            ? "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800/50"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
         }`}>
           <div className="flex items-center gap-3">
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              shop.status === "ACTIVE" ? "bg-green-500/20 text-green-400" :
-              shop.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-400" :
-              "bg-red-500/20 text-red-400"
+              shop.status === "ACTIVE" ? "bg-green-500/20 text-green-600 dark:text-green-400" :
+              shop.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" :
+              "bg-red-500/20 text-red-600 dark:text-red-400"
             }`}>{shop.status}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{shop.plan}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium">{shop.plan}</span>
             {shop.status === "TRIAL" && daysLeft !== null && (
-              <span className={`text-xs font-medium ${daysLeft <= 3 ? "text-red-400" : "text-slate-400"}`}>
+              <span className={`text-xs font-medium ${daysLeft <= 3 ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400"}`}>
                 {daysLeft} day{daysLeft !== 1 ? "s" : ""} left in trial
               </span>
             )}
@@ -165,13 +165,13 @@ export default function SettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
+      <div className="flex gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${
               tab === t.key
-                ? "bg-slate-700 text-white"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             }`}>
             <span className="text-base">{t.icon}</span>
             <span>{t.label}</span>
@@ -181,8 +181,8 @@ export default function SettingsPage() {
 
       {/* Profile tab */}
       {tab === "profile" && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-300">Profile Information</h2>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Profile Information</h2>
           {profileMsg && <Alert type="success" msg={profileMsg} />}
           {profileError && <Alert type="error" msg={profileError} />}
           <div className="grid grid-cols-2 gap-4">
@@ -197,7 +197,7 @@ export default function SettingsPage() {
           </div>
           <div className="pt-1">
             <p className="text-xs text-slate-500 mb-1">Role</p>
-            <span className="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">{user?.role}</span>
+            <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg">{user?.role}</span>
           </div>
           <button onClick={saveProfile} disabled={savingProfile}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
@@ -208,28 +208,28 @@ export default function SettingsPage() {
 
       {/* Shop tab */}
       {tab === "shop" && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
           {user?.role !== "ADMIN" ? (
             <p className="text-sm text-slate-500 text-center py-6">Only admins can edit shop settings.</p>
           ) : !shop ? (
             <p className="text-sm text-slate-500 text-center py-6">Loading shop...</p>
           ) : (
             <>
-              <h2 className="text-sm font-semibold text-slate-300">Shop Settings</h2>
+              <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Shop Settings</h2>
               {shopMsg && <Alert type="success" msg={shopMsg} />}
 
               {/* Logo */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-700 flex-shrink-0">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
                   {shop.logoUrl
                     ? <img src={shop.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                     : <span className="text-2xl">🔧</span>}
                 </div>
                 <div>
-                  <p className="text-sm text-white font-medium">Shop Logo</p>
+                  <p className="text-sm text-slate-900 dark:text-white font-medium">Shop Logo</p>
                   <p className="text-xs text-slate-500 mb-2">Shown on receipts and the customer portal</p>
                   <button onClick={() => logoRef.current?.click()} disabled={uploadingLogo}
-                    className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
+                    className="text-xs px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
                     {uploadingLogo ? "Uploading..." : "Upload Logo"}
                   </button>
                   <input ref={logoRef} type="file" className="hidden" accept="image/*" onChange={uploadLogo} />
@@ -268,8 +268,8 @@ export default function SettingsPage() {
 
       {/* Security tab */}
       {tab === "security" && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-300">Change Password</h2>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Change Password</h2>
           {pwMsg && <Alert type="success" msg={pwMsg} />}
           {pwError && <Alert type="error" msg={pwError} />}
           <div>

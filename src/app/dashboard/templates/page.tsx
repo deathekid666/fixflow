@@ -23,9 +23,9 @@ type Template = {
 };
 
 const FAULT_COLORS: Record<string, string> = {
-  LOW: "text-green-400 bg-green-500/10",
-  MEDIUM: "text-yellow-400 bg-yellow-500/10",
-  HIGH: "text-red-400 bg-red-500/10",
+  LOW: "text-green-600 dark:text-green-400 bg-green-500/10",
+  MEDIUM: "text-yellow-600 dark:text-yellow-400 bg-yellow-500/10",
+  HIGH: "text-red-600 dark:text-red-400 bg-red-500/10",
 };
 
 const CATEGORIES = ["", "Apple", "Samsung", "Huawei", "Honor", "Xiaomi", "Other"];
@@ -130,7 +130,7 @@ export default function TemplatesPage() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-white">Work Order Templates</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Work Order Templates</h1>
           <p className="text-sm text-slate-500 mt-0.5">Pre-fill common repairs to save time</p>
         </div>
         {isAdmin && (
@@ -142,21 +142,21 @@ export default function TemplatesPage() {
 
       {/* Create form */}
       {showForm && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
-          <h2 className="text-sm font-semibold text-slate-300">New Template</h2>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-5">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">New Template</h2>
+          {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 
           {/* Basic info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="text-xs text-slate-400 mb-1 block">Template Name *</label>
               <input placeholder="e.g. iPhone 13 Screen Replacement" value={form.name} onChange={e => set("name", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Category</label>
               <select value={form.category} onChange={e => set("category", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c || "No category"}</option>)}
               </select>
             </div>
@@ -171,12 +171,12 @@ export default function TemplatesPage() {
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Device Brand</label>
               <input placeholder="e.g. Apple" value={form.deviceBrand} onChange={e => set("deviceBrand", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Device Model</label>
               <input placeholder="e.g. iPhone 13" value={form.deviceModel} onChange={e => set("deviceModel", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div className="col-span-2">
               <label className="text-xs text-slate-400 mb-1 block">Fault Description *</label>
@@ -186,17 +186,17 @@ export default function TemplatesPage() {
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Repair Type</label>
               <input placeholder="e.g. Screen Replacement" value={form.repairType} onChange={e => set("repairType", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Default Price (MAD)</label>
               <input type="number" placeholder="0.00" value={form.defaultPrice} onChange={e => set("defaultPrice", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Fault Level</label>
               <select value={form.faultLevel} onChange={e => set("faultLevel", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none">
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="HIGH">High</option>
@@ -205,7 +205,7 @@ export default function TemplatesPage() {
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Service Type</label>
               <select value={form.serviceType} onChange={e => set("serviceType", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none">
                 <option value="IN_STORE">In Store</option>
                 <option value="ON_SITE">On Site</option>
                 <option value="RETRIEVAL">Retrieval</option>
@@ -223,7 +223,7 @@ export default function TemplatesPage() {
                 {spareParts.map(p => <option key={p.id} value={p.id}>{p.name} — {p.unitPrice.toFixed(2)} MAD</option>)}
               </select>
               <input type="number" min="1" value={newPartQty} onChange={e => setNewPartQty(e.target.value)}
-                className="w-16 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" placeholder="Qty" />
+                className="w-16 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none" placeholder="Qty" />
               <button onClick={addDefaultPart} disabled={!newPartId}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">Add</button>
             </div>
@@ -232,11 +232,11 @@ export default function TemplatesPage() {
                 {defaultParts.map(dp => {
                   const part = spareParts.find(p => p.id === dp.sparePartId);
                   return (
-                    <div key={dp.sparePartId} className="flex items-center justify-between bg-slate-800 rounded-lg px-3 py-2 text-xs">
-                      <span className="text-slate-300">{part?.name} × {dp.quantity}</span>
+                    <div key={dp.sparePartId} className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 text-xs">
+                      <span className="text-slate-600 dark:text-slate-300">{part?.name} × {dp.quantity}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-slate-500">{((part?.unitPrice ?? 0) * dp.quantity).toFixed(2)} MAD</span>
-                        <button onClick={() => removeDefaultPart(dp.sparePartId)} className="text-red-400 hover:text-red-300">×</button>
+                        <button onClick={() => removeDefaultPart(dp.sparePartId)} className="text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300">×</button>
                       </div>
                     </div>
                   );
@@ -250,20 +250,20 @@ export default function TemplatesPage() {
             <label className="text-xs text-slate-400 font-medium block">Default Line Items (Labor, Services)</label>
             <div className="flex gap-2">
               <input placeholder="e.g. Labor fee" value={newLineLabel} onChange={e => setNewLineLabel(e.target.value)}
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none" />
+                className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" />
               <input type="number" placeholder="Amount" value={newLineAmount} onChange={e => setNewLineAmount(e.target.value)}
-                className="w-24 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none" />
+                className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" />
               <button onClick={addDefaultLineItem} disabled={!newLineLabel || !newLineAmount}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">Add</button>
             </div>
             {defaultLineItems.length > 0 && (
               <div className="space-y-1">
                 {defaultLineItems.map((li, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-800 rounded-lg px-3 py-2 text-xs">
-                    <span className="text-slate-300">{li.label}</span>
+                  <div key={i} className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 text-xs">
+                    <span className="text-slate-600 dark:text-slate-300">{li.label}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-500">{li.amount.toFixed(2)} MAD</span>
-                      <button onClick={() => removeDefaultLineItem(i)} className="text-red-400 hover:text-red-300">×</button>
+                      <button onClick={() => removeDefaultLineItem(i)} className="text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300">×</button>
                     </div>
                   </div>
                 ))}
@@ -273,7 +273,7 @@ export default function TemplatesPage() {
 
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">{saving ? "Saving..." : "Save Template"}</button>
-            <button onClick={() => { setShowForm(false); setDefaultParts([]); setDefaultLineItems([]); }} className="px-5 py-2 border border-slate-700 text-slate-300 text-sm rounded-lg hover:bg-slate-800 transition-colors">Cancel</button>
+            <button onClick={() => { setShowForm(false); setDefaultParts([]); setDefaultLineItems([]); }} className="px-5 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
           </div>
         </div>
       )}
@@ -281,35 +281,35 @@ export default function TemplatesPage() {
       {/* Category filter */}
       {categories.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setFilterCategory("")} className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${!filterCategory ? "bg-blue-600 text-white border-blue-600" : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600"}`}>All</button>
+          <button onClick={() => setFilterCategory("")} className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${!filterCategory ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>All</button>
           {categories.map(c => (
-            <button key={c} onClick={() => setFilterCategory(c)} className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filterCategory === c ? "bg-blue-600 text-white border-blue-600" : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600"}`}>{c}</button>
+            <button key={c} onClick={() => setFilterCategory(c)} className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filterCategory === c ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>{c}</button>
           ))}
         </div>
       )}
 
       {/* Templates grid */}
       {loading ? <p className="text-slate-400 text-sm">Loading...</p> : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-xl">
+        <div className="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <p className="text-4xl mb-3">🗂️</p>
           <p className="text-slate-400 text-sm">No templates yet.</p>
-          {isAdmin && <p className="text-slate-600 text-xs mt-1">Create your first template to speed up work order creation.</p>}
+          {isAdmin && <p className="text-slate-400 text-xs mt-1">Create your first template to speed up work order creation.</p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(t => (
-            <div key={t.id} className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3 hover:border-slate-700 transition-colors">
+            <div key={t.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-white">{t.name}</h3>
-                    {t.category && <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{t.category}</span>}
+                    <h3 className="font-semibold text-slate-900 dark:text-white">{t.name}</h3>
+                    {t.category && <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full">{t.category}</span>}
                   </div>
                   {(t.deviceBrand || t.deviceModel) && <p className="text-xs text-slate-400 mt-0.5">{t.deviceBrand} {t.deviceModel}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {t.defaultPrice > 0 && <span className="text-xs text-emerald-400 font-medium">{t.defaultPrice} MAD</span>}
-                  {isAdmin && <button onClick={() => handleDelete(t.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>}
+                  {t.defaultPrice > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t.defaultPrice} MAD</span>}
+                  {isAdmin && <button onClick={() => handleDelete(t.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300">Delete</button>}
                 </div>
               </div>
 
@@ -317,9 +317,9 @@ export default function TemplatesPage() {
 
               <div className="flex flex-wrap gap-2">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${FAULT_COLORS[t.faultLevel]}`}>{t.faultLevel}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{t.serviceType.replace("_", " ")}</span>
-                {t.repairType && <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{t.repairType}</span>}
-                {t.estimatedDuration > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-blue-400">⏱ {formatDuration(t.estimatedDuration)}</span>}
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{t.serviceType.replace("_", " ")}</span>
+                {t.repairType && <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{t.repairType}</span>}
+                {t.estimatedDuration > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400">⏱ {formatDuration(t.estimatedDuration)}</span>}
               </div>
 
               {/* Default parts preview */}
@@ -330,7 +330,7 @@ export default function TemplatesPage() {
                     {(t.defaultParts as DefaultPart[]).map((dp, i) => {
                       const part = spareParts.find(p => p.id === dp.sparePartId);
                       return part ? (
-                        <span key={i} className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{part.name} ×{dp.quantity}</span>
+                        <span key={i} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded">{part.name} ×{dp.quantity}</span>
                       ) : null;
                     })}
                   </div>
@@ -343,7 +343,7 @@ export default function TemplatesPage() {
                   <p className="text-xs text-slate-500 mb-1">💰 Default Services ({t.defaultLineItems.length})</p>
                   <div className="flex flex-wrap gap-1">
                     {(t.defaultLineItems as DefaultLineItem[]).map((li, i) => (
-                      <span key={i} className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{li.label}: {li.amount} MAD</span>
+                      <span key={i} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded">{li.label}: {li.amount} MAD</span>
                     ))}
                   </div>
                 </div>

@@ -23,6 +23,8 @@ type Template = {
   defaultLineItems: DefaultLineItem[];
 };
 
+const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
+
 export default function NewWorkOrderPage() {
   const { user } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -192,11 +194,11 @@ export default function NewWorkOrderPage() {
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
-          <h1 className="text-xl font-semibold text-white">New Work Order</h1>
+          <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">New Work Order</h1>
         </div>
         <button onClick={() => setShowTemplates(!showTemplates)}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors flex items-center gap-2">
+          className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors flex items-center gap-2">
           <span>🗂️</span>
           {showTemplates ? "Hide Templates" : "Use Template"}
           {templates.length > 0 && <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">{templates.length}</span>}
@@ -204,27 +206,27 @@ export default function NewWorkOrderPage() {
       </div>
 
       {selectedTemplate && (
-        <div className="bg-blue-950/30 border border-blue-800/50 rounded-xl px-4 py-3 flex items-center justify-between">
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-800/50 rounded-xl px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-xs text-blue-400 font-medium">Template applied: {selectedTemplate.name}</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Template applied: {selectedTemplate.name}</p>
             <p className="text-xs text-slate-500 mt-0.5">
               {Array.isArray(selectedTemplate.defaultParts) && selectedTemplate.defaultParts.length > 0 && `${selectedTemplate.defaultParts.length} parts · `}
               {Array.isArray(selectedTemplate.defaultLineItems) && selectedTemplate.defaultLineItems.length > 0 && `${selectedTemplate.defaultLineItems.length} services · `}
               {selectedTemplate.estimatedDuration > 0 && `Est. ${formatDuration(selectedTemplate.estimatedDuration)}`}
             </p>
           </div>
-          <button onClick={() => setSelectedTemplate(null)} className="text-xs text-slate-500 hover:text-slate-300">✕ Clear</button>
+          <button onClick={() => setSelectedTemplate(null)} className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">✕ Clear</button>
         </div>
       )}
 
       {showTemplates && (
-        <div className="bg-slate-900 border border-blue-800/50 rounded-xl p-4 space-y-3">
-          <p className="text-xs text-slate-400 font-medium">Select a template to auto-fill the form:</p>
+        <div className="bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800/50 rounded-xl p-4 space-y-3">
+          <p className="text-xs text-slate-500 font-medium">Select a template to auto-fill the form:</p>
           {categories.length > 0 && (
             <div className="flex gap-2 flex-wrap">
-              <button onClick={() => setFilterCategory("")} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${!filterCategory ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>All</button>
+              <button onClick={() => setFilterCategory("")} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${!filterCategory ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"}`}>All</button>
               {categories.map(c => (
-                <button key={c} onClick={() => setFilterCategory(c)} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${filterCategory === c ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>{c}</button>
+                <button key={c} onClick={() => setFilterCategory(c)} className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${filterCategory === c ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"}`}>{c}</button>
               ))}
             </div>
           )}
@@ -234,12 +236,12 @@ export default function NewWorkOrderPage() {
             <div className="grid grid-cols-2 gap-2">
               {filteredTemplates.map(t => (
                 <button key={t.id} onClick={() => applyTemplate(t)}
-                  className="text-left bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500 rounded-lg p-3 transition-colors space-y-1">
-                  <p className="text-sm font-medium text-white">{t.name}</p>
-                  {(t.deviceBrand || t.deviceModel) && <p className="text-xs text-slate-400">{t.deviceBrand} {t.deviceModel}</p>}
+                  className="text-left bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg p-3 transition-colors space-y-1">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">{t.name}</p>
+                  {(t.deviceBrand || t.deviceModel) && <p className="text-xs text-slate-500">{t.deviceBrand} {t.deviceModel}</p>}
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {t.defaultPrice > 0 && <span className="text-xs text-emerald-400">{t.defaultPrice} MAD</span>}
-                    {t.estimatedDuration > 0 && <span className="text-xs text-blue-400">⏱ {formatDuration(t.estimatedDuration)}</span>}
+                    {t.defaultPrice > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400">{t.defaultPrice} MAD</span>}
+                    {t.estimatedDuration > 0 && <span className="text-xs text-blue-600 dark:text-blue-400">⏱ {formatDuration(t.estimatedDuration)}</span>}
                     {Array.isArray(t.defaultParts) && t.defaultParts.length > 0 && <span className="text-xs text-slate-500">🔧 {t.defaultParts.length} parts</span>}
                     {Array.isArray(t.defaultLineItems) && t.defaultLineItems.length > 0 && <span className="text-xs text-slate-500">💰 {t.defaultLineItems.length} services</span>}
                   </div>
@@ -250,11 +252,11 @@ export default function NewWorkOrderPage() {
         </div>
       )}
 
-      {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
+      {error && <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
 
       {/* Device Info */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Device Information</h2>
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Device Information</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} placeholder="e.g. Samsung, Apple" />
           <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} placeholder="e.g. Galaxy S22" />
@@ -263,17 +265,17 @@ export default function NewWorkOrderPage() {
           <Field label="Warranty Start" type="date" value={form.warrantyStart} onChange={v => set("warrantyStart", v)} />
           <Field label="Warranty End" type="date" value={form.warrantyEnd} onChange={v => set("warrantyEnd", v)} />
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
-          <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded border-slate-600" />
+        <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer">
+          <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded border-slate-300 dark:border-slate-600" />
           Device is under warranty
         </label>
       </section>
 
       {/* Device Photos */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Device Photos</h2>
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Device Photos</h2>
             <p className="text-xs text-slate-500 mt-0.5">Document device condition on intake — protects against disputes</p>
           </div>
           <button onClick={() => photoRef.current?.click()}
@@ -284,16 +286,16 @@ export default function NewWorkOrderPage() {
         </div>
         {intakePhotos.length === 0 ? (
           <button onClick={() => photoRef.current?.click()}
-            className="w-full border-2 border-dashed border-slate-700 hover:border-slate-600 rounded-xl p-8 text-center transition-colors group">
+            className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 rounded-xl p-8 text-center transition-colors group">
             <p className="text-3xl mb-2">📷</p>
-            <p className="text-sm text-slate-400 group-hover:text-slate-300">Click to add device photos</p>
-            <p className="text-xs text-slate-600 mt-1">Front, back, sides, any existing damage</p>
+            <p className="text-sm text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">Click to add device photos</p>
+            <p className="text-xs text-slate-400 mt-1">Front, back, sides, any existing damage</p>
           </button>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
               {intakePhotos.map((p, i) => (
-                <div key={i} className="relative group rounded-lg overflow-hidden bg-slate-800 aspect-square">
+                <div key={i} className="relative group rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 aspect-square">
                   <img src={p.preview} alt={`Intake photo ${i + 1}`} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button onClick={() => removePhoto(i)} className="bg-red-600 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg">Remove</button>
@@ -304,9 +306,9 @@ export default function NewWorkOrderPage() {
                 </div>
               ))}
               <button onClick={() => photoRef.current?.click()}
-                className="aspect-square border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors group">
-                <span className="text-2xl">+</span>
-                <span className="text-xs text-slate-500 group-hover:text-slate-300">Add more</span>
+                className="aspect-square border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors group">
+                <span className="text-2xl text-slate-400">+</span>
+                <span className="text-xs text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">Add more</span>
               </button>
             </div>
             <p className="text-xs text-slate-500">{intakePhotos.length} photo{intakePhotos.length !== 1 ? "s" : ""} added</p>
@@ -315,14 +317,14 @@ export default function NewWorkOrderPage() {
       </section>
 
       {/* Customer Info */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Customer Information</h2>
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Customer Information</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Phone *</label>
+            <label className="text-xs text-slate-500 mb-1 block">Phone *</label>
             <div className="relative">
               <input type="text" placeholder="+212..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className={INPUT}
                 value={form.customerPhone} onChange={e => set("customerPhone", e.target.value)} />
               {lookingUp && <span className="absolute right-3 top-2.5 text-xs text-slate-400">🔍</span>}
             </div>
@@ -333,38 +335,38 @@ export default function NewWorkOrderPage() {
           </div>
         </div>
         {customerHistory && (
-          <div className="bg-blue-950/30 border border-blue-800/50 rounded-lg p-4 space-y-2">
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-800/50 rounded-lg p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-blue-300">👤 Returning Customer</p>
+              <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">👤 Returning Customer</p>
               <button onClick={() => { set("customerName", customerHistory.name); set("customerEmail", customerHistory.email || ""); }}
                 className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
                 Use this customer
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3 text-xs">
-              <div><p className="text-slate-500">Name</p><p className="text-slate-200 font-medium">{customerHistory.name}</p></div>
-              <div><p className="text-slate-500">Total Orders</p><p className="text-slate-200 font-medium">{customerHistory.totalOrders}</p></div>
-              <div><p className="text-slate-500">Last Visit</p><p className="text-slate-200 font-medium">{new Date(customerHistory.lastVisit).toLocaleDateString()}</p></div>
+              <div><p className="text-slate-500">Name</p><p className="text-slate-800 dark:text-slate-200 font-medium">{customerHistory.name}</p></div>
+              <div><p className="text-slate-500">Total Orders</p><p className="text-slate-800 dark:text-slate-200 font-medium">{customerHistory.totalOrders}</p></div>
+              <div><p className="text-slate-500">Last Visit</p><p className="text-slate-800 dark:text-slate-200 font-medium">{new Date(customerHistory.lastVisit).toLocaleDateString()}</p></div>
             </div>
           </div>
         )}
       </section>
 
       {/* Fault Info */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Fault & Service</h2>
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Fault & Service</h2>
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">Fault Description *</label>
+          <label className="text-xs text-slate-500 mb-1 block">Fault Description *</label>
           <textarea rows={3} placeholder="Describe the fault..."
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+            className={INPUT + " resize-none"}
             value={form.faultDescription} onChange={e => set("faultDescription", e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Appearance" value={form.appearance} onChange={v => set("appearance", v)} placeholder="e.g. Good, Scratched" />
           <Field label="Repair Type" value={form.repairType} onChange={v => set("repairType", v)} placeholder="e.g. Screen Replacement" />
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Service Type</label>
-            <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            <label className="text-xs text-slate-500 mb-1 block">Service Type</label>
+            <select className={INPUT}
               value={form.serviceType} onChange={e => set("serviceType", e.target.value)}>
               <option value="IN_STORE">In Store</option>
               <option value="ON_SITE">On Site</option>
@@ -372,8 +374,8 @@ export default function NewWorkOrderPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Fault Level</label>
-            <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            <label className="text-xs text-slate-500 mb-1 block">Fault Level</label>
+            <select className={INPUT}
               value={form.faultLevel} onChange={e => set("faultLevel", e.target.value)}>
               <option value="LOW">Low</option>
               <option value="MEDIUM">Medium</option>
@@ -382,9 +384,9 @@ export default function NewWorkOrderPage() {
           </div>
         </div>
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">Remarks</label>
+          <label className="text-xs text-slate-500 mb-1 block">Remarks</label>
           <textarea rows={2} placeholder="Any additional remarks..."
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+            className={INPUT + " resize-none"}
             value={form.remarks} onChange={e => set("remarks", e.target.value)} />
         </div>
       </section>
@@ -402,9 +404,9 @@ function Field({ label, value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <div>
-      <label className="text-xs text-slate-400 mb-1 block">{label}</label>
+      <label className="text-xs text-slate-500 mb-1 block">{label}</label>
       <input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+        className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
     </div>
   );
 }

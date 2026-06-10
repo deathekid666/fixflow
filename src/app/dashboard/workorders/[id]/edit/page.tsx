@@ -24,6 +24,8 @@ type WorkOrder = {
   faultLevel: string;
 };
 
+const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
+
 export default function EditWorkOrderPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -68,17 +70,17 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-slate-400 hover:text-white text-sm">← Back</button>
-        <h1 className="text-xl font-semibold text-white">Edit Work Order</h1>
+        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Edit Work Order</h1>
       </div>
 
-      {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
+      {error && <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
 
       {/* Admin-only: Device & Customer info */}
       {isAdmin && (
         <>
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Device Information <span className="text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Device Information <span className="text-blue-600 dark:text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} />
               <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} />
@@ -87,14 +89,14 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
               <Field label="Warranty Start" type="date" value={form.warrantyStart ? form.warrantyStart.slice(0, 10) : ""} onChange={v => set("warrantyStart", v)} />
               <Field label="Warranty End" type="date" value={form.warrantyEnd ? form.warrantyEnd.slice(0, 10) : ""} onChange={v => set("warrantyEnd", v)} />
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer">
               <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded" />
               Under warranty
             </label>
           </section>
 
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Customer Information <span className="text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Customer Information <span className="text-blue-600 dark:text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Name *" value={form.customerName} onChange={v => set("customerName", v)} />
               <Field label="Phone *" value={form.customerPhone} onChange={v => set("customerPhone", v)} />
@@ -107,12 +109,12 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
       )}
 
       {/* Everyone can edit fault & service */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Fault & Service</h2>
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Fault & Service</h2>
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">Fault Description *</label>
+          <label className="text-xs text-slate-500 mb-1 block">Fault Description *</label>
           <textarea rows={3}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+            className={INPUT + " resize-none"}
             value={form.faultDescription}
             onChange={e => set("faultDescription", e.target.value)} />
         </div>
@@ -120,8 +122,8 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
           <Field label="Appearance" value={form.appearance} onChange={v => set("appearance", v)} />
           <Field label="Repair Type" value={form.repairType} onChange={v => set("repairType", v)} />
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Service Type</label>
-            <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+            <label className="text-xs text-slate-500 mb-1 block">Service Type</label>
+            <select className={INPUT}
               value={form.serviceType} onChange={e => set("serviceType", e.target.value)}>
               <option value="IN_STORE">In Store</option>
               <option value="ON_SITE">On Site</option>
@@ -129,8 +131,8 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
             </select>
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Fault Level</label>
-            <select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+            <label className="text-xs text-slate-500 mb-1 block">Fault Level</label>
+            <select className={INPUT}
               value={form.faultLevel} onChange={e => set("faultLevel", e.target.value)}>
               <option value="LOW">Low</option>
               <option value="MEDIUM">Medium</option>
@@ -139,9 +141,9 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
           </div>
         </div>
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">Remarks</label>
+          <label className="text-xs text-slate-500 mb-1 block">Remarks</label>
           <textarea rows={2}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+            className={INPUT + " resize-none"}
             value={form.remarks}
             onChange={e => set("remarks", e.target.value)} />
         </div>
@@ -158,9 +160,9 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
-      <label className="text-xs text-slate-400 mb-1 block">{label}</label>
+      <label className="text-xs text-slate-500 mb-1 block">{label}</label>
       <input type={type}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+        className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
         value={value ?? ""} onChange={e => onChange(e.target.value)} />
     </div>
   );

@@ -17,9 +17,9 @@ type Shop = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  TRIAL: "bg-yellow-500/20 text-yellow-400",
-  ACTIVE: "bg-green-500/20 text-green-400",
-  SUSPENDED: "bg-red-500/20 text-red-400",
+  TRIAL: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
+  ACTIVE: "bg-green-500/20 text-green-600 dark:text-green-400",
+  SUSPENDED: "bg-red-500/20 text-red-600 dark:text-red-400",
 };
 
 export default function ShopsPage() {
@@ -120,7 +120,7 @@ export default function ShopsPage() {
   return (
     <div className="p-6 space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-xl font-semibold text-white">Shop Management</h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Shop Management</h1>
         <p className="text-sm text-slate-500 mt-0.5">Manage your shop settings and all tenant shops</p>
       </div>
 
@@ -129,44 +129,44 @@ export default function ShopsPage() {
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">My Shop Settings</h2>
 
         {myShop && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[myShop.status] ?? "bg-slate-700 text-slate-400"}`}>{myShop.status}</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">{myShop.plan}</span>
             </div>
             <div className="flex items-center gap-4 text-xs text-slate-500">
               {myShop.status === "TRIAL" && daysLeft !== null && (
-                <span>Trial: <span className="text-yellow-400">{daysLeft} days left</span></span>
+                <span>Trial: <span className="text-yellow-600 dark:text-yellow-400">{daysLeft} days left</span></span>
               )}
               <span>Since {new Date(myShop.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
         )}
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-          {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
-          {saved && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">✓ Saved successfully</div>}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+          {error && <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
+          {saved && <div className="bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 text-sm px-4 py-3 rounded-lg">✓ Saved successfully</div>}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="text-xs text-slate-400 mb-1 block">Shop Name *</label>
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Phone</label>
               <input placeholder="+212..." value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Email</label>
               <input type="email" placeholder="shop@example.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div className="col-span-2">
               <label className="text-xs text-slate-400 mb-1 block">Address</label>
               <input placeholder="Shop address" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
           </div>
 
@@ -184,15 +184,15 @@ export default function ShopsPage() {
           <div className="flex gap-3 text-xs text-slate-500">
             <span>🏪 {shops.length} shops</span>
             <span>📋 {totalOrders} total orders</span>
-            <span className="text-yellow-400">⏳ {shops.filter(s => s.status === "TRIAL").length} trial</span>
-            <span className="text-green-400">✅ {shops.filter(s => s.status === "ACTIVE").length} active</span>
+            <span className="text-yellow-600 dark:text-yellow-400">⏳ {shops.filter(s => s.status === "TRIAL").length} trial</span>
+            <span className="text-green-600 dark:text-green-400">✅ {shops.filter(s => s.status === "ACTIVE").length} active</span>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-slate-200 dark:border-slate-800">
                 {["Shop", "Owner", "Orders", "Status", "Plan", "Trial Ends", "Actions"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
                 ))}
@@ -203,20 +203,20 @@ export default function ShopsPage() {
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No shops yet.</td></tr>
               )}
               {shops.map(shop => (
-                <tr key={shop.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                <tr key={shop.id} className="border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20">
                   <td className="px-4 py-3">
-                    <p className="text-white font-medium">{shop.name || "—"}</p>
+                    <p className="text-slate-900 dark:text-white font-medium">{shop.name || "—"}</p>
                     {shop.phone && <p className="text-xs text-slate-500">{shop.phone}</p>}
                   </td>
                   <td className="px-4 py-3">
                     {shop.users?.[0] ? (
                       <div>
-                        <p className="text-slate-300 text-xs">{shop.users[0].name}</p>
+                        <p className="text-slate-700 dark:text-slate-300 text-xs">{shop.users[0].name}</p>
                         <p className="text-slate-500 text-xs">{shop.users[0].email}</p>
                       </div>
                     ) : <span className="text-slate-600 text-xs">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-slate-300 text-xs">{shop._count?.workOrders ?? 0}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-xs">{shop._count?.workOrders ?? 0}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[shop.status] ?? "bg-slate-700 text-slate-400"}`}>
                       {shop.status}
@@ -226,7 +226,7 @@ export default function ShopsPage() {
                     <select value={shop.plan}
                       onChange={e => updateShopStatus(shop.id, { plan: e.target.value })}
                       disabled={updating === shop.id}
-                      className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                      className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none">
                       <option value="FREE">FREE</option>
                       <option value="PRO">PRO</option>
                       <option value="ENTERPRISE">ENTERPRISE</option>

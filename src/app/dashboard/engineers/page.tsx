@@ -93,7 +93,7 @@ export default function EngineersPage() {
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white">Engineers</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Engineers</h1>
           <p className="text-sm text-slate-500 mt-0.5">Team performance overview</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
@@ -103,9 +103,9 @@ export default function EngineersPage() {
       </div>
 
       {showForm && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-300">New Engineer</h2>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">New Engineer</h2>
+          {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: "Name", field: "name", placeholder: "Full name" },
@@ -116,7 +116,7 @@ export default function EngineersPage() {
                 <label className="text-xs text-slate-400 mb-1 block">{f.label}</label>
                 <input
                   type={f.type || "text"}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   placeholder={f.placeholder}
                   value={(form as any)[f.field]}
                   onChange={(e) => setForm((prev) => ({ ...prev, [f.field]: e.target.value }))}
@@ -130,7 +130,7 @@ export default function EngineersPage() {
               {saving ? "Saving..." : "Add Engineer"}
             </button>
             <button onClick={() => setShowForm(false)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
               Cancel
             </button>
           </div>
@@ -144,37 +144,37 @@ export default function EngineersPage() {
       ) : (
         <div className="space-y-4">
           {engineers.map((e) => (
-            <div key={e.id} className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div key={e.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
               {/* Engineer header */}
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-white">{e.name}</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">{e.name}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       e.role === "ADMIN"
-                        ? "bg-purple-500/20 text-purple-400"
-                        : "bg-blue-500/20 text-blue-400"
+                        ? "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+                        : "bg-blue-500/20 text-blue-600 dark:text-blue-400"
                     }`}>{e.role}</span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{e.email}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-slate-500">Total Revenue</p>
-                  <p className="text-lg font-bold text-emerald-400">{e.stats.revenue.toFixed(0)} MAD</p>
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{e.stats.revenue.toFixed(0)} MAD</p>
                 </div>
               </div>
 
               {/* Stats grid */}
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 {[
-                  { label: "Assigned", value: e.stats.total, color: "text-white" },
-                  { label: "Completed", value: e.stats.completed, color: "text-green-400" },
-                  { label: "Delivered", value: e.stats.delivered, color: "text-slate-300" },
-                  { label: "Cancelled", value: e.stats.cancelled, color: e.stats.cancelled > 0 ? "text-red-400" : "text-slate-500" },
-                  { label: "Bounces", value: e.stats.bounces, color: e.stats.bounces > 0 ? "text-orange-400" : "text-slate-500" },
-                  { label: "Avg TAT", value: `${e.stats.avgTat}d`, color: e.stats.avgTat > 3 ? "text-orange-400" : "text-blue-400" },
+                  { label: "Assigned", value: e.stats.total, color: "text-slate-900 dark:text-white" },
+                  { label: "Completed", value: e.stats.completed, color: "text-green-600 dark:text-green-400" },
+                  { label: "Delivered", value: e.stats.delivered, color: "text-slate-600 dark:text-slate-300" },
+                  { label: "Cancelled", value: e.stats.cancelled, color: e.stats.cancelled > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500" },
+                  { label: "Bounces", value: e.stats.bounces, color: e.stats.bounces > 0 ? "text-orange-600 dark:text-orange-400" : "text-slate-500" },
+                  { label: "Avg TAT", value: `${e.stats.avgTat}d`, color: e.stats.avgTat > 3 ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400" },
                 ].map((s) => (
-                  <div key={s.label} className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div key={s.label} className="bg-slate-100 dark:bg-slate-800 rounded-lg p-3 text-center">
                     <p className="text-xs text-slate-500 mb-1">{s.label}</p>
                     <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
                   </div>
@@ -188,7 +188,7 @@ export default function EngineersPage() {
                     <span>Completion rate</span>
                     <span>{Math.round((e.stats.completed / e.stats.total) * 100)}%</span>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                     <div
                       className="bg-green-500 h-full rounded-full transition-all"
                       style={{ width: `${Math.round((e.stats.completed / e.stats.total) * 100)}%` }}
