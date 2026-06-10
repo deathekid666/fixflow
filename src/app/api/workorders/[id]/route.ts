@@ -46,7 +46,11 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const tatDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   const isOverdue = tatDays > 3 && !["DONE", "DELIVERED", "CANCELLED"].includes(order.status);
 
-  return Response.json({ ...order, tatDays, isOverdue });
+  const customerOrderCount = await prisma.workOrder.count({
+    where: { customerPhone: order.customerPhone, shopId: order.shopId },
+  });
+
+  return Response.json({ ...order, tatDays, isOverdue, customerOrderCount });
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { loyaltyTier } from "@/lib/loyaltyTier";
 
 type Customer = {
   name: string; phone: string; email: string;
@@ -10,13 +11,6 @@ type Customer = {
 };
 
 type SortKey = "totalOrders" | "totalSpent" | "lastVisit" | "name";
-
-function loyaltyTier(orders: number): { label: string; className: string } | null {
-  if (orders >= 5) return { label: "⭐ VIP", className: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30" };
-  if (orders >= 3) return { label: "⭐ Loyal", className: "bg-amber-500/20 text-amber-400 border border-amber-500/30" };
-  if (orders >= 2) return { label: "Repeat", className: "bg-blue-500/20 text-blue-400" };
-  return null;
-}
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -60,6 +54,9 @@ export default function CustomersPage() {
   const loyalCustomers = customers.filter(c => c.totalOrders >= 3).length;
   const totalRevenue = customers.reduce((s, c) => s + c.totalSpent, 0);
   const outstanding = customers.reduce((s, c) => s + (c.totalSpent - c.totalCollected), 0);
+  const bronzeCount = customers.filter(c => c.totalOrders >= 1 && c.totalOrders <= 2).length;
+  const silverCount = customers.filter(c => c.totalOrders >= 3 && c.totalOrders <= 5).length;
+  const goldCount   = customers.filter(c => c.totalOrders >= 6).length;
 
   function SortIcon({ k }: { k: SortKey }) {
     if (sortBy !== k) return <span className="text-slate-700 ml-1">↕</span>;
@@ -91,6 +88,34 @@ export default function CustomersPage() {
         <div className={`border rounded-xl p-4 ${outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
           <p className="text-xs text-slate-500 mb-1">Outstanding</p>
           <p className={`text-2xl font-bold ${outstanding > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500"}`}>{outstanding.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
+        </div>
+      </div>
+
+      {/* Loyalty tiers */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-orange-600/8 border border-orange-500/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl leading-none">🥉</span>
+            <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Bronze</p>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{bronzeCount}</p>
+          <p className="text-xs text-slate-500 mt-1">1–2 orders</p>
+        </div>
+        <div className="bg-slate-400/8 border border-slate-400/25 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl leading-none">🥈</span>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide">Silver</p>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{silverCount}</p>
+          <p className="text-xs text-slate-500 mt-1">3–5 orders</p>
+        </div>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl leading-none">🥇</span>
+            <p className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 uppercase tracking-wide">Gold</p>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{goldCount}</p>
+          <p className="text-xs text-slate-500 mt-1">6+ orders</p>
         </div>
       </div>
 

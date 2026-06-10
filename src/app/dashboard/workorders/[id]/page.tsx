@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import RatingModal from "@/components/RatingModal";
 import { useAuth } from "@/context/AuthContext";
+import { loyaltyTier } from "@/lib/loyaltyTier";
 
 type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
@@ -26,7 +27,7 @@ type WorkOrder = {
   lineItems: LineItem[];
   logs: { id: string; action: string; description: string; createdAt: string; user: { name: string } }[];
   attachments: Attachment[]; bounces: Bounce[]; notes: Note[];
-  tatDays: number; isOverdue: boolean;
+  tatDays: number; isOverdue: boolean; customerOrderCount: number;
   rating?: { rating: number; comment: string | null } | null;
   payments: Payment[];
   checklist: CheckItem[];
@@ -330,6 +331,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   if (!order) return null;
 
   const selectedPartData = spareParts.find(p => p.id === selectedPart);
+  const customerTier = loyaltyTier(order.customerOrderCount);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
   const isFullyPaid = remaining <= 0.01 && order.collected > 0 && order.collected <= grandTotal + 0.01;
@@ -436,7 +438,18 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Customer Information</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <Info label="Name" value={order.customerName} />
+              <div>
+                <p className="text-xs text-slate-500">Name</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-slate-900 dark:text-white">{order.customerName}</span>
+                  {customerTier && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${customerTier.className}`}>
+                      {customerTier.label}
+                    </span>
+                  )}
+                  <span className="text-xs text-slate-400">{order.customerOrderCount} order{order.customerOrderCount !== 1 ? "s" : ""}</span>
+                </div>
+              </div>
               <Info label="Phone" value={order.customerPhone} />
               <Info label="Email" value={order.customerEmail || "—"} />
             </div>
