@@ -1,9 +1,55 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// In-memory rate limiter — persists within a single server process (next start).
+// In edge/serverless deployments each isolate has its own counter, so effective
+// limit per replica will be lower; swap for Redis if you need cross-replica enforcement.
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS = 100;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > MAX_REQUESTS;
+}
+
+// Periodically purge expired entries to prevent unbounded memory growth.
+// Runs at most once every 5 minutes regardless of traffic.
+let lastPurge = 0;
+function maybePurge() {
+  const now = Date.now();
+  if (now - lastPurge < 300_000) return;
+  lastPurge = now;
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(key);
+  }
+}
+
 export async function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
   const path = req.nextUrl.pathname;
+
+  // Rate limit all API routes
+  if (path.startsWith("/api/")) {
+    maybePurge();
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+    if (checkRateLimit(ip)) {
+      return new NextResponse(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
+  }
+
+  const token = req.cookies.get("token")?.value;
   const isDashboard = path.startsWith("/dashboard");
   const isAdminRoute = path.startsWith("/admin");
   const isSuspended = path.startsWith("/suspended");
@@ -57,5 +103,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/suspended"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/suspended", "/api/:path*"],
 };
