@@ -17,7 +17,8 @@ type WorkOrder = {
   isUnderWarranty: boolean; customerName: string; customerPhone: string; customerEmail: string;
   faultDescription: string; appearance: string; remarks: string; serviceType: string;
   repairType: string; faultLevel: string; status: string; receivedAt: string;
-  doneAt: string | null; deliveredAt: string | null; bounceCount: number; isBounce: boolean;
+  doneAt: string | null; deliveredAt: string | null; startedAt: string | null; completedAt: string | null;
+  bounceCount: number; isBounce: boolean;
   subtotal: number; quotationItems: number; discount: number; total: number;
   collected: number; quotationRemarks: string | null; createdAt: string;
   creator: { name: string }; assignee: { id: string; name: string } | null;
@@ -101,12 +102,22 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [newCheckItem, setNewCheckItem] = useState("");
   const [addingCheck, setAddingCheck] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [timerSaving, setTimerSaving] = useState(false);
 
   useEffect(() => {
     load();
     fetch("/api/users", { credentials: "include" }).then(r => r.json()).then(setEngineers).catch(() => {});
     fetch("/api/spareparts", { credentials: "include" }).then(r => r.json()).then(setSpareParts).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!order?.startedAt || order?.completedAt) return;
+    const tick = () => setElapsed(Date.now() - new Date(order.startedAt!).getTime());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [order?.startedAt, order?.completedAt]);
 
   async function load() {
     const res = await fetch(`/api/workorders/${params.id}`, { credentials: "include" });
@@ -174,6 +185,26 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       credentials: "include", body: JSON.stringify({ assignedTo: assignedTo || null }),
     });
     await load();
+  }
+
+  async function startTimer() {
+    setTimerSaving(true);
+    await fetch(`/api/workorders/${params.id}/timer`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ action: "start" }),
+    });
+    await load();
+    setTimerSaving(false);
+  }
+
+  async function stopTimer() {
+    setTimerSaving(true);
+    await fetch(`/api/workorders/${params.id}/timer`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ action: "stop" }),
+    });
+    await load();
+    setTimerSaving(false);
   }
 
   async function addPart() {
@@ -652,6 +683,44 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </section>
 
+          {/* Repair Timer */}
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Repair Timer</h2>
+            {order.startedAt && order.completedAt ? (
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Started</span>
+                  <span className="text-slate-900 dark:text-white">{new Date(order.startedAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Stopped</span>
+                  <span className="text-slate-900 dark:text-white">{new Date(order.completedAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-slate-200 dark:border-slate-700 pt-2 mt-1 text-emerald-600 dark:text-emerald-400">
+                  <span>Duration</span>
+                  <span>{formatRepairDuration(new Date(order.completedAt).getTime() - new Date(order.startedAt).getTime())}</span>
+                </div>
+              </div>
+            ) : order.startedAt ? (
+              <div className="space-y-3">
+                <div className="text-center py-2">
+                  <p className="text-2xl font-mono font-bold text-orange-500 dark:text-orange-400 tabular-nums">{formatRepairDuration(elapsed)}</p>
+                  <p className="text-xs text-slate-500 mt-1">in progress</p>
+                </div>
+                <button onClick={stopTimer} disabled={timerSaving} className="w-full py-2 bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
+                  {timerSaving ? "..." : "⏹ Stop Timer"}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <p className="text-xs text-slate-500">Track how long the actual repair takes.</p>
+                <button onClick={startTimer} disabled={timerSaving} className="w-full py-2 bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
+                  {timerSaving ? "..." : "▶ Start Timer"}
+                </button>
+              </div>
+            )}
+          </section>
+
           {order.status === "DELIVERED" && (
             <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Rating</h2>
@@ -875,11 +944,20 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {order.logs.map(log => {
                 const isStatusChange = log.action === "STATUS_CHANGED";
+                const isTimerStart = log.action === "TIMER_STARTED";
+                const isTimerStop = log.action === "TIMER_STOPPED";
                 const newStatus = isStatusChange
                   ? STATUS_OPTIONS.find(s => log.description.includes(s))
                   : null;
+                const rowClass = isStatusChange
+                  ? "bg-slate-100 dark:bg-slate-800/40 rounded-lg px-3 py-2 border-0"
+                  : isTimerStart
+                  ? "bg-blue-50 dark:bg-blue-950/20 rounded-lg px-3 py-2 border-0"
+                  : isTimerStop
+                  ? "bg-emerald-50 dark:bg-emerald-950/20 rounded-lg px-3 py-2 border-0"
+                  : "";
                 return (
-                  <div key={log.id} className={`text-xs border-b border-slate-200/50 dark:border-slate-800/50 pb-2 ${isStatusChange ? "bg-slate-100 dark:bg-slate-800/40 rounded-lg px-3 py-2 border-0" : ""}`}>
+                  <div key={log.id} className={`text-xs border-b border-slate-200/50 dark:border-slate-800/50 pb-2 ${rowClass}`}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         {isStatusChange && newStatus ? (
@@ -889,13 +967,24 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                               {newStatus}
                             </span>
                           </>
+                        ) : isTimerStart ? (
+                          <span className="text-blue-600 dark:text-blue-400 font-semibold">▶ Timer Started</span>
+                        ) : isTimerStop ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                            ⏹ Timer Stopped
+                            {log.description.includes("·") && (
+                              <span className="font-normal text-emerald-600/70 dark:text-emerald-400/70 ml-1.5">
+                                · {log.description.split("·")[1]?.trim()}
+                              </span>
+                            )}
+                          </span>
                         ) : (
                           <span className="text-blue-600 dark:text-blue-400 font-medium">{log.action.replace(/_/g, " ")}</span>
                         )}
                       </div>
                       <span className="text-slate-400 font-mono text-xs flex-shrink-0">{new Date(log.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}</span>
                     </div>
-                    {(!isStatusChange || !newStatus) && (
+                    {!isStatusChange && !isTimerStart && !isTimerStop && (
                       <p className="text-slate-500 mt-0.5">{log.description}</p>
                     )}
                     <p className="text-slate-400 mt-0.5">by {log.user.name}</p>
@@ -927,4 +1016,14 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="text-slate-900 dark:text-white mt-0.5">{value}</p>
     </div>
   );
+}
+
+function formatRepairDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
 }

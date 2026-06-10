@@ -82,6 +82,8 @@ model WorkOrder {
   receivedAt  DateTime  @default(now())
   doneAt      DateTime?
   deliveredAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
 
   bounceCount Int     @default(0)
   isBounce    Boolean @default(false)
