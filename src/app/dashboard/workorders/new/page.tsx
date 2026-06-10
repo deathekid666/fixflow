@@ -41,6 +41,7 @@ export default function NewWorkOrderPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const photoRef = useRef<HTMLInputElement>(null);
   const [intakePhotos, setIntakePhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [photoError, setPhotoError] = useState(false);
 
   const [form, setForm] = useState({
     deviceBrand: "", deviceModel: "", serialNumber: "", imei: "",
@@ -104,6 +105,7 @@ export default function NewWorkOrderPage() {
       };
       reader.readAsDataURL(file);
     });
+    if (files.length > 0) setPhotoError(false);
     if (photoRef.current) photoRef.current.value = "";
   }
 
@@ -113,6 +115,11 @@ export default function NewWorkOrderPage() {
 
   async function handleSubmit() {
     setError("");
+    if (intakePhotos.length === 0) {
+      setPhotoError(true);
+      document.getElementById("device-photos-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     if (!form.deviceBrand || !form.deviceModel || !form.customerName || !form.customerPhone || !form.faultDescription) {
       setError("Please fill in all required fields."); return;
     }
@@ -272,10 +279,12 @@ export default function NewWorkOrderPage() {
       </section>
 
       {/* Device Photos */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+      <section id="device-photos-section" className={`bg-white dark:bg-slate-900 rounded-xl p-5 space-y-4 border ${photoError && intakePhotos.length === 0 ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-800"}`}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Device Photos</h2>
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+              Device Photos <span className="text-red-500">*</span>
+            </h2>
             <p className="text-xs text-slate-500 mt-0.5">Document device condition on intake — protects against disputes</p>
           </div>
           <button onClick={() => photoRef.current?.click()}
@@ -285,12 +294,21 @@ export default function NewWorkOrderPage() {
           <input ref={photoRef} type="file" className="hidden" accept="image/*" multiple onChange={onPhotoSelected} />
         </div>
         {intakePhotos.length === 0 ? (
-          <button onClick={() => photoRef.current?.click()}
-            className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 rounded-xl p-8 text-center transition-colors group">
-            <p className="text-3xl mb-2">📷</p>
-            <p className="text-sm text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">Click to add device photos</p>
-            <p className="text-xs text-slate-400 mt-1">Front, back, sides, any existing damage</p>
-          </button>
+          <>
+            <button onClick={() => photoRef.current?.click()}
+              className={`w-full border-2 border-dashed rounded-xl p-8 text-center transition-colors group ${
+                photoError
+                  ? "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-950/20"
+                  : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"
+              }`}>
+              <p className="text-3xl mb-2">📷</p>
+              <p className={`text-sm ${photoError ? "text-red-600 dark:text-red-400 font-medium" : "text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"}`}>Click to add device photos</p>
+              <p className="text-xs text-slate-400 mt-1">Front, back, sides, any existing damage</p>
+            </button>
+            {photoError && (
+              <p className="text-sm font-medium text-red-500 dark:text-red-400">⚠ Device photo is required</p>
+            )}
+          </>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">

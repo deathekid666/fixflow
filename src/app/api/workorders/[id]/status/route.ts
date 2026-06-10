@@ -13,6 +13,16 @@ const VALID_STATUSES = [
   "CANCELLED",
 ];
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
@@ -38,17 +48,22 @@ export async function POST(
 
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
+  const now = new Date();
   const wasDelivered = order.status === "DELIVERED";
   const isNowDelivered = status === "DELIVERED";
   const isNowDone = status === "DONE";
+  const autoStartTimer = status === "REPAIRING" && !order.startedAt;
+  const autoStopTimer = status === "DONE" && !!order.startedAt && !order.completedAt;
 
   const updated = await prisma.workOrder.update({
     where: { id: params.id },
     data: {
       status,
-      updatedAt: new Date(),
-      ...(isNowDelivered && !wasDelivered ? { deliveredAt: new Date() } : {}),
-      ...(isNowDone && !order.doneAt ? { doneAt: new Date() } : {}),
+      updatedAt: now,
+      ...(isNowDelivered && !wasDelivered ? { deliveredAt: now } : {}),
+      ...(isNowDone && !order.doneAt ? { doneAt: now } : {}),
+      ...(autoStartTimer ? { startedAt: now } : {}),
+      ...(autoStopTimer ? { completedAt: now } : {}),
     },
   });
 
@@ -60,6 +75,29 @@ export async function POST(
       userId: user.id,
     },
   });
+
+  if (autoStartTimer) {
+    await prisma.operationLog.create({
+      data: {
+        action: "TIMER_STARTED",
+        description: "Repair timer started",
+        workOrderId: order.id,
+        userId: user.id,
+      },
+    });
+  }
+
+  if (autoStopTimer) {
+    const durationMs = now.getTime() - order.startedAt!.getTime();
+    await prisma.operationLog.create({
+      data: {
+        action: "TIMER_STOPPED",
+        description: `Repair timer stopped · ${formatDuration(durationMs)}`,
+        workOrderId: order.id,
+        userId: user.id,
+      },
+    });
+  }
 
   if (isNowDelivered && !wasDelivered) {
     if (order.customerPhone) {

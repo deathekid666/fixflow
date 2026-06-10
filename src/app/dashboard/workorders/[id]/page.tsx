@@ -104,7 +104,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [newCheckItem, setNewCheckItem] = useState("");
   const [addingCheck, setAddingCheck] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [timerSaving, setTimerSaving] = useState(false);
 
   useEffect(() => {
     load();
@@ -186,26 +185,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       credentials: "include", body: JSON.stringify({ assignedTo: assignedTo || null }),
     });
     await load();
-  }
-
-  async function startTimer() {
-    setTimerSaving(true);
-    await fetch(`/api/workorders/${params.id}/timer`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      credentials: "include", body: JSON.stringify({ action: "start" }),
-    });
-    await load();
-    setTimerSaving(false);
-  }
-
-  async function stopTimer() {
-    setTimerSaving(true);
-    await fetch(`/api/workorders/${params.id}/timer`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      credentials: "include", body: JSON.stringify({ action: "stop" }),
-    });
-    await load();
-    setTimerSaving(false);
   }
 
   async function addPart() {
@@ -706,7 +685,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   <span className="text-slate-900 dark:text-white">{new Date(order.startedAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Stopped</span>
+                  <span className="text-slate-500">Completed</span>
                   <span className="text-slate-900 dark:text-white">{new Date(order.completedAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
                 </div>
                 <div className="flex justify-between font-semibold border-t border-slate-200 dark:border-slate-700 pt-2 mt-1 text-emerald-600 dark:text-emerald-400">
@@ -715,22 +694,16 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </div>
               </div>
             ) : order.startedAt ? (
-              <div className="space-y-3">
-                <div className="text-center py-2">
-                  <p className="text-2xl font-mono font-bold text-orange-500 dark:text-orange-400 tabular-nums">{formatRepairDuration(elapsed)}</p>
-                  <p className="text-xs text-slate-500 mt-1">in progress</p>
-                </div>
-                <button onClick={stopTimer} disabled={timerSaving} className="w-full py-2 bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
-                  {timerSaving ? "..." : "⏹ Stop Timer"}
-                </button>
+              <div className="text-center py-2 space-y-1">
+                <p className="text-2xl font-mono font-bold text-orange-500 dark:text-orange-400 tabular-nums">{formatRepairDuration(elapsed)}</p>
+                <p className="text-xs text-slate-500">repair in progress</p>
               </div>
             ) : (
-              <div className="space-y-2.5">
-                <p className="text-xs text-slate-500">Track how long the actual repair takes.</p>
-                <button onClick={startTimer} disabled={timerSaving} className="w-full py-2 bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
-                  {timerSaving ? "..." : "▶ Start Timer"}
-                </button>
-              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Starts automatically when status changes to{" "}
+                <span className="text-orange-500 dark:text-orange-400 font-medium">REPAIRING</span>, stops when{" "}
+                <span className="text-green-600 dark:text-green-400 font-medium">DONE</span>.
+              </p>
             )}
           </section>
 
