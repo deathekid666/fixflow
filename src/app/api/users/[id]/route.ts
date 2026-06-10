@@ -34,3 +34,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   return Response.json(updated);
 }
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const user = requireAuth(req);
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (user.id === params.id) return Response.json({ error: "Cannot delete yourself" }, { status: 400 });
+
+  const target = await prisma.user.findFirst({
+    where: { id: params.id, shopId: user.shopId ?? undefined },
+  });
+  if (!target) return Response.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.user.delete({ where: { id: params.id } });
+  return Response.json({ ok: true });
+}

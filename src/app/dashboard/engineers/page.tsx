@@ -77,6 +77,14 @@ export default function EngineersPage() {
     }
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this engineer? This cannot be undone.")) return;
+    const res = await fetch(`/api/users/${id}`, { method: "DELETE", credentials: "include" });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || "Failed to delete"); return; }
+    setEngineers(prev => prev.filter(e => e.id !== id));
+  }
+
   function openEdit(eng: EngineerWithStats) {
     setEditingId(eng.id);
     setEditForm({ name: eng.name, email: eng.email, password: "" });
@@ -187,6 +195,10 @@ export default function EngineersPage() {
                     <button onClick={() => editingId === e.id ? setEditingId(null) : openEdit(e)}
                       className={`text-xs transition-colors ${editingId === e.id ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`}>
                       {editingId === e.id ? "✕ Close" : "✏ Edit"}
+                    </button>
+                    <button onClick={() => handleDelete(e.id)}
+                      className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                      🗑 Delete
                     </button>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{e.email}</p>
