@@ -20,6 +20,9 @@ export default function CustomersPage() {
   const [sortBy, setSortBy] = useState<SortKey>("totalOrders");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [tierFilter, setTierFilter] = useState<"bronze" | "silver" | "gold" | null>(null);
+  const [editingPhone, setEditingPhone] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
@@ -34,6 +37,31 @@ export default function CustomersPage() {
     const data = await res.json();
     setCustomers(Array.isArray(data) ? data : []);
     setLoading(false);
+  }
+
+  function openEdit(c: Customer, e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditingPhone(c.phone);
+    setEditForm({ name: c.name, email: c.email ?? "" });
+  }
+
+  async function saveEdit(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!editingPhone || !editForm.name.trim()) return;
+    setSavingEdit(true);
+    const res = await fetch("/api/customers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ phone: editingPhone, name: editForm.name, email: editForm.email }),
+    });
+    if (res.ok) {
+      setCustomers(prev => prev.map(c =>
+        c.phone === editingPhone ? { ...c, name: editForm.name.trim(), email: editForm.email.trim() } : c
+      ));
+      setEditingPhone(null);
+    }
+    setSavingEdit(false);
   }
 
   function toggleSort(key: SortKey) {
@@ -184,9 +212,10 @@ export default function CustomersPage() {
         {displayed.map((c, i) => {
           const badge = loyaltyTier(c.totalOrders);
           const due = c.totalSpent - c.totalCollected;
+          const isEditing = editingPhone === c.phone;
           return (
             <div key={c.phone}
-              onClick={() => router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}
+              onClick={() => !isEditing && router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}
               className="fade-in bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-50 dark:active:bg-slate-800 cursor-pointer"
               style={{ animationDelay: `${i * 40}ms` }}>
               {/* Name + badge */}
@@ -200,8 +229,41 @@ export default function CustomersPage() {
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5">{c.email || c.phone}</div>
                 </div>
-                <span className="text-xs text-blue-400 flex-shrink-0 mt-1">View →</span>
+                <div className="flex items-center gap-2 flex-shrink-0 mt-1" onClick={e => e.stopPropagation()}>
+                  <button onClick={e => isEditing ? (e.stopPropagation(), setEditingPhone(null)) : openEdit(c, e)}
+                    className={`text-xs transition-colors ${isEditing ? "text-blue-500 font-medium" : "text-slate-400 hover:text-blue-500"}`}>
+                    {isEditing ? "✕" : "Edit"}
+                  </button>
+                  <span className="text-xs text-blue-400" onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}>View →</span>
+                </div>
               </div>
+              {isEditing && (
+                <div className="space-y-2 pt-1" onClick={e => e.stopPropagation()}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Name *</label>
+                      <input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                        className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Email</label>
+                      <input value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                        placeholder="Optional"
+                        className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+                      {savingEdit ? "Saving..." : "Save"}
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); setEditingPhone(null); }}
+                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
@@ -291,36 +353,75 @@ export default function CustomersPage() {
             {displayed.map((c, i) => {
               const badge = loyaltyTier(c.totalOrders);
               const due = c.totalSpent - c.totalCollected;
+              const isEditing = editingPhone === c.phone;
               return (
-                <tr key={c.phone} className="fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
-                  style={{ animationDelay: `${i * 30}ms` }}
-                  onClick={() => router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}>
-                  <td className="px-4 py-3">
-                    <div className="text-slate-900 dark:text-white font-medium">{c.name}</div>
-                    <div className="text-xs text-slate-500">{c.email || "—"}</div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-sm">{c.phone}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-slate-900 dark:text-white font-semibold">{c.totalOrders}</span>
-                    <span className="text-xs text-slate-500 ml-1">visit{c.totalOrders !== 1 ? "s" : ""}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-slate-900 dark:text-white font-medium">{c.totalSpent.toFixed(2)} MAD</span>
-                    {due > 0.01 && <div className="text-xs text-red-600 dark:text-red-400 mt-0.5">{due.toFixed(0)} due</div>}
-                  </td>
-                  <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{c.totalCollected.toFixed(2)} MAD</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{new Date(c.lastVisit).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
-                    {badge ? (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
-                    ) : (
-                      <span className="text-xs text-slate-600">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View →</span>
-                  </td>
-                </tr>
+                <>
+                  <tr key={c.phone} className="fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                    style={{ animationDelay: `${i * 30}ms` }}
+                    onClick={() => !isEditing && router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}>
+                    <td className="px-4 py-3">
+                      <div className="text-slate-900 dark:text-white font-medium">{c.name}</div>
+                      <div className="text-xs text-slate-500">{c.email || "—"}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-sm">{c.phone}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-slate-900 dark:text-white font-semibold">{c.totalOrders}</span>
+                      <span className="text-xs text-slate-500 ml-1">visit{c.totalOrders !== 1 ? "s" : ""}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-slate-900 dark:text-white font-medium">{c.totalSpent.toFixed(2)} MAD</span>
+                      {due > 0.01 && <div className="text-xs text-red-600 dark:text-red-400 mt-0.5">{due.toFixed(0)} due</div>}
+                    </td>
+                    <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{c.totalCollected.toFixed(2)} MAD</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{new Date(c.lastVisit).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      {badge ? (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
+                      ) : (
+                        <span className="text-xs text-slate-600">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-3">
+                        <button onClick={e => isEditing ? (e.stopPropagation(), setEditingPhone(null)) : openEdit(c, e)}
+                          className={`text-xs transition-colors ${isEditing ? "text-blue-500" : "text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"}`}>
+                          Edit
+                        </button>
+                        <button onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}
+                          className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View →</button>
+                      </div>
+                    </td>
+                  </tr>
+                  {isEditing && (
+                    <tr key={`edit-${c.phone}`} className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
+                      <td colSpan={8} className="px-4 py-4">
+                        <div className="flex items-end gap-3 flex-wrap">
+                          <div>
+                            <label className="text-xs text-slate-400 mb-1 block">Name *</label>
+                            <input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 w-48" />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-400 mb-1 block">Email</label>
+                            <input value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                              placeholder="Optional"
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-48" />
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}
+                              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+                              {savingEdit ? "Saving..." : "Save"}
+                            </button>
+                            <button onClick={e => { e.stopPropagation(); setEditingPhone(null); }}
+                              className="px-4 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               );
             })}
           </tbody>

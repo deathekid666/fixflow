@@ -71,3 +71,21 @@ export async function GET(req: Request) {
 
   return Response.json(Array.from(customerMap.values()));
 }
+
+export async function PATCH(req: Request) {
+  const user = requireAuth(req);
+  if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  if (!body?.phone || !body?.name?.trim()) return Response.json({ error: "phone and name required" }, { status: 400 });
+
+  await prisma.workOrder.updateMany({
+    where: { shopId: user.shopId, customerPhone: body.phone },
+    data: {
+      customerName: body.name.trim(),
+      customerEmail: body.email?.trim() || null,
+    },
+  });
+
+  return Response.json({ ok: true });
+}
