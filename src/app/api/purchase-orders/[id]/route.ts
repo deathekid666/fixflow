@@ -42,3 +42,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   return Response.json(updated);
 }
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const user = requireAuth(req);
+  if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const order = await prisma.purchaseOrder.findFirst({
+    where: { id: params.id, shopId: user.shopId },
+  });
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.purchaseOrder.delete({ where: { id: params.id } });
+  return Response.json({ ok: true });
+}

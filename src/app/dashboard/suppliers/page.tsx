@@ -145,6 +145,23 @@ export default function SuppliersPage() {
     setSubmittingPO(false);
   }
 
+  async function deletePO(id: string) {
+    if (!confirm("Delete this purchase order? This cannot be undone.")) return;
+    const res = await fetch(`/api/purchase-orders/${id}`, {
+      method: "DELETE", credentials: "include",
+    });
+    if (res.ok) {
+      const po = orders.find(o => o.id === id);
+      setOrders(prev => prev.filter(o => o.id !== id));
+      if (po) {
+        setSuppliers(prev => prev.map(s => s.id === po.supplier.id
+          ? { ...s, _count: { purchaseOrders: Math.max(0, s._count.purchaseOrders - 1) } }
+          : s
+        ));
+      }
+    }
+  }
+
   async function updateStatus(id: string, status: string) {
     setUpdatingPO(id);
     const res = await fetch(`/api/purchase-orders/${id}`, {
@@ -406,6 +423,10 @@ export default function SuppliersPage() {
                         Mark Received
                       </button>
                     )}
+                    <button onClick={() => deletePO(o.id)}
+                      className="text-xs px-2 py-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Delete order">
+                      🗑
+                    </button>
                   </div>
                 </div>
 
