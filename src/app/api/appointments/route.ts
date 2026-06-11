@@ -24,10 +24,18 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const user = requireAuth(req);
-  if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  const { customerName, customerPhone, deviceBrand, deviceModel, faultDescription, scheduledAt, duration, notes } = body ?? {};
+  const { shopId: bodyShopId, customerName, customerPhone, deviceBrand, deviceModel, faultDescription, scheduledAt, duration, notes } = body ?? {};
+
+  // Authenticated: use session shopId. Unauthenticated (public booking): require shopId in body.
+  const shopId = user?.shopId ?? bodyShopId;
+  if (!shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!user) {
+    const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { id: true } });
+    if (!shop) return Response.json({ error: "Shop not found" }, { status: 404 });
+  }
 
   if (!customerName || !customerPhone || !deviceBrand || !deviceModel || !faultDescription || !scheduledAt) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
@@ -35,7 +43,7 @@ export async function POST(req: Request) {
 
   const appointment = await prisma.appointment.create({
     data: {
-      shopId: user.shopId,
+      shopId,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       deviceBrand: deviceBrand.trim(),
