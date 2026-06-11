@@ -55,6 +55,8 @@ model Shop {
   suppliers      Supplier[]
   purchaseOrders PurchaseOrder[]
   appointments   Appointment[]
+  availability   ShopAvailability[]
+  closures       ShopClosure[]
 }
 
 model WorkOrder {
@@ -385,6 +387,32 @@ model Appointment {
   status           String   @default("PENDING")
   notes            String?
   createdAt        DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id])
+}
+
+model ShopAvailability {
+  id                  String   @id @default(cuid())
+  shopId              String
+  dayOfWeek           Int
+  openTime            String   @default("09:00")
+  closeTime           String   @default("18:00")
+  isOpen              Boolean  @default(true)
+  slotDurationMinutes Int      @default(60)
+  maxConcurrent       Int      @default(2)
+  createdAt           DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id])
+
+  @@unique([shopId, dayOfWeek])
+}
+
+model ShopClosure {
+  id        String   @id @default(cuid())
+  shopId    String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
 
   shop Shop @relation(fields: [shopId], references: [id])
 }

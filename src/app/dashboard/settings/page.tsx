@@ -5,13 +5,36 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/context/LanguageContext";
 
-type Tab = "profile" | "shop" | "security" | "preferences";
+type Tab = "profile" | "shop" | "security" | "preferences" | "appointments";
 
 type Shop = {
   id: string; name: string; phone: string | null;
   address: string | null; email: string | null;
   logoUrl: string | null; plan: string; status: string; trialEndsAt: string | null;
 };
+
+type DayAvailability = {
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
+  isOpen: boolean;
+};
+
+type Closure = {
+  id: string;
+  date: string;
+  reason: string | null;
+};
+
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const DEFAULT_DAYS: DayAvailability[] = DAY_NAMES.map((_, i) => ({
+  dayOfWeek: i,
+  openTime: "09:00",
+  closeTime: "18:00",
+  isOpen: i >= 1 && i <= 5,
+}));
 
 const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
 
@@ -54,6 +77,18 @@ export default function SettingsPage() {
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  // Appointments / availability
+  const [days, setDays] = useState<DayAvailability[]>(DEFAULT_DAYS);
+  const [slotDuration, setSlotDuration] = useState(60);
+  const [maxConcurrent, setMaxConcurrent] = useState(2);
+  const [savingAvail, setSavingAvail] = useState(false);
+  const [availMsg, setAvailMsg] = useState("");
+  const [closures, setClosures] = useState<Closure[]>([]);
+  const [newClosureDate, setNewClosureDate] = useState("");
+  const [newClosureReason, setNewClosureReason] = useState("");
+  const [addingClosure, setAddingClosure] = useState(false);
+  const [deletingClosureId, setDeletingClosureId] = useState<string | null>(null);
+
   useEffect(() => {
     if (user?.shopId) {
       fetch(`/api/shops/${user.shopId}`, { credentials: "include" })
@@ -64,6 +99,71 @@ export default function SettingsPage() {
         }).catch(() => {});
     }
   }, [user]);
+
+  useEffect(() => {
+    if (tab === "appointments" && user?.shopId) {
+      loadAvailability();
+      loadClosures();
+    }
+  }, [tab, user?.shopId]);
+
+  async function loadAvailability() {
+    if (!user?.shopId) return;
+    const res = await fetch(`/api/shops/${user.shopId}/availability`, { credentials: "include" });
+    if (res.ok) {
+      const data: (DayAvailability & { slotDurationMinutes?: number; maxConcurrent?: number })[] = await res.json();
+      setDays(data.map(d => ({ dayOfWeek: d.dayOfWeek, openTime: d.openTime, closeTime: d.closeTime, isOpen: d.isOpen })));
+      if (data[0]?.slotDurationMinutes) setSlotDuration(data[0].slotDurationMinutes);
+      if (data[0]?.maxConcurrent) setMaxConcurrent(data[0].maxConcurrent);
+    }
+  }
+
+  async function loadClosures() {
+    if (!user?.shopId) return;
+    const res = await fetch(`/api/shops/${user.shopId}/closures`, { credentials: "include" });
+    if (res.ok) setClosures(await res.json());
+  }
+
+  async function saveAvailability() {
+    if (!user?.shopId) return;
+    setSavingAvail(true); setAvailMsg("");
+    const res = await fetch(`/api/shops/${user.shopId}/availability`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ days, slotDurationMinutes: slotDuration, maxConcurrent }),
+    });
+    setAvailMsg(res.ok ? "Availability saved." : "Failed to save.");
+    setSavingAvail(false);
+  }
+
+  async function addClosure() {
+    if (!newClosureDate || !user?.shopId) return;
+    setAddingClosure(true);
+    const res = await fetch(`/api/shops/${user.shopId}/closures`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ date: newClosureDate, reason: newClosureReason }),
+    });
+    if (res.ok) {
+      setNewClosureDate(""); setNewClosureReason("");
+      await loadClosures();
+    }
+    setAddingClosure(false);
+  }
+
+  async function deleteClosure(id: string) {
+    if (!user?.shopId) return;
+    setDeletingClosureId(id);
+    await fetch(`/api/shops/${user.shopId}/closures?closureId=${id}`, {
+      method: "DELETE", credentials: "include",
+    });
+    setClosures(prev => prev.filter(c => c.id !== id));
+    setDeletingClosureId(null);
+  }
+
+  function updateDay(dayOfWeek: number, patch: Partial<DayAvailability>) {
+    setDays(prev => prev.map(d => d.dayOfWeek === dayOfWeek ? { ...d, ...patch } : d));
+  }
 
   async function saveProfile() {
     setSavingProfile(true); setProfileMsg(""); setProfileError("");
@@ -132,6 +232,7 @@ export default function SettingsPage() {
     { key: "shop", label: "Shop", icon: "🏪" },
     { key: "security", label: "Security", icon: "🔒" },
     { key: "preferences", label: "Preferences", icon: "🎨" },
+    { key: "appointments", label: "Appointments", icon: "📅" },
   ];
 
   return (
@@ -171,10 +272,10 @@ export default function SettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+      <div className="flex gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 overflow-x-auto">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+            className={`flex-shrink-0 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
               tab === t.key
                 ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
@@ -344,6 +445,158 @@ export default function SettingsPage() {
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
             {savingPw ? "Changing..." : "Change Password"}
           </button>
+        </div>
+      )}
+
+      {/* Appointments tab */}
+      {tab === "appointments" && (
+        <div className="space-y-4">
+          {user?.role !== "ADMIN" ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+              <p className="text-sm text-slate-500 text-center py-6">Only admins can edit appointment settings.</p>
+            </div>
+          ) : (
+            <>
+              {/* Weekly schedule */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+                <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Weekly Schedule</h2>
+                {availMsg && <Alert type={availMsg.includes("Failed") ? "error" : "success"} msg={availMsg} />}
+
+                <div className="space-y-2">
+                  {days.map(day => (
+                    <div key={day.dayOfWeek} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                      day.isOpen
+                        ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                        : "bg-slate-50/50 dark:bg-slate-800/20 border-slate-100 dark:border-slate-800"
+                    }`}>
+                      {/* Day toggle */}
+                      <button
+                        onClick={() => updateDay(day.dayOfWeek, { isOpen: !day.isOpen })}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
+                          day.isOpen ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          day.isOpen ? "translate-x-4" : "translate-x-0"
+                        }`} />
+                      </button>
+
+                      {/* Day name */}
+                      <span className={`w-10 text-xs font-semibold ${
+                        day.isOpen ? "text-slate-900 dark:text-white" : "text-slate-400"
+                      }`}>{DAY_SHORT[day.dayOfWeek]}</span>
+
+                      {day.isOpen ? (
+                        <>
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="time"
+                              value={day.openTime}
+                              onChange={e => updateDay(day.dayOfWeek, { openTime: e.target.value })}
+                              className="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 w-28"
+                            />
+                            <span className="text-xs text-slate-400">to</span>
+                            <input
+                              type="time"
+                              value={day.closeTime}
+                              onChange={e => updateDay(day.dayOfWeek, { closeTime: e.target.value })}
+                              className="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 w-28"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-400 flex-1">Closed</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Global slot / concurrent settings */}
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1.5 block">Slot Duration</label>
+                    <div className="flex gap-1">
+                      {[30, 60, 90].map(m => (
+                        <button key={m} onClick={() => setSlotDuration(m)}
+                          className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                            slotDuration === m
+                              ? "bg-blue-600 border-blue-600 text-white"
+                              : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
+                          }`}>
+                          {m}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1.5 block">Max Concurrent</label>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setMaxConcurrent(v => Math.max(1, v - 1))}
+                        className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">−</button>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white w-6 text-center">{maxConcurrent}</span>
+                      <button onClick={() => setMaxConcurrent(v => Math.min(10, v + 1))}
+                        className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">+</button>
+                      <span className="text-xs text-slate-400">per slot</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={saveAvailability} disabled={savingAvail}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+                  {savingAvail ? "Saving..." : "Save Schedule"}
+                </button>
+              </div>
+
+              {/* Closure dates */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+                <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Holiday & Closure Dates</h2>
+                <p className="text-xs text-slate-500">Dates when the shop is closed for appointments (holidays, events, etc.)</p>
+
+                {/* Add closure */}
+                <div className="flex gap-2 flex-wrap">
+                  <input
+                    type="date"
+                    value={newClosureDate}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={e => setNewClosureDate(e.target.value)}
+                    className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    placeholder="Reason (optional)"
+                    value={newClosureReason}
+                    onChange={e => setNewClosureReason(e.target.value)}
+                    className="flex-1 min-w-0 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  />
+                  <button onClick={addClosure} disabled={addingClosure || !newClosureDate}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+                    {addingClosure ? "..." : "+ Add"}
+                  </button>
+                </div>
+
+                {/* Closure list */}
+                {closures.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-3">No closure dates added</p>
+                ) : (
+                  <div className="space-y-2">
+                    {closures.map(c => (
+                      <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-slate-900 dark:text-white">
+                            {new Date(c.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
+                          </span>
+                          {c.reason && <span className="text-xs text-slate-500">{c.reason}</span>}
+                        </div>
+                        <button onClick={() => deleteClosure(c.id)} disabled={deletingClosureId === c.id}
+                          className="text-xs text-red-500 hover:text-red-400 disabled:opacity-50 flex-shrink-0">
+                          {deletingClosureId === c.id ? "..." : "✕ Remove"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
