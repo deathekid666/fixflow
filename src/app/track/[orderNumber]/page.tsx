@@ -43,7 +43,8 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   const [chatMessages, setChatMessages] = useState<{ id: string; message: string; senderType: string; createdAt: string }[]>([]);
   const [newMsg, setNewMsg] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const prevMsgCountRef = useRef(0);
 
   useEffect(() => {
     fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
@@ -84,9 +85,13 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
     return () => clearInterval(id);
   }, [data?.id]);
 
-  // Auto-scroll chat on new messages
+  // Auto-scroll chat container only when new messages arrive
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatMessages.length > prevMsgCountRef.current) {
+      const el = chatContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+    prevMsgCountRef.current = chatMessages.length;
   }, [chatMessages]);
 
   async function sendChat() {
@@ -335,7 +340,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
               </div>
 
               {/* Messages area */}
-              <div style={{ height: 280, overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 8, background: "rgba(0,0,0,0.2)" }}>
+              <div ref={chatContainerRef} style={{ height: 280, overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 8, background: "rgba(0,0,0,0.2)" }}>
                 {chatMessages.length === 0 && (
                   <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ fontSize: 13, color: "#475569", textAlign: "center" }}>
@@ -366,7 +371,6 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                     </div>
                   );
                 })}
-                <div ref={chatEndRef} />
               </div>
 
               {/* Input */}
