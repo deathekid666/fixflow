@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   // Check plan limits
   const shop = await prisma.shop.findUnique({
     where: { id: user.shopId },
-    select: { plan: true },
+    select: { plan: true, taxEnabled: true, taxRate: true },
   });
 
   const plan = (shop?.plan ?? "FREE") as keyof typeof PLAN_LIMITS;
@@ -124,6 +124,7 @@ export async function POST(req: Request) {
       shopId: user.shopId,
       userId: user.id,
       slaDeadline,
+      taxRate: shop?.taxEnabled ? (shop.taxRate ?? 0) : 0,
     },
   });
 

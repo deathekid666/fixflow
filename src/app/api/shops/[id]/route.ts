@@ -9,7 +9,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { name, address, phone, email, googleMapsUrl, currency, onboardingComplete } = body;
+  const { name, address, phone, email, googleMapsUrl, currency, onboardingComplete, taxEnabled, taxRate, taxLabel } = body;
 
   const shop = await prisma.shop.update({
     where: { id: params.id },
@@ -21,6 +21,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       googleMapsUrl: googleMapsUrl !== undefined ? googleMapsUrl || null : undefined,
       ...(currency && { currency }),
       ...(onboardingComplete !== undefined && { onboardingComplete }),
+      ...(taxEnabled !== undefined && { taxEnabled }),
+      ...(taxRate !== undefined && { taxRate: parseFloat(taxRate) || 0 }),
+      ...(taxLabel && { taxLabel }),
     },
   });
 

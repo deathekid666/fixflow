@@ -12,7 +12,7 @@ type WorkOrder = {
   repairType: string; faultLevel: string; status: string; receivedAt: string;
   doneAt: string | null; deliveredAt: string | null; tatDays: number;
   subtotal: number; quotationItems: number; discount: number; total: number;
-  collected: number; quotationRemarks: string | null; createdAt: string;
+  collected: number; quotationRemarks: string | null; createdAt: string; taxRate: number;
   creator: { name: string }; assignee: { name: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
@@ -46,7 +46,9 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
   const currency = order.shop?.currency ?? "MAD";
   const mad = (n: number) => formatCurrency(n, currency);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
-  const remaining = grandTotal - order.collected;
+  const taxAmount = grandTotal * (order.taxRate ?? 0) / 100;
+  const totalWithTax = grandTotal + taxAmount;
+  const remaining = totalWithTax - order.collected;
 
   return (
     <>
@@ -163,9 +165,19 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
           {order.subtotal > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Parts subtotal</span><span>{mad(order.subtotal)}</span></div>}
           {order.quotationItems > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Services subtotal</span><span>{mad(order.quotationItems)}</span></div>}
           {order.discount > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Discount</span><span>-{mad(order.discount)}</span></div>}
-          <div className="flex justify-between font-bold text-lg mt-2 border-t border-black pt-2">
-            <span>Total</span><span>{mad(grandTotal)}</span>
-          </div>
+          {taxAmount > 0 ? (
+            <>
+              <div className="flex justify-between text-sm mt-2 border-t border-gray-300 pt-2"><span className="text-gray-600">Subtotal</span><span>{mad(grandTotal)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-600">{order.taxRate}% tax</span><span>{mad(taxAmount)}</span></div>
+              <div className="flex justify-between font-bold text-lg mt-2 border-t border-black pt-2">
+                <span>Total incl. tax</span><span>{mad(totalWithTax)}</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-between font-bold text-lg mt-2 border-t border-black pt-2">
+              <span>Total</span><span>{mad(grandTotal)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm text-green-700 mt-1">
             <span>Collected</span><span>{mad(order.collected)}</span>
           </div>
@@ -174,14 +186,14 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
               <span>Remaining</span><span>{mad(remaining)}</span>
             </div>
           )}
-          {remaining <= 0.01 && order.collected > 0 && order.collected <= grandTotal + 0.01 && (
+          {remaining <= 0.01 && order.collected > 0 && order.collected <= totalWithTax + 0.01 && (
             <div className="flex justify-between text-sm text-green-700 font-medium">
               <span>✓ Fully Paid</span><span></span>
             </div>
           )}
-          {order.collected > grandTotal + 0.01 && (
+          {order.collected > totalWithTax + 0.01 && (
             <div className="flex justify-between text-sm text-orange-600 font-medium">
-              <span>⚠ Overpaid by {mad(order.collected - grandTotal)}</span><span></span>
+              <span>⚠ Overpaid by {mad(order.collected - totalWithTax)}</span><span></span>
             </div>
           )}
         </div>

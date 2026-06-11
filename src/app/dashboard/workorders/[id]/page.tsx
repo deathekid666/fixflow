@@ -23,7 +23,7 @@ type WorkOrder = {
   doneAt: string | null; deliveredAt: string | null; startedAt: string | null; completedAt: string | null;
   bounceCount: number; isBounce: boolean; lastReminderAt: string | null; slaDeadline: string | null;
   subtotal: number; quotationItems: number; discount: number; total: number;
-  collected: number; quotationRemarks: string | null; createdAt: string;
+  collected: number; quotationRemarks: string | null; createdAt: string; taxRate: number;
   creator: { name: string }; assignee: { id: string; name: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: LineItem[];
@@ -382,8 +382,10 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     return (n.getFullYear() - d.getFullYear()) * 12 + (n.getMonth() - d.getMonth());
   })();
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
-  const remaining = grandTotal - order.collected;
-  const isFullyPaid = remaining <= 0.01 && order.collected > 0 && order.collected <= grandTotal + 0.01;
+  const taxAmount = grandTotal * (order.taxRate ?? 0) / 100;
+  const totalWithTax = grandTotal + taxAmount;
+  const remaining = totalWithTax - order.collected;
+  const isFullyPaid = remaining <= 0.01 && order.collected > 0 && order.collected <= totalWithTax + 0.01;
   const checkOK = order.checklist.filter(c => c.status === "OK").length;
   const checkIssue = order.checklist.filter(c => c.status === "ISSUE").length;
   const checkNA = order.checklist.filter(c => c.status === "NA").length;
@@ -1018,7 +1020,15 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               {order.subtotal > 0 && <div className="flex justify-between text-slate-500"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>}
               {order.quotationItems > 0 && <div className="flex justify-between text-slate-500"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>}
               {order.discount > 0 && <div className="flex justify-between text-slate-500"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
-              <div className="flex justify-between text-slate-900 dark:text-white font-bold border-t border-slate-200 dark:border-slate-700 pt-2"><span>Total</span><span>{fmt(grandTotal)}</span></div>
+              {taxAmount > 0 ? (
+                <>
+                  <div className="flex justify-between text-slate-500 border-t border-slate-200 dark:border-slate-700 pt-2"><span>Subtotal</span><span>{fmt(grandTotal)}</span></div>
+                  <div className="flex justify-between text-slate-500"><span>{`${order.taxRate}% tax`}</span><span>{fmt(taxAmount)}</span></div>
+                  <div className="flex justify-between text-slate-900 dark:text-white font-bold border-t border-slate-200 dark:border-slate-700 pt-2"><span>Total incl. tax</span><span>{fmt(totalWithTax)}</span></div>
+                </>
+              ) : (
+                <div className="flex justify-between text-slate-900 dark:text-white font-bold border-t border-slate-200 dark:border-slate-700 pt-2"><span>Total</span><span>{fmt(grandTotal)}</span></div>
+              )}
             </div>
             {editingQuotation && (
               <div className="space-y-3 mb-4 bg-slate-100 dark:bg-slate-800 rounded-lg p-3">
@@ -1042,11 +1052,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
               <div className="bg-slate-100 dark:bg-slate-800 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-slate-500 font-medium">Total: {fmt(grandTotal)}</span>
+                  <span className="text-slate-500 font-medium">Total: {fmt(totalWithTax)}</span>
                   <span className="text-green-600 dark:text-green-400 font-medium">Paid: {fmt(order.collected)}</span>
                   {remaining > 0.01 && <span className="text-red-600 dark:text-red-400 font-medium">Due: {fmt(remaining)}</span>}
-                  {isFullyPaid && order.collected <= grandTotal + 0.01 && <span className="text-green-600 dark:text-green-400 font-medium">✓ Fully paid</span>}
-                  {order.collected > grandTotal + 0.01 && <span className="text-orange-600 dark:text-orange-400 font-medium">⚠ Overpaid {fmt(order.collected - grandTotal)}</span>}
+                  {isFullyPaid && order.collected <= totalWithTax + 0.01 && <span className="text-green-600 dark:text-green-400 font-medium">✓ Fully paid</span>}
+                  {order.collected > totalWithTax + 0.01 && <span className="text-orange-600 dark:text-orange-400 font-medium">⚠ Overpaid {fmt(order.collected - totalWithTax)}</span>}
                   {grandTotal === 0 && <span className="text-yellow-600 dark:text-yellow-400 font-medium">⚠ Add a service fee above</span>}
                 </div>
                 <button onClick={() => setShowPaymentForm(!showPaymentForm)}

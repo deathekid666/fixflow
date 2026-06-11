@@ -48,6 +48,9 @@ model Shop {
   trialEndsAt        DateTime?
   onboardingComplete Boolean  @default(false)
   currency           String   @default("MAD")
+  taxEnabled         Boolean  @default(false)
+  taxRate            Float    @default(0)
+  taxLabel           String   @default("TVA")
   createdAt          DateTime @default(now())
 
   users          User[]
@@ -106,6 +109,7 @@ model WorkOrder {
   total            Float  @default(0)
   collected        Float  @default(0)
   quotationRemarks String?
+  taxRate          Float  @default(0)
 
   lastReminderAt DateTime?
   slaDeadline    DateTime?

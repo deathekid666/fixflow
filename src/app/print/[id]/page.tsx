@@ -34,6 +34,7 @@ type WorkOrder = {
   collected: number;
   quotationRemarks: string | null;
   createdAt: string;
+  taxRate: number;
   creator: { name: string };
   assignee: { name: string } | null;
   shop: { name: string; address?: string; phone?: string; currency?: string } | null;
@@ -67,7 +68,9 @@ export default function PrintPage({ params }: { params: { id: string } }) {
   const currency = order.shop?.currency ?? "MAD";
   const mad = (n: number) => formatCurrency(n, currency);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
-  const remaining = grandTotal - order.collected;
+  const taxAmount = grandTotal * (order.taxRate ?? 0) / 100;
+  const totalWithTax = grandTotal + taxAmount;
+  const remaining = totalWithTax - order.collected;
   const woNumber = `WO-${new Date(order.createdAt).getFullYear()}-${order.orderNumber.slice(0, 6).toUpperCase()}`;
   const trackUrl = `${origin}/track/${order.orderNumber.slice(0, 6)}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(trackUrl)}`;
@@ -234,7 +237,7 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         <div className="totals-block">
           {order.subtotal > 0 && (
             <div className="total-row subtotal-row">
-              <span>Parts subtotal</span><span>{order.subtotal.toFixed(2)} MAD</span>
+              <span>Parts subtotal</span><span>{mad(order.subtotal)}</span>
             </div>
           )}
           {order.lineItems.length > 0 && (
@@ -243,24 +246,32 @@ export default function PrintPage({ params }: { params: { id: string } }) {
               {order.lineItems.map(item => (
                 <div key={item.id} className="total-row item-row">
                   <span>{item.label}</span>
-                  <span>{item.amount.toFixed(2)} MAD</span>
+                  <span>{mad(item.amount)}</span>
                 </div>
               ))}
               {order.quotationItems > 0 && (
                 <div className="total-row subtotal-row">
-                  <span>Services subtotal</span><span>{order.quotationItems.toFixed(2)} MAD</span>
+                  <span>Services subtotal</span><span>{mad(order.quotationItems)}</span>
                 </div>
               )}
             </>
           )}
           {order.discount > 0 && (
             <div className="total-row discount">
-              <span>Discount</span><span>− {order.discount.toFixed(2)} MAD</span>
+              <span>Discount</span><span>− {mad(order.discount)}</span>
             </div>
           )}
-          <div className="total-row grand"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
-          <div className="total-row collected"><span>Collected</span><span>{order.collected.toFixed(2)} MAD</span></div>
-          {remaining > 0 && <div className="total-row remaining"><span>Remaining</span><span>{remaining.toFixed(2)} MAD</span></div>}
+          {taxAmount > 0 ? (
+            <>
+              <div className="total-row subtotal-row"><span>Subtotal</span><span>{mad(grandTotal)}</span></div>
+              <div className="total-row subtotal-row"><span>{order.taxRate}% tax</span><span>{mad(taxAmount)}</span></div>
+              <div className="total-row grand"><span>Total incl. tax</span><span>{mad(totalWithTax)}</span></div>
+            </>
+          ) : (
+            <div className="total-row grand"><span>Total</span><span>{mad(grandTotal)}</span></div>
+          )}
+          <div className="total-row collected"><span>Collected</span><span>{mad(order.collected)}</span></div>
+          {remaining > 0 && <div className="total-row remaining"><span>Remaining</span><span>{mad(remaining)}</span></div>}
           {order.quotationRemarks && (
             <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", lineHeight: 1.5 }}>
               {order.quotationRemarks}

@@ -13,6 +13,7 @@ type Shop = {
   address: string | null; email: string | null;
   logoUrl: string | null; googleMapsUrl: string | null;
   currency: string;
+  taxEnabled: boolean; taxRate: number; taxLabel: string;
   plan: string; status: string; trialEndsAt: string | null;
 };
 
@@ -75,7 +76,7 @@ export default function SettingsPage() {
 
   // Shop
   const [shop, setShop] = useState<Shop | null>(null);
-  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD" });
+  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD", taxEnabled: false, taxRate: 20, taxLabel: "TVA" });
   const [savingShop, setSavingShop] = useState(false);
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -103,7 +104,7 @@ export default function SettingsPage() {
         .then(r => r.json())
         .then(s => {
           setShop(s);
-          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD" });
+          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD", taxEnabled: s.taxEnabled ?? false, taxRate: s.taxRate ?? 20, taxLabel: s.taxLabel ?? "TVA" });
         }).catch(() => {});
       fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
@@ -432,6 +433,51 @@ export default function SettingsPage() {
                     {savingSla ? "Saving..." : "Save"}
                   </button>
                 </div>
+              </div>
+
+              {/* Tax Settings */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Tax Settings</h3>
+                <p className="text-xs text-slate-500">When enabled, tax is applied to new work orders and shown on invoices.</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-900 dark:text-white font-medium">Enable Tax</p>
+                    <p className="text-xs text-slate-500">New orders will include a tax line</p>
+                  </div>
+                  <button
+                    onClick={() => setShopForm(p => ({ ...p, taxEnabled: !p.taxEnabled }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${shopForm.taxEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${shopForm.taxEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+                {shopForm.taxEnabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Tax Rate (%)</label>
+                      <input
+                        type="number" min="0" max="100" step="0.1"
+                        value={shopForm.taxRate}
+                        onChange={e => setShopForm(p => ({ ...p, taxRate: parseFloat(e.target.value) || 0 }))}
+                        className={INPUT} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Tax Label</label>
+                      <select
+                        value={shopForm.taxLabel}
+                        onChange={e => setShopForm(p => ({ ...p, taxLabel: e.target.value }))}
+                        className={INPUT}>
+                        <option value="TVA">TVA</option>
+                        <option value="VAT">VAT</option>
+                        <option value="GST">GST</option>
+                        <option value="Tax">Tax</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+                <button onClick={saveShop} disabled={savingShop}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
+                  {savingShop ? "Saving..." : "Save Tax Settings"}
+                </button>
               </div>
 
               {/* Public links & embed codes */}

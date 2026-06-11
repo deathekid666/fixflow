@@ -9,7 +9,7 @@ type WorkOrder = {
   serialNumber: string; imei: string; customerName: string; customerPhone: string;
   customerEmail: string; faultDescription: string; repairType: string;
   status: string; receivedAt: string; doneAt: string | null; deliveredAt: string | null;
-  subtotal: number; total: number; discount: number; quotationItems: number;
+  subtotal: number; total: number; discount: number; quotationItems: number; taxRate: number;
   creator: { name: string }; assignee: { id: string; name: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
@@ -38,6 +38,8 @@ export default function HealthReportPage({ params }: { params: { id: string } })
   const currency = order.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
+  const taxAmount = grandTotal * (order.taxRate ?? 0) / 100;
+  const totalWithTax = grandTotal + taxAmount;
 
   return (
     <div className="min-h-screen bg-slate-950 p-6">
@@ -169,7 +171,15 @@ export default function HealthReportPage({ params }: { params: { id: string } })
             <div key={item.id} className="flex justify-between text-sm text-gray-500 mb-1"><span>{item.label}</span><span>{fmt(item.amount)}</span></div>
           ))}
           {order.discount > 0 && <div className="flex justify-between text-sm text-gray-500 mb-1"><span>Discount</span><span>-{fmt(order.discount)}</span></div>}
-          <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-2 mt-2"><span>Total</span><span>{fmt(grandTotal)}</span></div>
+          {taxAmount > 0 ? (
+            <>
+              <div className="flex justify-between text-sm text-gray-500 mb-1"><span>Subtotal</span><span>{fmt(grandTotal)}</span></div>
+              <div className="flex justify-between text-sm text-gray-500 mb-1"><span>{order.taxRate}% tax</span><span>{fmt(taxAmount)}</span></div>
+              <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-2 mt-2"><span>Total incl. tax</span><span>{fmt(totalWithTax)}</span></div>
+            </>
+          ) : (
+            <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-2 mt-2"><span>Total</span><span>{fmt(grandTotal)}</span></div>
+          )}
         </div>
 
         {/* Footer */}
