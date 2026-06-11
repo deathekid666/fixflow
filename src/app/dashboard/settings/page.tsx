@@ -6,7 +6,9 @@ import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/context/LanguageContext";
 import { CURRENCIES } from "@/lib/currency";
 
-type Tab = "profile" | "shop" | "security" | "preferences" | "appointments";
+type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys";
+
+type ApiKey = { id: string; name: string; key: string; lastUsed: string | null; createdAt: string; isActive: boolean };
 
 type Shop = {
   id: string; name: string; phone: string | null;
@@ -86,6 +88,13 @@ export default function SettingsPage() {
   const [savingSla, setSavingSla] = useState(false);
   const [slaMsg, setSlaMsg] = useState("");
 
+  // API Keys
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
+
   // Appointments / availability
   const [days, setDays] = useState<DayAvailability[]>(DEFAULT_DAYS);
   const [slotDuration, setSlotDuration] = useState(60);
@@ -119,6 +128,44 @@ export default function SettingsPage() {
       loadClosures();
     }
   }, [tab, user?.shopId]);
+
+  useEffect(() => {
+    if (tab === "api-keys") loadApiKeys();
+  }, [tab]);
+
+  async function loadApiKeys() {
+    const res = await fetch("/api/keys", { credentials: "include" });
+    if (res.ok) setApiKeys(await res.json());
+  }
+
+  async function createApiKey() {
+    if (!newKeyName.trim()) return;
+    setCreatingKey(true);
+    const res = await fetch("/api/keys", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ name: newKeyName.trim() }),
+    });
+    if (res.ok) {
+      const key = await res.json();
+      setApiKeys(prev => [key, ...prev]);
+      setNewKeyName("");
+    }
+    setCreatingKey(false);
+  }
+
+  async function deleteApiKey(id: string) {
+    if (!confirm("Delete this API key? Any integrations using it will stop working.")) return;
+    setDeletingKeyId(id);
+    await fetch(`/api/keys?id=${id}`, { method: "DELETE", credentials: "include" });
+    setApiKeys(prev => prev.filter(k => k.id !== id));
+    setDeletingKeyId(null);
+  }
+
+  function copyKey(key: ApiKey) {
+    navigator.clipboard.writeText(key.key);
+    setCopiedKeyId(key.id);
+    setTimeout(() => setCopiedKeyId(null), 2000);
+  }
 
   async function loadAvailability() {
     if (!user?.shopId) return;
@@ -257,6 +304,7 @@ export default function SettingsPage() {
     { key: "security", label: "Security", icon: "🔒" },
     { key: "preferences", label: "Preferences", icon: "🎨" },
     { key: "appointments", label: "Appointments", icon: "📅" },
+    { key: "api-keys", label: "API Keys", icon: "🔑" },
   ];
 
   return (
@@ -783,6 +831,86 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* API Keys tab */}
+      {tab === "api-keys" && (
+        <div className="space-y-4">
+          {user?.role !== "ADMIN" ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+              <p className="text-sm text-slate-500 text-center py-6">Only admins can manage API keys.</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">API Keys</h2>
+                  <p className="text-xs text-slate-500 mt-1">Use API keys to authenticate requests to the FixFlow API from external integrations. Keys are shown in full — store them securely.</p>
+                </div>
+
+                {/* Create new key */}
+                <div className="flex gap-2">
+                  <input
+                    value={newKeyName}
+                    onChange={e => setNewKeyName(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && newKeyName.trim()) createApiKey(); }}
+                    placeholder="Key name (e.g. Zapier, n8n, My App)"
+                    className={INPUT} />
+                  <button
+                    onClick={createApiKey}
+                    disabled={creatingKey || !newKeyName.trim()}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0">
+                    {creatingKey ? "Creating..." : "+ Generate Key"}
+                  </button>
+                </div>
+
+                {/* Key list */}
+                {apiKeys.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 text-sm">No API keys yet — create one above.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {apiKeys.map(k => (
+                      <div key={k.id} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-900 dark:text-white">{k.name}</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => copyKey(k)}
+                              className="text-xs px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-md transition-colors">
+                              {copiedKeyId === k.id ? "✓ Copied" : "Copy"}
+                            </button>
+                            <button
+                              onClick={() => deleteApiKey(k.id)}
+                              disabled={deletingKeyId === k.id}
+                              className="text-xs px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-md transition-colors disabled:opacity-50">
+                              {deletingKeyId === k.id ? "..." : "Delete"}
+                            </button>
+                          </div>
+                        </div>
+                        <code className="block text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 break-all select-all">
+                          {k.key}
+                        </code>
+                        <div className="flex gap-4 mt-2 text-xs text-slate-400">
+                          <span>Created {new Date(k.createdAt).toLocaleDateString()}</span>
+                          {k.lastUsed && <span>Last used {new Date(k.lastUsed).toLocaleDateString()}</span>}
+                          {!k.lastUsed && <span>Never used</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                <p className="font-medium text-slate-800 dark:text-slate-200">Using the API</p>
+                <p>Include your key as a Bearer token in the <code className="font-mono bg-slate-200 dark:bg-slate-700 px-1 rounded">Authorization</code> header:</p>
+                <code className="block font-mono bg-slate-200 dark:bg-slate-700 rounded px-2 py-1.5 mt-1 select-all">
+                  Authorization: Bearer fk_your_key_here
+                </code>
               </div>
             </>
           )}

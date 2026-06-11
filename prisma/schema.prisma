@@ -66,6 +66,7 @@ model Shop {
   closures       ShopClosure[]
   shopSettings   ShopSettings?
   commissions    EngineerCommission[]
+  apiKeys        ApiKey[]
 }
 
 model WorkOrder {
@@ -498,4 +499,15 @@ model EngineerCommission {
   shop Shop @relation(fields: [shopId], references: [id])
 
   @@unique([userId, shopId, month])
+}
+model ApiKey {
+  id        String    @id @default(cuid())
+  key       String    @unique
+  name      String
+  shopId    String
+  lastUsed  DateTime?
+  createdAt DateTime  @default(now())
+  isActive  Boolean   @default(true)
+
+  shop Shop @relation(fields: [shopId], references: [id])
 }
