@@ -28,7 +28,7 @@ type WorkOrder = {
   lineItems: LineItem[];
   logs: { id: string; action: string; description: string; createdAt: string; user: { name: string } }[];
   attachments: Attachment[]; bounces: Bounce[]; notes: Note[];
-  tatDays: number; isOverdue: boolean; customerOrderCount: number;
+  tatDays: number; isOverdue: boolean; customerOrderCount: number; customerFirstVisit: string;
   rating?: { rating: number; comment: string | null } | null;
   payments: Payment[];
   checklist: CheckItem[];
@@ -371,6 +371,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
   const selectedPartData = spareParts.find(p => p.id === selectedPart);
   const customerTier = loyaltyTier(order.customerOrderCount);
+  const customerSinceMonths = (() => {
+    const d = new Date(order.customerFirstVisit);
+    const n = new Date();
+    return (n.getFullYear() - d.getFullYear()) * 12 + (n.getMonth() - d.getMonth());
+  })();
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
   const isFullyPaid = remaining <= 0.01 && order.collected > 0 && order.collected <= grandTotal + 0.01;
@@ -525,6 +530,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     </span>
                   )}
                   <span className="text-xs text-slate-400">{order.customerOrderCount} order{order.customerOrderCount !== 1 ? "s" : ""}</span>
+                  {customerSinceMonths > 0 && (
+                    <span className="text-xs text-purple-500 dark:text-purple-400">
+                      · Customer since {customerSinceMonths < 12
+                        ? `${customerSinceMonths}mo`
+                        : `${Math.floor(customerSinceMonths / 12)}y${customerSinceMonths % 12 > 0 ? ` ${customerSinceMonths % 12}mo` : ""}`}
+                    </span>
+                  )}
                 </div>
               </div>
               <Info label="Phone" value={order.customerPhone} />

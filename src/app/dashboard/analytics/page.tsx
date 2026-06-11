@@ -24,6 +24,7 @@ type Analytics = {
   engineerStats: { id: string; name: string; completed: number; total: number; bounces: number; avgTat: number }[];
   lowStock: { id: string; name: string; partNumber: string; stock: number; unitPrice: number }[];
   sla: { total: number; met: number; breached: number; compliance: number | null };
+  milestones: { anniversaryThisMonth: number; tenPlusCustomers: number; goldCustomers: number };
 };
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
@@ -522,6 +523,31 @@ export default function AnalyticsPage() {
             <p className="text-xs text-slate-400 mt-1">{analytics.sla.met} of {analytics.sla.total} completed orders met their SLA deadline</p>
           </div>
         )}
+      </div>
+
+      {/* Loyalty Milestones */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Loyalty Milestones</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Customer engagement highlights</p>
+          </div>
+          <span className="text-2xl">🏆</span>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl">
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{analytics.milestones.anniversaryThisMonth}</p>
+            <p className="text-xs text-slate-500 mt-1">Anniversaries this month</p>
+          </div>
+          <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{analytics.milestones.tenPlusCustomers}</p>
+            <p className="text-xs text-slate-500 mt-1">10+ order customers</p>
+          </div>
+          <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-xl">
+            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{analytics.milestones.goldCustomers}</p>
+            <p className="text-xs text-slate-500 mt-1">Gold VIP (6+ orders)</p>
+          </div>
+        </div>
       </div>
     </div>
   );

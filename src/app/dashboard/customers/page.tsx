@@ -7,8 +7,19 @@ import { loyaltyTier } from "@/lib/loyaltyTier";
 type Customer = {
   name: string; phone: string; email: string;
   totalOrders: number; totalSpent: number; totalCollected: number;
-  lastVisit: string; statuses: string[];
+  firstVisit: string; lastVisit: string; statuses: string[];
 };
+
+function customerSince(firstVisit: string): string {
+  const d = new Date(firstVisit);
+  const now = new Date();
+  const months = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+  if (months < 1) return "New";
+  if (months < 12) return `${months}mo`;
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  return rem > 0 ? `${years}y ${rem}mo` : `${years}y`;
+}
 
 type SortKey = "totalOrders" | "totalSpent" | "lastVisit" | "name";
 
@@ -99,6 +110,14 @@ export default function CustomersPage() {
   const silverCount = customers.filter(c => c.totalOrders >= 3 && c.totalOrders <= 5).length;
   const goldCount   = customers.filter(c => c.totalOrders >= 6).length;
 
+  const now = new Date();
+  const anniversaryCount = customers.filter(c => {
+    if (!c.firstVisit) return false;
+    const d = new Date(c.firstVisit);
+    return d.getMonth() === now.getMonth() && d.getFullYear() < now.getFullYear();
+  }).length;
+  const tenPlusCount = customers.filter(c => c.totalOrders >= 10).length;
+
   const displayed = sorted.filter(c => {
     if (!tierFilter) return true;
     if (tierFilter === "bronze") return c.totalOrders >= 1 && c.totalOrders <= 2;
@@ -181,6 +200,27 @@ export default function CustomersPage() {
           </div>
         )}
       </div>
+
+      {/* Loyalty Milestones */}
+      {(anniversaryCount > 0 || tenPlusCount > 0) && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Loyalty Milestones</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl">
+              <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{anniversaryCount}</p>
+              <p className="text-xs text-slate-500 mt-1">Anniversaries this month</p>
+            </div>
+            <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
+              <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{tenPlusCount}</p>
+              <p className="text-xs text-slate-500 mt-1">10+ order customers</p>
+            </div>
+            <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-xl">
+              <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{goldCount}</p>
+              <p className="text-xs text-slate-500 mt-1">Gold VIP (6+)</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <input
@@ -279,7 +319,7 @@ export default function CustomersPage() {
                 </div>
               )}
               {/* Stats row */}
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-4 gap-2 text-center">
                 <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
                   <p className="text-base font-bold text-slate-900 dark:text-white">{c.totalOrders}</p>
                   <p className="text-xs text-slate-500">visits</p>
@@ -291,6 +331,10 @@ export default function CustomersPage() {
                 <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
                   <p className="text-base font-bold text-slate-600 dark:text-slate-300">{new Date(c.lastVisit).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</p>
                   <p className="text-xs text-slate-500">last visit</p>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg py-2">
+                  <p className="text-base font-bold text-purple-600 dark:text-purple-400">{customerSince(c.firstVisit)}</p>
+                  <p className="text-xs text-slate-500">since</p>
                 </div>
               </div>
               {/* Outstanding */}
@@ -332,6 +376,7 @@ export default function CustomersPage() {
                   Last Visit <SortIcon k="lastVisit" />
                 </button>
               </th>
+              <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Customer Since</th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Loyalty</th>
               <th />
             </tr>
@@ -345,13 +390,14 @@ export default function CustomersPage() {
                 <td className="px-4 py-3.5"><div className={`h-3 bg-slate-200 dark:bg-slate-800 rounded ${["w-20","w-16","w-24","w-18","w-20","w-16"][i]}`} /></td>
                 <td className="px-4 py-3.5"><div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
                 <td className="px-4 py-3.5"><div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                <td className="px-4 py-3.5"><div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" /></td>
                 <td className="px-4 py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
                 <td className="px-4 py-3.5"><div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" /></td>
               </tr>
             ))}
             {!loading && displayed.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center">
+                <td colSpan={9} className="px-4 py-12 text-center">
                   <p className="text-4xl mb-3">👤</p>
                   <p className="text-slate-400 font-medium">
                     {tierFilter ? `No ${tierFilter} customers` : search ? "No customers match your search" : "No customers yet"}
@@ -388,6 +434,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{c.totalCollected.toFixed(2)} MAD</td>
                     <td className="px-4 py-3 text-slate-400 text-xs">{new Date(c.lastVisit).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-xs text-purple-600 dark:text-purple-400 font-medium">{customerSince(c.firstVisit)}</td>
                     <td className="px-4 py-3">
                       {badge ? (
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
@@ -410,7 +457,7 @@ export default function CustomersPage() {
                   </tr>
                   {isEditing && (
                     <tr key={`edit-${c.phone}`} className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                      <td colSpan={8} className="px-4 py-4">
+                      <td colSpan={9} className="px-4 py-4">
                         <div className="flex items-end gap-3 flex-wrap">
                           <div>
                             <label className="text-xs text-slate-400 mb-1 block">Name *</label>
