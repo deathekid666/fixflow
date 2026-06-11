@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingApptCount, setPendingApptCount] = useState(0);
 
   useEffect(() => { refresh(); }, []);
 
@@ -48,6 +49,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const interval = setInterval(() => { if (user) loadNotifications(); }, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    if (user && !user.isSuperAdmin) loadPendingAppts();
+    const interval = setInterval(() => { if (user && !user.isSuperAdmin) loadPendingAppts(); }, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  async function loadPendingAppts() {
+    try {
+      const res = await fetch("/api/appointments?status=PENDING", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingApptCount(Array.isArray(data) ? data.length : 0);
+      }
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
@@ -155,7 +172,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}>
                 <span>{item.icon}</span>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.href === "/dashboard/appointments" && pendingApptCount > 0 && (
+                  <span className={`text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 ${active ? "bg-white/25 text-white" : "bg-yellow-500 text-white"}`}>
+                    {pendingApptCount > 9 ? "9+" : pendingApptCount}
+                  </span>
+                )}
               </Link>
             );
           })}
