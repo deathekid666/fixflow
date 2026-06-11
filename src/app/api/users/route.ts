@@ -17,6 +17,7 @@ export async function GET(req: Request) {
       email: true,
       name: true,
       role: true,
+      commissionRate: true,
     },
     orderBy: { name: "asc" },
   });

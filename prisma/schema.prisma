@@ -15,6 +15,7 @@ model User {
   role               String   @default("ENGINEER")
   shopId             String?
   isSuperAdmin       Boolean  @default(false)
+  commissionRate     Float    @default(0)
   emailVerified      Boolean  @default(false)
   emailVerifyToken   String?
   resetPasswordToken String?
@@ -31,6 +32,7 @@ model User {
   expenses         Expense[]
   customerNotes    CustomerNote[]
   purchaseOrders   PurchaseOrder[]
+  commissions      EngineerCommission[]
 }
 
 model Shop {
@@ -58,6 +60,7 @@ model Shop {
   availability   ShopAvailability[]
   closures       ShopClosure[]
   shopSettings   ShopSettings?
+  commissions    EngineerCommission[]
 }
 
 model WorkOrder {
@@ -472,4 +475,21 @@ model ShopSettings {
   updatedAt       DateTime @updatedAt
 
   shop Shop @relation(fields: [shopId], references: [id])
+}
+
+model EngineerCommission {
+  id               String   @id @default(cuid())
+  userId           String
+  shopId           String
+  month            String
+  totalOrders      Int      @default(0)
+  totalRevenue     Float    @default(0)
+  commissionRate   Float    @default(0)
+  commissionAmount Float    @default(0)
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  shop Shop @relation(fields: [shopId], references: [id])
+
+  @@unique([userId, shopId, month])
 }

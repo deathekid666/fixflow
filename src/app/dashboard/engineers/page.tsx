@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type Engineer = {
   id: string;
   name: string;
   email: string;
   role: string;
+  commissionRate: number;
 };
 
 type Stats = {
@@ -31,7 +33,7 @@ export default function EngineersPage() {
 
   // Edit engineer
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", email: "", password: "" });
+  const [editForm, setEditForm] = useState({ name: "", email: "", password: "", commissionRate: "0" });
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -87,7 +89,7 @@ export default function EngineersPage() {
 
   function openEdit(eng: EngineerWithStats) {
     setEditingId(eng.id);
-    setEditForm({ name: eng.name, email: eng.email, password: "" });
+    setEditForm({ name: eng.name, email: eng.email, password: "", commissionRate: eng.commissionRate.toString() });
     setEditError("");
   }
 
@@ -99,11 +101,11 @@ export default function EngineersPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(editForm),
+      body: JSON.stringify({ ...editForm, commissionRate: parseFloat(editForm.commissionRate) || 0 }),
     });
     const data = await res.json();
     if (!res.ok) { setEditError(data.error || "Failed to save"); setSavingEdit(false); return; }
-    setEngineers(prev => prev.map(e => e.id === editingId ? { ...e, name: data.name, email: data.email } : e));
+    setEngineers(prev => prev.map(e => e.id === editingId ? { ...e, name: data.name, email: data.email, commissionRate: data.commissionRate ?? e.commissionRate } : e));
     setEditingId(null);
     setSavingEdit(false);
   }
@@ -133,10 +135,16 @@ export default function EngineersPage() {
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Engineers</h1>
           <p className="text-sm text-slate-500 mt-0.5">Team performance overview</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-          + Add Engineer
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/engineers/commissions"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg transition-colors font-medium">
+            💸 Commissions
+          </Link>
+          <button onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
+            + Add Engineer
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -203,9 +211,17 @@ export default function EngineersPage() {
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{e.email}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-500">Total Revenue</p>
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{e.stats.revenue.toFixed(0)} MAD</p>
+                <div className="flex items-start gap-6">
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500">Total Revenue</p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{e.stats.revenue.toFixed(0)} MAD</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500">Commission ({e.commissionRate}%)</p>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {((e.stats.revenue * e.commissionRate) / 100).toFixed(0)} MAD
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -213,7 +229,7 @@ export default function EngineersPage() {
               {editingId === e.id && (
                 <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                   {editError && <p className="text-red-500 dark:text-red-400 text-xs">{editError}</p>}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
                       <label className="text-xs text-slate-400 mb-1 block">Name *</label>
                       <input value={editForm.name} onChange={ev => setEditForm(p => ({ ...p, name: ev.target.value }))}
@@ -229,6 +245,12 @@ export default function EngineersPage() {
                       <input type="password" value={editForm.password} onChange={ev => setEditForm(p => ({ ...p, password: ev.target.value }))}
                         placeholder="••••••••"
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Commission Rate (%)</label>
+                      <input type="number" min={0} max={100} step={0.5} value={editForm.commissionRate}
+                        onChange={ev => setEditForm(p => ({ ...p, commissionRate: ev.target.value }))}
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                     </div>
                   </div>
                   <div className="flex gap-2">

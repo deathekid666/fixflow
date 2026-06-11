@@ -26,10 +26,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     data.password = await bcrypt.hash(body.password.trim(), 10);
   }
 
+  if (typeof body.commissionRate === "number") {
+    data.commissionRate = Math.max(0, Math.min(100, body.commissionRate));
+  }
+
   const updated = await prisma.user.update({
     where: { id: params.id },
     data,
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, commissionRate: true },
   });
 
   return Response.json(updated);
