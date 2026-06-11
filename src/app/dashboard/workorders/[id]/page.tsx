@@ -88,6 +88,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadTag, setUploadTag] = useState("other");
   const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
+  const [photoView, setPhotoView] = useState<"grid" | "timeline">("grid");
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -619,10 +621,24 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           {/* Attachments */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Attachments</h2>
-              <button onClick={() => fileRef.current?.click()} disabled={uploadingFile || !!pendingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">{uploadingFile ? "Uploading..." : "Upload File"}</button>
-              <input ref={fileRef} type="file" className="hidden" accept="image/*,.pdf,.txt" onChange={onFileSelected} />
+              <div className="flex items-center gap-2 ml-auto">
+                {order.attachments.length > 0 && (
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+                    <button onClick={() => setPhotoView("grid")}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${photoView === "grid" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
+                      Grid
+                    </button>
+                    <button onClick={() => setPhotoView("timeline")}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${photoView === "timeline" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
+                      Timeline
+                    </button>
+                  </div>
+                )}
+                <button onClick={() => fileRef.current?.click()} disabled={uploadingFile || !!pendingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">{uploadingFile ? "Uploading..." : "Upload File"}</button>
+                <input ref={fileRef} type="file" className="hidden" accept="image/*,.pdf,.txt" onChange={onFileSelected} />
+              </div>
             </div>
             {pendingFile && (
               <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700/50 rounded-lg p-4 space-y-3">
@@ -653,12 +669,15 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </div>
               </div>
             )}
-            {order.attachments.length === 0 ? <p className="text-sm text-slate-500">No attachments yet.</p> : (
+            {order.attachments.length === 0 ? (
+              <p className="text-sm text-slate-500">No attachments yet.</p>
+            ) : photoView === "grid" ? (
               <div className="grid grid-cols-3 gap-3">
                 {order.attachments.map(a => (
                   <div key={a.id} className="bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden group relative">
                     {a.path.startsWith("data:image") || a.path.startsWith("https://") ? (
-                      <img src={a.path} alt={a.filename} className="w-full h-24 object-cover" />
+                      <img src={a.path} alt={a.filename} onClick={() => setLightboxUrl(a.path)}
+                        className="w-full h-24 object-cover cursor-pointer hover:opacity-90 transition-opacity" />
                     ) : (
                       <div className="h-24 flex items-center justify-center text-slate-500 text-xs">📄 {a.filename}</div>
                     )}
@@ -677,6 +696,38 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                       className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50">×</button>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {[
+                  { key: "intake",     icon: "📥", label: "Intake",     pill: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
+                  { key: "repair",     icon: "🔧", label: "Repair",     pill: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20" },
+                  { key: "completion", icon: "✅", label: "Completion", pill: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20" },
+                  { key: "other",      icon: "📄", label: "Other",      pill: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700" },
+                ].map(stage => {
+                  const photos = order.attachments.filter(a =>
+                    a.tag === stage.key && (a.path.startsWith("data:image") || a.path.startsWith("https://"))
+                  );
+                  if (photos.length === 0) return null;
+                  const stageDate = new Date(photos[0].createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+                  return (
+                    <div key={stage.key}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${stage.pill}`}>
+                          {stage.icon} {stage.label}
+                        </span>
+                        <span className="text-xs text-slate-400">{stageDate}</span>
+                        <span className="text-xs text-slate-400">· {photos.length} photo{photos.length !== 1 ? "s" : ""}</span>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {photos.map(a => (
+                          <img key={a.id} src={a.path} alt={a.filename} onClick={() => setLightboxUrl(a.path)}
+                            className="h-36 w-36 object-cover rounded-xl flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity ring-2 ring-transparent hover:ring-blue-500" />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -1187,6 +1238,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
         </div>
       </div>
+
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">×</button>
+          <img src={lightboxUrl} alt="Full size" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
 
       {showRating && (
         <RatingModal workOrderId={order.id} orderNumber={order.orderNumber} customerName={order.customerName}

@@ -29,6 +29,11 @@ export async function GET(req: Request) {
         orderBy: { createdAt: "asc" },
       },
       rating: { select: { rating: true, comment: true } },
+      attachments: {
+        where: { tag: "completion" },
+        select: { id: true, path: true, filename: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 

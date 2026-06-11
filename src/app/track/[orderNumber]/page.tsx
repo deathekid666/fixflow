@@ -18,6 +18,7 @@ type TrackData = {
   shop: { name: string; phone: string | null; address: string | null } | null;
   logs: { action: string; description: string; createdAt: string }[];
   rating: { rating: number; comment: string | null } | null;
+  attachments: { id: string; path: string; filename: string; createdAt: string }[];
 };
 
 const STATUS_STEPS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED"];
@@ -40,6 +41,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<{ id: string; message: string; senderType: string; createdAt: string }[]>([]);
   const [newMsg, setNewMsg] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
@@ -264,6 +266,27 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
               </div>
             )}
 
+            {/* Repair Photos */}
+            {data.attachments && data.attachments.filter(a => a.path.startsWith("data:image") || a.path.startsWith("https://")).length > 0 && (
+              <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
+                <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Repair Photos</p>
+                <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+                  {data.attachments.filter(a => a.path.startsWith("data:image") || a.path.startsWith("https://")).map(a => (
+                    <img
+                      key={a.id}
+                      src={a.path}
+                      alt={a.filename}
+                      onClick={() => setLightboxUrl(a.path)}
+                      style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 12, flexShrink: 0, cursor: "pointer", border: "2px solid rgba(255,255,255,0.1)", transition: "border-color 0.15s" }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = "#3b82f6")}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+                    />
+                  ))}
+                </div>
+                <p style={{ margin: "10px 0 0", fontSize: 11, color: "#64748b" }}>Tap a photo to view full size</p>
+              </div>
+            )}
+
             {/* Rating */}
             {data.status === "DELIVERED" && !data.rating && !submitted && (
               <div style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 16, padding: 20 }}>
@@ -431,6 +454,24 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
           </div>
         )}
       </div>
+
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <button
+            onClick={() => setLightboxUrl(null)}
+            style={{ position: "absolute", top: 16, right: 16, width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            ×
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
+          />
+        </div>
+      )}
     </div>
   );
 }
