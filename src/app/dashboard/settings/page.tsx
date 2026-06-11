@@ -368,6 +368,52 @@ export default function SettingsPage() {
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
                 {savingShop ? "Saving..." : "Save Shop Settings"}
               </button>
+
+              {/* Public links & embed codes */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Public Links & Embeds</h3>
+
+                {/* Booking page */}
+                <div>
+                  <label className="text-xs text-slate-400 mb-1.5 block">Booking Page</label>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={`https://fixflow-ruddy.vercel.app/book/${shop.id}`}
+                      className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 font-mono focus:outline-none select-all"
+                      onClick={e => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={() => navigator.clipboard.writeText(`https://fixflow-ruddy.vercel.app/book/${shop.id}`)}
+                      className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors flex-shrink-0">
+                      Copy
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">Share this link so customers can book appointments directly.</p>
+                </div>
+
+                {/* Widget embed code */}
+                <div>
+                  <label className="text-xs text-slate-400 mb-1.5 block">Website Widget Embed Code</label>
+                  <div className="relative">
+                    <textarea
+                      readOnly
+                      rows={3}
+                      value={`<iframe src="https://fixflow-ruddy.vercel.app/widget/${shop.id}" width="420" height="600" frameborder="0"></iframe>`}
+                      className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 font-mono focus:outline-none resize-none"
+                      onClick={e => (e.target as HTMLTextAreaElement).select()}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-xs text-slate-400">Paste this on your website to embed the repair tracker + booking widget.</p>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(`<iframe src="https://fixflow-ruddy.vercel.app/widget/${shop.id}" width="420" height="600" frameborder="0"></iframe>`)}
+                      className="ml-3 px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors flex-shrink-0">
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>
