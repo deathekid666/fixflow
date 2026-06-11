@@ -6,6 +6,8 @@ type ShopInfo = {
   name: string;
   logoUrl: string | null;
   phone: string | null;
+  address: string | null;
+  googleMapsUrl: string | null;
   availability: { dayOfWeek: number; isOpen: boolean }[];
   closures: string[];
 };
@@ -173,7 +175,28 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
               : <span style={{ fontSize: 20 }}>🔧</span>}
             <span style={{ color: "white", fontWeight: 700, fontSize: 18 }}>{shop?.name}</span>
           </div>
+          {shop?.address && (
+            <p style={{ color: "#475569", fontSize: 12, margin: "0 0 6px" }}>📍 {shop.address}</p>
+          )}
           <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Book an Appointment</p>
+          {shop?.googleMapsUrl && (
+            <div style={{ marginTop: 10 }}>
+              <a
+                href={shop.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 99, padding: "7px 18px",
+                  color: "#94a3b8", fontSize: 13, fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                🗺 View on Maps
+              </a>
+            </div>
+          )}
         </div>
 
         {/* ── Step indicator ── */}

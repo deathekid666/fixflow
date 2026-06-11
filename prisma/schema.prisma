@@ -42,6 +42,7 @@ model Shop {
   phone              String?
   email              String?
   logoUrl            String?
+  googleMapsUrl      String?
   status             String   @default("TRIAL")
   plan               String   @default("FREE")
   trialEndsAt        DateTime?

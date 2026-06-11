@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: { shopId: string } }) {
   const shop = await prisma.shop.findUnique({
     where: { id: params.shopId },
-    select: { id: true, name: true, logoUrl: true, phone: true },
+    select: { id: true, name: true, logoUrl: true, phone: true, address: true, googleMapsUrl: true },
   });
   if (!shop) return Response.json({ error: "Not found" }, { status: 404 });
 

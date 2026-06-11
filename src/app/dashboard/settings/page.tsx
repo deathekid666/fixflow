@@ -10,7 +10,8 @@ type Tab = "profile" | "shop" | "security" | "preferences" | "appointments";
 type Shop = {
   id: string; name: string; phone: string | null;
   address: string | null; email: string | null;
-  logoUrl: string | null; plan: string; status: string; trialEndsAt: string | null;
+  logoUrl: string | null; googleMapsUrl: string | null;
+  plan: string; status: string; trialEndsAt: string | null;
 };
 
 type DayAvailability = {
@@ -72,7 +73,7 @@ export default function SettingsPage() {
 
   // Shop
   const [shop, setShop] = useState<Shop | null>(null);
-  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "" });
+  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "" });
   const [savingShop, setSavingShop] = useState(false);
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -100,7 +101,7 @@ export default function SettingsPage() {
         .then(r => r.json())
         .then(s => {
           setShop(s);
-          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "" });
+          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "" });
         }).catch(() => {});
       fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
@@ -383,6 +384,12 @@ export default function SettingsPage() {
                   <input value={shopForm.address} onChange={e => setShopForm(p => ({ ...p, address: e.target.value }))}
                     placeholder="Shop address" className={INPUT} />
                 </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-slate-400 mb-1 block">Google Maps URL</label>
+                  <input value={shopForm.googleMapsUrl} onChange={e => setShopForm(p => ({ ...p, googleMapsUrl: e.target.value }))}
+                    placeholder="https://maps.google.com/..." className={INPUT} />
+                  <p className="text-xs text-slate-500 mt-1">Paste your Google Maps business link — shown as a "Get Directions" button on your booking page.</p>
+                </div>
               </div>
               <button onClick={saveShop} disabled={savingShop}
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
@@ -457,6 +464,38 @@ export default function SettingsPage() {
                     <button
                       onClick={() => navigator.clipboard.writeText(`<iframe src="https://fixflow-ruddy.vercel.app/widget/${shop.id}" width="420" height="600" frameborder="0"></iframe>`)}
                       className="ml-3 px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors flex-shrink-0">
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Google My Business instructions */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Google My Business</h3>
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl flex-shrink-0">📍</span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">Add a Booking Button to your Google profile</p>
+                      <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside">
+                        <li>Go to your Google Business Profile</li>
+                        <li>Click <span className="font-medium text-slate-700 dark:text-slate-300">Edit profile → Add button</span></li>
+                        <li>Choose <span className="font-medium text-slate-700 dark:text-slate-300">Book</span></li>
+                        <li>Paste your booking link below</li>
+                      </ol>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={`https://fixflow-ruddy.vercel.app/book/${shop.id}`}
+                      className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 font-mono focus:outline-none select-all"
+                      onClick={e => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={() => navigator.clipboard.writeText(`https://fixflow-ruddy.vercel.app/book/${shop.id}`)}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition-colors flex-shrink-0 font-medium">
                       Copy
                     </button>
                   </div>
