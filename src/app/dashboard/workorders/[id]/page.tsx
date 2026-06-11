@@ -20,7 +20,7 @@ type WorkOrder = {
   faultDescription: string; appearance: string; remarks: string; serviceType: string;
   repairType: string; faultLevel: string; status: string; receivedAt: string;
   doneAt: string | null; deliveredAt: string | null; startedAt: string | null; completedAt: string | null;
-  bounceCount: number; isBounce: boolean; lastReminderAt: string | null;
+  bounceCount: number; isBounce: boolean; lastReminderAt: string | null; slaDeadline: string | null;
   subtotal: number; quotationItems: number; discount: number; total: number;
   collected: number; quotationRemarks: string | null; createdAt: string;
   creator: { name: string }; assignee: { id: string; name: string } | null;
@@ -110,6 +110,22 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [slaCountdown, setSlaCountdown] = useState("");
+
+  useEffect(() => {
+    if (!order?.slaDeadline || ["DELIVERED", "CANCELLED"].includes(order.status)) return;
+    function updateCountdown() {
+      const diffMs = new Date(order!.slaDeadline!).getTime() - Date.now();
+      if (diffMs <= 0) { setSlaCountdown("BREACHED"); return; }
+      const h = Math.floor(diffMs / (1000 * 60 * 60));
+      const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+      setSlaCountdown(`${h}h ${m}m ${s}s`);
+    }
+    updateCountdown();
+    const id = setInterval(updateCountdown, 1000);
+    return () => clearInterval(id);
+  }, [order?.slaDeadline, order?.status]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -377,6 +393,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {order.isBounce && <span className="text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">Bounce ×{order.bounceCount}</span>}
           {order.isOverdue && <span className="text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">⚠ Overdue {order.tatDays}d</span>}
           <span className="text-xs text-slate-500">TAT: {order.tatDays} day{order.tatDays !== 1 ? "s" : ""}</span>
+          {order.slaDeadline && !["DELIVERED", "CANCELLED"].includes(order.status) && (
+            slaCountdown === "BREACHED"
+              ? <span className="text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">🔴 SLA Breached</span>
+              : <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${slaCountdown && new Date(order.slaDeadline).getTime() - Date.now() < 2 * 60 * 60 * 1000 ? "bg-orange-500/20 text-orange-600 dark:text-orange-400" : "bg-blue-500/10 text-blue-600 dark:text-blue-400"}`}>
+                  ⏱ SLA: {slaCountdown || "..."}
+                </span>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 Print</a>
@@ -449,6 +472,26 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <button onClick={submitBounce} disabled={submittingBounce || !bounceReason || !bounceScenario} className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs rounded-lg">{submittingBounce ? "..." : "Submit"}</button>
             <button onClick={() => setShowBounceForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
           </div>
+        </div>
+      )}
+
+      {/* SLA banner */}
+      {order.slaDeadline && !["DELIVERED", "CANCELLED"].includes(order.status) && (
+        <div className={`rounded-xl px-4 py-3 flex items-center justify-between gap-4 ${slaCountdown === "BREACHED" ? "bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800/50" : "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40"}`}>
+          <div className="flex items-center gap-3">
+            <span className="text-lg">{slaCountdown === "BREACHED" ? "🔴" : "⏱"}</span>
+            <div>
+              <p className={`text-xs font-semibold ${slaCountdown === "BREACHED" ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"}`}>
+                {slaCountdown === "BREACHED" ? "SLA Deadline Breached" : "SLA Deadline"}
+              </p>
+              <p className="text-xs text-slate-500">{new Date(order.slaDeadline).toLocaleString()}</p>
+            </div>
+          </div>
+          {slaCountdown && slaCountdown !== "BREACHED" && (
+            <span className={`text-sm font-mono font-bold ${new Date(order.slaDeadline).getTime() - Date.now() < 2 * 60 * 60 * 1000 ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400"}`}>
+              {slaCountdown}
+            </span>
+          )}
         </div>
       )}
 

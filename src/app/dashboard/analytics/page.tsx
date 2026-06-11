@@ -23,6 +23,7 @@ type Analytics = {
   topParts: { sparePartId: string; _sum: { quantity: number; total: number }; part: { name: string; partNumber: string } }[];
   engineerStats: { id: string; name: string; completed: number; total: number; bounces: number; avgTat: number }[];
   lowStock: { id: string; name: string; partNumber: string; stock: number; unitPrice: number }[];
+  sla: { total: number; met: number; breached: number; compliance: number | null };
 };
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
@@ -479,6 +480,48 @@ export default function AnalyticsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* SLA Compliance */}
+      <div className={`border rounded-xl p-5 ${analytics.sla.compliance !== null && analytics.sla.compliance < 80 ? "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">SLA Compliance</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Orders completed within their deadline</p>
+          </div>
+          {analytics.sla.compliance !== null && (
+            <span className={`text-2xl font-bold ${analytics.sla.compliance >= 90 ? "text-green-600 dark:text-green-400" : analytics.sla.compliance >= 70 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
+              {analytics.sla.compliance}%
+            </span>
+          )}
+        </div>
+        {analytics.sla.total === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-4">No completed orders with SLA deadlines yet.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{analytics.sla.total}</p>
+              <p className="text-xs text-slate-500 mt-1">Total</p>
+            </div>
+            <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-xl">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{analytics.sla.met}</p>
+              <p className="text-xs text-slate-500 mt-1">Met SLA</p>
+            </div>
+            <div className="text-center p-3 bg-red-50 dark:bg-red-950/30 rounded-xl">
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{analytics.sla.breached}</p>
+              <p className="text-xs text-slate-500 mt-1">Breached</p>
+            </div>
+          </div>
+        )}
+        {analytics.sla.total > 0 && analytics.sla.compliance !== null && (
+          <div className="mt-4">
+            <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${analytics.sla.compliance >= 90 ? "bg-green-500" : analytics.sla.compliance >= 70 ? "bg-yellow-500" : "bg-red-500"}`}
+                style={{ width: `${analytics.sla.compliance}%` }} />
+            </div>
+            <p className="text-xs text-slate-400 mt-1">{analytics.sla.met} of {analytics.sla.total} completed orders met their SLA deadline</p>
+          </div>
+        )}
       </div>
     </div>
   );

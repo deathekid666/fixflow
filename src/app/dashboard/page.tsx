@@ -11,6 +11,7 @@ type WorkOrder = {
   assignee: { id: string; name: string } | null;
   total: number; collected: number; tatDays: number; isOverdue: boolean;
   lastReminderAt?: string | null;
+  slaDeadline?: string | null;
 };
 
 type Engineer = { id: string; name: string };
@@ -30,6 +31,15 @@ const PAGE_SIZE = 20;
 
 function orderLabel(o: WorkOrder) {
   return o.orderNumber.startsWith("wo-") ? o.orderNumber.toUpperCase() : o.orderNumber.slice(0, 8).toUpperCase();
+}
+
+function SlaBadge({ o }: { o: WorkOrder }) {
+  if (!o.slaDeadline || ["DELIVERED", "CANCELLED"].includes(o.status)) return null;
+  const diffMs = new Date(o.slaDeadline).getTime() - Date.now();
+  const diffH = diffMs / (1000 * 60 * 60);
+  if (diffMs < 0) return <span className="text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold">SLA</span>;
+  if (diffH < 2) return <span className="text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded font-bold">SLA!</span>;
+  return null;
 }
 
 export default function DashboardPage() {
@@ -336,6 +346,7 @@ export default function DashboardPage() {
                   <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
                   {o.isUnderWarranty && <span className="ml-1.5 text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
                   {o.isOverdue && <span className="ml-1 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
+                  <span className="ml-1"><SlaBadge o={o} /></span>
                   {unreadCounts[o.id] > 0 && (
                     <span className="ml-1.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                       {unreadCounts[o.id]}
@@ -421,6 +432,7 @@ export default function DashboardPage() {
                     <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
                     {o.isUnderWarranty && <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
                     {o.isOverdue && <span className="text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
+                    <SlaBadge o={o} />
                     {unreadCounts[o.id] > 0 && (
                       <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                         💬 {unreadCounts[o.id]}

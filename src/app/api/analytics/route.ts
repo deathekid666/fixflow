@@ -83,6 +83,20 @@ export async function GET(req: Request) {
     orderBy: { stock: "asc" },
   });
 
+  // SLA compliance — for completed/delivered orders that had a deadline
+  const slaOrders = await prisma.workOrder.findMany({
+    where: { ...shopFilter, slaDeadline: { not: null }, status: { in: ["DONE", "DELIVERED"] } },
+    select: { slaDeadline: true, doneAt: true, deliveredAt: true, completedAt: true },
+  });
+  const slaTotal = slaOrders.length;
+  const slaMet = slaOrders.filter(o => {
+    const finishedAt = o.completedAt ?? o.doneAt ?? o.deliveredAt;
+    if (!finishedAt) return false;
+    return new Date(finishedAt) <= new Date(o.slaDeadline!);
+  }).length;
+  const slaBreached = slaTotal - slaMet;
+  const slaCompliance = slaTotal > 0 ? Math.round((slaMet / slaTotal) * 100) : null;
+
   return Response.json({
     orders: { total, received, diagnosing, repairing, done, delivered, cancelled },
     revenue: {
@@ -93,5 +107,6 @@ export async function GET(req: Request) {
     topParts: topPartsWithNames,
     engineerStats,
     lowStock,
+    sla: { total: slaTotal, met: slaMet, breached: slaBreached, compliance: slaCompliance },
   });
 }

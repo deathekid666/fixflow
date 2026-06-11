@@ -101,6 +101,13 @@ export async function POST(req: Request) {
   const seq = String(count + 1).padStart(4, "0");
   const orderNumber = `wo-${year}-${seq}-${user.shopId.slice(0, 4)}`;
 
+  const shopSettings = await prisma.shopSettings.findUnique({
+    where: { shopId: user.shopId },
+    select: { defaultSlaHours: true },
+  });
+  const slaHours = shopSettings?.defaultSlaHours ?? 24;
+  const slaDeadline = new Date(Date.now() + slaHours * 60 * 60 * 1000);
+
   const order = await prisma.workOrder.create({
     data: {
       orderNumber,
@@ -116,6 +123,7 @@ export async function POST(req: Request) {
       status: "RECEIVED",
       shopId: user.shopId,
       userId: user.id,
+      slaDeadline,
     },
   });
 

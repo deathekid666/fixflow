@@ -77,6 +77,11 @@ export default function SettingsPage() {
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  // SLA settings
+  const [defaultSlaHours, setDefaultSlaHours] = useState(24);
+  const [savingSla, setSavingSla] = useState(false);
+  const [slaMsg, setSlaMsg] = useState("");
+
   // Appointments / availability
   const [days, setDays] = useState<DayAvailability[]>(DEFAULT_DAYS);
   const [slotDuration, setSlotDuration] = useState(60);
@@ -97,6 +102,10 @@ export default function SettingsPage() {
           setShop(s);
           setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "" });
         }).catch(() => {});
+      fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setDefaultSlaHours(d.defaultSlaHours); })
+        .catch(() => {});
     }
   }, [user]);
 
@@ -205,6 +214,17 @@ export default function SettingsPage() {
     });
     if (res.ok) setShopMsg("Shop settings saved.");
     setSavingShop(false);
+  }
+
+  async function saveSlaSettings() {
+    if (!shop) return;
+    setSavingSla(true); setSlaMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ defaultSlaHours }),
+    });
+    setSlaMsg(res.ok ? "SLA setting saved." : "Failed to save.");
+    setSavingSla(false);
   }
 
   async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -368,6 +388,34 @@ export default function SettingsPage() {
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
                 {savingShop ? "Saving..." : "Save Shop Settings"}
               </button>
+
+              {/* SLA Settings */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">SLA Settings</h3>
+                <p className="text-xs text-slate-500">Default hours before a work order breaches its SLA deadline.</p>
+                {slaMsg && <Alert type={slaMsg.includes("Failed") ? "error" : "success"} msg={slaMsg} />}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                    <button onClick={() => setDefaultSlaHours(h => Math.max(1, h - 1))}
+                      className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-lg font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">−</button>
+                    <span className="w-14 text-center text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{defaultSlaHours}h</span>
+                    <button onClick={() => setDefaultSlaHours(h => h + 1)}
+                      className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-lg font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+</button>
+                  </div>
+                  <div className="flex gap-2">
+                    {[24, 48, 72].map(h => (
+                      <button key={h} onClick={() => setDefaultSlaHours(h)}
+                        className={`px-3 py-1.5 text-xs rounded-lg transition-colors font-medium ${defaultSlaHours === h ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600"}`}>
+                        {h}h
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={saveSlaSettings} disabled={savingSla}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors ml-auto">
+                    {savingSla ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </div>
 
               {/* Public links & embed codes */}
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">

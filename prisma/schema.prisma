@@ -57,6 +57,7 @@ model Shop {
   appointments   Appointment[]
   availability   ShopAvailability[]
   closures       ShopClosure[]
+  shopSettings   ShopSettings?
 }
 
 model WorkOrder {
@@ -102,6 +103,7 @@ model WorkOrder {
   quotationRemarks String?
 
   lastReminderAt DateTime?
+  slaDeadline    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -327,6 +329,7 @@ model WorkOrderTemplate {
   serviceType       String   @default("IN_STORE")
   defaultPrice      Float    @default(0)
   estimatedDuration Int      @default(0)
+  slaHours          Int      @default(24)
   defaultParts      Json     @default("[]")
   defaultLineItems  Json     @default("[]")
   shopId            String
@@ -459,4 +462,14 @@ model PurchaseOrderItem {
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   sparePart     SparePart     @relation(fields: [sparePartId], references: [id])
+}
+
+model ShopSettings {
+  id              String   @id @default(cuid())
+  shopId          String   @unique
+  defaultSlaHours Int      @default(24)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id])
 }
