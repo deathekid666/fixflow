@@ -20,7 +20,7 @@ type WorkOrder = {
   faultDescription: string; appearance: string; remarks: string; serviceType: string;
   repairType: string; faultLevel: string; status: string; receivedAt: string;
   doneAt: string | null; deliveredAt: string | null; startedAt: string | null; completedAt: string | null;
-  bounceCount: number; isBounce: boolean;
+  bounceCount: number; isBounce: boolean; lastReminderAt: string | null;
   subtotal: number; quotationItems: number; discount: number; total: number;
   collected: number; quotationRemarks: string | null; createdAt: string;
   creator: { name: string }; assignee: { id: string; name: string } | null;
@@ -109,6 +109,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -150,6 +151,16 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     await loadMessages();
     setSendingMessage(false);
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  async function sendReminder() {
+    setSendingReminder(true);
+    const res = await fetch(`/api/workorders/${params.id}/remind`, { method: "POST", credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      setOrder(prev => prev ? { ...prev, lastReminderAt: data.lastReminderAt } : prev);
+    }
+    setSendingReminder(false);
   }
 
   async function load() {
@@ -369,6 +380,14 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 Print</a>
+          <div className="flex items-center gap-1.5">
+            <button onClick={sendReminder} disabled={sendingReminder} className="text-xs px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/35 text-amber-700 dark:text-amber-400 rounded-lg transition-colors disabled:opacity-50">
+              {sendingReminder ? "..." : "🔔 Send Reminder"}
+            </button>
+            {order.lastReminderAt && (
+              <span className="text-xs text-slate-400">Last: {new Date(order.lastReminderAt).toLocaleDateString()}</span>
+            )}
+          </div>
           {(order.status === "DONE" || order.status === "DELIVERED") && (
             <a href={`/dashboard/workorders/${params.id}/health-report`} target="_blank" className="text-xs px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-700 dark:text-emerald-400 rounded-lg transition-colors font-medium">🩺 Health Report</a>
           )}

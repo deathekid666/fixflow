@@ -7,8 +7,10 @@ import UpgradeModal from "@/components/UpgradeModal";
 type WorkOrder = {
   id: string; orderNumber: string; customerName: string; customerPhone: string;
   deviceBrand: string; deviceModel: string; status: string; faultLevel: string;
-  isUnderWarranty: boolean; createdAt: string; assignee: { id: string; name: string } | null;
+  isUnderWarranty: boolean; createdAt: string; updatedAt: string;
+  assignee: { id: string; name: string } | null;
   total: number; collected: number; tatDays: number; isOverdue: boolean;
+  lastReminderAt?: string | null;
 };
 
 type Engineer = { id: string; name: string };
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [noContactFilter, setNoContactFilter] = useState(false);
   const [engineers, setEngineers] = useState<Engineer[]>([]);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -45,11 +48,11 @@ export default function DashboardPage() {
   const [upgradeInfo] = useState({ limit: 50, current: 50 });
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
-  useEffect(() => { setPage(1); }, [search, statusFilter]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, noContactFilter]);
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
     return () => clearTimeout(timer);
-  }, [search, statusFilter, page]);
+  }, [search, statusFilter, noContactFilter, page]);
 
   useEffect(() => {
     fetch("/api/users", { credentials: "include" })
@@ -69,6 +72,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
+    if (noContactFilter) params.set("noContact", "true");
     params.set("page", page.toString());
     params.set("limit", PAGE_SIZE.toString());
     const res = await fetch(`/api/workorders?${params}`, { credentials: "include" });
@@ -161,9 +165,9 @@ export default function DashboardPage() {
       <td colSpan={colSpan} className="px-4 py-12 text-center">
         <div className="space-y-3">
           <p className="text-4xl">📋</p>
-          <p className="text-slate-400 font-medium">{search || statusFilter ? "No orders match your search" : "No work orders yet"}</p>
-          <p className="text-slate-400 text-sm">{search || statusFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
-          {!search && !statusFilter && (
+          <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? "No orders match your search" : "No work orders yet"}</p>
+          <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
+          {!search && !statusFilter && !noContactFilter && (
             <Link href="/dashboard/workorders/new" className="inline-block mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
               + New Work Order
             </Link>
@@ -232,11 +236,15 @@ export default function DashboardPage() {
       {/* Status filter pills — horizontally scrollable on mobile */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-none">
         {["", ...STATUS_OPTIONS].map((s) => (
-          <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+          <button key={s} onClick={() => { setStatusFilter(s); setNoContactFilter(false); }}
+            className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${!noContactFilter && statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
             {s || "All"}
           </button>
         ))}
+        <button onClick={() => { setNoContactFilter(v => !v); setStatusFilter(""); }}
+          className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+          ⏰ No contact 3d+
+        </button>
       </div>
 
       {/* Bulk actions */}
@@ -296,9 +304,9 @@ export default function DashboardPage() {
         {!loading && orders.length === 0 && (
           <div className="py-12 text-center space-y-3">
             <p className="text-4xl">📋</p>
-            <p className="text-slate-400 font-medium">{search || statusFilter ? "No orders match your search" : "No work orders yet"}</p>
-            <p className="text-slate-400 text-sm">{search || statusFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
-            {!search && !statusFilter && (
+            <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? "No orders match your search" : "No work orders yet"}</p>
+            <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
+            {!search && !statusFilter && !noContactFilter && (
               <Link href="/dashboard/workorders/new" className="inline-block mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
                 + New Work Order
               </Link>

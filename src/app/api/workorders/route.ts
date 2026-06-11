@@ -16,12 +16,23 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const search = searchParams.get("search");
+  const noContact = searchParams.get("noContact") === "true";
+
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
   const orders = await prisma.workOrder.findMany({
     where: {
       shopId: user.shopId ?? undefined,
       ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
       ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
+      ...(noContact ? {
+        status: { notIn: ["DELIVERED", "CANCELLED"] },
+        updatedAt: { lt: threeDaysAgo },
+        OR: [
+          { lastReminderAt: null },
+          { lastReminderAt: { lt: threeDaysAgo } },
+        ],
+      } : {}),
       ...(search ? {
         OR: [
           { customerName: { contains: search, mode: "insensitive" } },
