@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/lib/currency";
 
 type WorkOrder = {
   id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
@@ -15,17 +16,13 @@ type WorkOrder = {
   creator: { name: string }; assignee: { name: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
-  shop?: { name: string; phone: string | null; address: string | null; email: string | null; logoUrl: string | null };
+  shop?: { name: string; phone: string | null; address: string | null; email: string | null; logoUrl: string | null; currency?: string };
 };
 
 function formatWO(raw: string, date: string) {
   // Support both new sequential format and old cuid format
   if (raw.startsWith("wo-")) return raw.toUpperCase();
   return `WO-${new Date(date).getFullYear()}-${raw.slice(0, 6).toUpperCase()}`;
-}
-
-function mad(n: number) {
-  return `${n.toFixed(2)} MAD`;
 }
 
 export default function PrintWorkOrderPage({ params }: { params: { id: string } }) {
@@ -46,6 +43,8 @@ export default function PrintWorkOrderPage({ params }: { params: { id: string } 
   if (loading) return <div className="flex items-center justify-center h-64 text-slate-500 text-sm">Preparing print...</div>;
   if (!order) return null;
 
+  const currency = order.shop?.currency ?? "MAD";
+  const mad = (n: number) => formatCurrency(n, currency);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
 

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import RatingModal from "@/components/RatingModal";
 import { useAuth } from "@/context/AuthContext";
 import { loyaltyTier } from "@/lib/loyaltyTier";
+import { formatCurrency } from "@/lib/currency";
 
 type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
@@ -63,6 +64,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const router = useRouter();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const fileRef = useRef<HTMLInputElement>(null);
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1006,7 +1009,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <div className="flex gap-2 mb-3">
               <input className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" placeholder="e.g. Labor fee, Screen repair..." value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && newItemLabel && newItemAmount) addLineItem(); }} />
-              <input className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" placeholder="Price MAD" type="number" value={newItemAmount} onChange={(e) => setNewItemAmount(e.target.value)}
+              <input className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" placeholder={`Price ${currency}`} type="number" value={newItemAmount} onChange={(e) => setNewItemAmount(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && newItemLabel && newItemAmount) addLineItem(); }} />
               <button onClick={addLineItem} disabled={addingItem || !newItemLabel || !newItemAmount} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded">+ Add</button>
             </div>
@@ -1015,12 +1018,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               {order.subtotal > 0 && <div className="flex justify-between text-slate-500"><span>Parts</span><span>{order.subtotal.toFixed(2)}</span></div>}
               {order.quotationItems > 0 && <div className="flex justify-between text-slate-500"><span>Services</span><span>{order.quotationItems.toFixed(2)}</span></div>}
               {order.discount > 0 && <div className="flex justify-between text-slate-500"><span>Discount</span><span>-{order.discount.toFixed(2)}</span></div>}
-              <div className="flex justify-between text-slate-900 dark:text-white font-bold border-t border-slate-200 dark:border-slate-700 pt-2"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
+              <div className="flex justify-between text-slate-900 dark:text-white font-bold border-t border-slate-200 dark:border-slate-700 pt-2"><span>Total</span><span>{fmt(grandTotal)}</span></div>
             </div>
             {editingQuotation && (
               <div className="space-y-3 mb-4 bg-slate-100 dark:bg-slate-800 rounded-lg p-3">
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Total (MAD)</label>
+                  <label className="text-xs text-slate-500 mb-1 block">Total ({currency})</label>
                   <input type="number" min="0" className={INPUT_INNER} value={manualTotal} onChange={(e) => setManualTotal(e.target.value)}
                     placeholder="Set total manually if no parts added" />
                   <p className="text-xs text-slate-400 mt-0.5">Auto-calculated from parts + services when available</p>
@@ -1039,11 +1042,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
               <div className="bg-slate-100 dark:bg-slate-800 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-slate-500 font-medium">Total: {grandTotal.toFixed(2)} MAD</span>
-                  <span className="text-green-600 dark:text-green-400 font-medium">Paid: {order.collected.toFixed(2)} MAD</span>
-                  {remaining > 0.01 && <span className="text-red-600 dark:text-red-400 font-medium">Due: {remaining.toFixed(2)} MAD</span>}
+                  <span className="text-slate-500 font-medium">Total: {fmt(grandTotal)}</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">Paid: {fmt(order.collected)}</span>
+                  {remaining > 0.01 && <span className="text-red-600 dark:text-red-400 font-medium">Due: {fmt(remaining)}</span>}
                   {isFullyPaid && order.collected <= grandTotal + 0.01 && <span className="text-green-600 dark:text-green-400 font-medium">✓ Fully paid</span>}
-                  {order.collected > grandTotal + 0.01 && <span className="text-orange-600 dark:text-orange-400 font-medium">⚠ Overpaid {(order.collected - grandTotal).toFixed(2)} MAD</span>}
+                  {order.collected > grandTotal + 0.01 && <span className="text-orange-600 dark:text-orange-400 font-medium">⚠ Overpaid {fmt(order.collected - grandTotal)}</span>}
                   {grandTotal === 0 && <span className="text-yellow-600 dark:text-yellow-400 font-medium">⚠ Add a service fee above</span>}
                 </div>
                 <button onClick={() => setShowPaymentForm(!showPaymentForm)}
@@ -1068,7 +1071,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     ))}
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Amount (MAD) *</label>
+                    <label className="text-xs text-slate-500 mb-1 block">Amount ({currency}) *</label>
                     <input type="number" min="0" placeholder="0.00"
                       className={INPUT_INNER_FOCUS_GREEN}
                       value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
@@ -1132,7 +1135,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                           <span className="text-base mt-0.5">{METHOD_ICONS[p.method] ?? "💰"}</span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-slate-900 dark:text-white font-medium">{p.amount.toFixed(2)} MAD</span>
+                              <span className="text-sm text-slate-900 dark:text-white font-medium">{fmt(p.amount)}</span>
                               <span className="text-xs text-slate-500">{p.method.replace("_", " ")}</span>
                             </div>
                             {p.note && <p className="text-xs text-slate-500 mt-0.5 truncate">{p.note}</p>}

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type CommissionRow = {
   userId: string;
@@ -35,6 +37,9 @@ function monthOptions() {
 }
 
 export default function CommissionsPage() {
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -140,8 +145,8 @@ export default function CommissionsPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total Orders", value: totalOrders, color: "text-slate-900 dark:text-white", icon: "📋" },
-          { label: "Total Revenue", value: `${totalRevenue.toFixed(0)} MAD`, color: "text-emerald-600 dark:text-emerald-400", icon: "💰" },
-          { label: "Total Commissions", value: `${totalCommission.toFixed(0)} MAD`, color: "text-blue-600 dark:text-blue-400", icon: "💸" },
+          { label: "Total Revenue", value: fmt(totalRevenue), color: "text-emerald-600 dark:text-emerald-400", icon: "💰" },
+          { label: "Total Commissions", value: fmt(totalCommission), color: "text-blue-600 dark:text-blue-400", icon: "💸" },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
@@ -187,7 +192,7 @@ export default function CommissionsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3.5 font-medium text-slate-900 dark:text-white">{r.totalOrders}</td>
-                <td className="px-4 py-3.5 text-emerald-600 dark:text-emerald-400 font-medium">{r.totalRevenue.toFixed(0)} MAD</td>
+                <td className="px-4 py-3.5 text-emerald-600 dark:text-emerald-400 font-medium">{fmt(r.totalRevenue)}</td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
@@ -212,14 +217,14 @@ export default function CommissionsPage() {
                 </td>
                 <td className="px-4 py-3.5">
                   <span className={`font-bold text-sm ${r.commissionAmount > 0 ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
-                    {r.commissionAmount.toFixed(0)} MAD
+                    {fmt(r.commissionAmount)}
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
                   {r.locked ? (
                     <div>
                       <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">Saved</span>
-                      <p className="text-xs text-slate-400 mt-0.5">{r.locked.commissionAmount.toFixed(0)} MAD @ {r.locked.commissionRate}%</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{fmt(r.locked.commissionAmount)} @ {r.locked.commissionRate}%</p>
                     </div>
                   ) : (
                     <span className="text-xs text-slate-400">—</span>
@@ -233,9 +238,9 @@ export default function CommissionsPage() {
               <tr className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                 <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white text-sm" colSpan={2}>Total</td>
                 <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">{totalOrders}</td>
-                <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">{totalRevenue.toFixed(0)} MAD</td>
+                <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmt(totalRevenue)}</td>
                 <td className="px-4 py-3" />
-                <td className="px-4 py-3 font-bold text-blue-600 dark:text-blue-400">{totalCommission.toFixed(0)} MAD</td>
+                <td className="px-4 py-3 font-bold text-blue-600 dark:text-blue-400">{fmt(totalCommission)}</td>
                 <td className="px-4 py-3" />
               </tr>
             </tfoot>

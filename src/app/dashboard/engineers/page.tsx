@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type Engineer = {
   id: string;
@@ -24,6 +26,9 @@ type Stats = {
 type EngineerWithStats = Engineer & { stats: Stats };
 
 export default function EngineersPage() {
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [engineers, setEngineers] = useState<EngineerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -214,12 +219,12 @@ export default function EngineersPage() {
                 <div className="flex items-start gap-6">
                   <div className="text-right">
                     <p className="text-xs text-slate-500">Total Revenue</p>
-                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{e.stats.revenue.toFixed(0)} MAD</p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{fmt(e.stats.revenue)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-slate-500">Commission ({e.commissionRate}%)</p>
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {((e.stats.revenue * e.commissionRate) / 100).toFixed(0)} MAD
+                      {fmt((e.stats.revenue * e.commissionRate) / 100)}
                     </p>
                   </div>
                 </div>

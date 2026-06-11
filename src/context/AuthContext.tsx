@@ -19,6 +19,7 @@ type User = {
     id: string;
     name: string;
     onboardingComplete: boolean;
+    currency: string;
   } | null;
 };
 

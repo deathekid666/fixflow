@@ -5,6 +5,8 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type RevenueData = {
   data: { label: string; total: number; collected: number; count: number; expenses: number; profit: number }[];
@@ -51,6 +53,9 @@ function downloadChartSVG(containerId: string, filename: string) {
 }
 
 export default function AnalyticsPage() {
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [comparison, setComparison] = useState<Comparison | null>(null);
@@ -85,13 +90,13 @@ export default function AnalyticsPage() {
       [],
       ["Summary"],
       ["Total Orders", s.totalOrders],
-      ["Total Revenue (MAD)", s.totalRevenue.toFixed(2)],
-      ["Total Collected (MAD)", s.totalCollected.toFixed(2)],
-      ["Total Expenses (MAD)", s.totalExpenses.toFixed(2)],
-      ["Net Profit (MAD)", s.profit.toFixed(2)],
-      ["Avg Order Value (MAD)", s.avgOrderValue.toFixed(2)],
+      [`Total Revenue (${currency})`, s.totalRevenue.toFixed(2)],
+      [`Total Collected (${currency})`, s.totalCollected.toFixed(2)],
+      [`Total Expenses (${currency})`, s.totalExpenses.toFixed(2)],
+      [`Net Profit (${currency})`, s.profit.toFixed(2)],
+      [`Avg Order Value (${currency})`, s.avgOrderValue.toFixed(2)],
       [],
-      ["Period", "Revenue (MAD)", "Collected (MAD)", "Expenses (MAD)", "Profit (MAD)", "Orders"],
+      [`Period`, `Revenue (${currency})`, `Collected (${currency})`, `Expenses (${currency})`, `Profit (${currency})`, "Orders"],
       ...revenue.data.map(d => [d.label, d.total.toFixed(2), d.collected.toFixed(2), d.expenses.toFixed(2), d.profit.toFixed(2), d.count]),
     ];
     const csv = rows.map(r => r.join(",")).join("\n");
@@ -158,11 +163,11 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { label: "Total Orders", value: revenue.summary.totalOrders, sub: `${activeOrders} active`, color: "text-slate-900 dark:text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
-          { label: "Revenue", value: `${revenue.summary.totalRevenue.toFixed(0)} MAD`, sub: `Avg: ${revenue.summary.avgOrderValue.toFixed(0)} MAD`, color: "text-slate-900 dark:text-white", icon: "💰", bg: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
-          { label: "Collected", value: `${revenue.summary.totalCollected.toFixed(0)} MAD`, sub: `${collectionRate}% rate`, color: "text-green-600 dark:text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
-          { label: "Expenses", value: `${revenue.summary.totalExpenses.toFixed(0)} MAD`, sub: "Total costs", color: "text-red-600 dark:text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
-          { label: "Net Profit", value: `${revenue.summary.profit.toFixed(0)} MAD`, sub: `${profitMargin}% margin`, color: revenue.summary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
-          { label: "Outstanding", value: `${outstanding.toFixed(0)} MAD`, sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
+          { label: "Revenue", value: formatCurrency(revenue.summary.totalRevenue, currency, 0), sub: `Avg: ${formatCurrency(revenue.summary.avgOrderValue, currency, 0)}`, color: "text-slate-900 dark:text-white", icon: "💰", bg: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
+          { label: "Collected", value: formatCurrency(revenue.summary.totalCollected, currency, 0), sub: `${collectionRate}% rate`, color: "text-green-600 dark:text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
+          { label: "Expenses", value: formatCurrency(revenue.summary.totalExpenses, currency, 0), sub: "Total costs", color: "text-red-600 dark:text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
+          { label: "Net Profit", value: formatCurrency(revenue.summary.profit, currency, 0), sub: `${profitMargin}% margin`, color: revenue.summary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
+          { label: "Outstanding", value: formatCurrency(outstanding, currency, 0), sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
         ].map(s => (
           <div key={s.label} className={`border rounded-xl p-4 ${s.bg}`}>
             <div className="flex items-center justify-between mb-2">
@@ -204,7 +209,7 @@ export default function AnalyticsPage() {
             label: "Revenue",
             icon: "💰",
             curr: tm.revenue, prev: lm.revenue,
-            fmt: (v: number) => `${v.toFixed(0)} MAD`,
+            fmt: (v: number) => formatCurrency(v, currency, 0),
             invert: false,
           },
           {
@@ -225,14 +230,14 @@ export default function AnalyticsPage() {
             label: "Expenses",
             icon: "💸",
             curr: tm.expenses, prev: lm.expenses,
-            fmt: (v: number) => `${v.toFixed(0)} MAD`,
+            fmt: (v: number) => formatCurrency(v, currency, 0),
             invert: true,
           },
           {
             label: "Net Profit",
             icon: tm.profit >= 0 ? "📈" : "📉",
             curr: tm.profit, prev: lm.profit,
-            fmt: (v: number) => `${v.toFixed(0)} MAD`,
+            fmt: (v: number) => formatCurrency(v, currency, 0),
             invert: false,
           },
         ];
@@ -445,7 +450,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-slate-400 font-mono">{p.part?.partNumber || "—"}</span>
-                      <span className="text-xs text-green-600 dark:text-green-400">{p._sum.total?.toFixed(0)} MAD</span>
+                      <span className="text-xs text-green-600 dark:text-green-400">{formatCurrency(p._sum.total ?? 0, currency, 0)}</span>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type MonthRow = { label: string; total: number; collected: number; expenses: number; profit: number; count: number };
 
@@ -27,9 +29,10 @@ function monthLabel(iso: string) {
   return new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString("default", { month: "long", year: "numeric" });
 }
 
-function fmt(n: number) { return n.toFixed(2); }
-
 export default function ReportsPage() {
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency, 0);
   const [months, setMonths] = useState<MonthRow[]>([]);
   const [parts, setParts] = useState<PartsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -140,12 +143,12 @@ export default function ReportsPage() {
               <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">{year} Summary</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { label: "Revenue", value: `${fmt(ys.revenue)} MAD`, color: "text-slate-900 dark:text-white", sub: `${ys.orders} orders` },
-                  { label: "Collected", value: `${fmt(ys.collected)} MAD`, color: "text-green-600 dark:text-green-400", sub: `${collectionRate}% rate` },
-                  { label: "Outstanding", value: `${fmt(ys.revenue - ys.collected)} MAD`, color: ys.revenue - ys.collected > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", sub: "uncollected" },
-                  { label: "Expenses", value: `${fmt(ys.expenses)} MAD`, color: "text-red-600 dark:text-red-400", sub: "total costs" },
-                  { label: "Net Profit", value: `${fmt(ys.profit)} MAD`, color: ys.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", sub: ys.collected > 0 ? `${Math.round((ys.profit / ys.collected) * 100)}% margin` : "" },
-                  { label: "Orders", value: ys.orders.toString(), color: "text-blue-600 dark:text-blue-400", sub: `avg ${ys.orders > 0 ? fmt(ys.revenue / ys.orders) : "0"} MAD` },
+                  { label: "Revenue", value: fmt(ys.revenue), color: "text-slate-900 dark:text-white", sub: `${ys.orders} orders` },
+                  { label: "Collected", value: fmt(ys.collected), color: "text-green-600 dark:text-green-400", sub: `${collectionRate}% rate` },
+                  { label: "Outstanding", value: fmt(ys.revenue - ys.collected), color: ys.revenue - ys.collected > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", sub: "uncollected" },
+                  { label: "Expenses", value: fmt(ys.expenses), color: "text-red-600 dark:text-red-400", sub: "total costs" },
+                  { label: "Net Profit", value: fmt(ys.profit), color: ys.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", sub: ys.collected > 0 ? `${Math.round((ys.profit / ys.collected) * 100)}% margin` : "" },
+                  { label: "Orders", value: ys.orders.toString(), color: "text-blue-600 dark:text-blue-400", sub: `avg ${ys.orders > 0 ? fmt(ys.revenue / ys.orders) : "0"}` },
                 ].map(s => (
                   <div key={s.label} className="print-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
                     <p className="text-xs text-slate-500 mb-1">{s.label}</p>
@@ -168,7 +171,7 @@ export default function ReportsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-800">
-                        {["Month", "Orders", "Revenue (MAD)", "Collected (MAD)", "Coll. Rate", "Expenses (MAD)", "Net Profit (MAD)"].map(h => (
+                        {["Month", "Orders", `Revenue (${currency})`, `Collected (${currency})`, "Coll. Rate", `Expenses (${currency})`, `Net Profit (${currency})`].map(h => (
                           <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium whitespace-nowrap">{h}</th>
                         ))}
                       </tr>

@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/context/LanguageContext";
+import { CURRENCIES } from "@/lib/currency";
 
 type Tab = "profile" | "shop" | "security" | "preferences" | "appointments";
 
@@ -11,6 +12,7 @@ type Shop = {
   id: string; name: string; phone: string | null;
   address: string | null; email: string | null;
   logoUrl: string | null; googleMapsUrl: string | null;
+  currency: string;
   plan: string; status: string; trialEndsAt: string | null;
 };
 
@@ -73,7 +75,7 @@ export default function SettingsPage() {
 
   // Shop
   const [shop, setShop] = useState<Shop | null>(null);
-  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "" });
+  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD" });
   const [savingShop, setSavingShop] = useState(false);
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -101,7 +103,7 @@ export default function SettingsPage() {
         .then(r => r.json())
         .then(s => {
           setShop(s);
-          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "" });
+          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD" });
         }).catch(() => {});
       fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
@@ -389,6 +391,14 @@ export default function SettingsPage() {
                   <input value={shopForm.googleMapsUrl} onChange={e => setShopForm(p => ({ ...p, googleMapsUrl: e.target.value }))}
                     placeholder="https://maps.google.com/..." className={INPUT} />
                   <p className="text-xs text-slate-500 mt-1">Paste your Google Maps business link — shown as a "Get Directions" button on your booking page.</p>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Currency</label>
+                  <select value={shopForm.currency} onChange={e => setShopForm(p => ({ ...p, currency: e.target.value }))}
+                    className={INPUT}>
+                    {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">Used for all amounts displayed in invoices, reports and the dashboard.</p>
                 </div>
               </div>
               <button onClick={saveShop} disabled={savingShop}

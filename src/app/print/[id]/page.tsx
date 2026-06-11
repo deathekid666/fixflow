@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/currency";
 
 type WorkOrder = {
   id: string;
@@ -35,7 +36,7 @@ type WorkOrder = {
   createdAt: string;
   creator: { name: string };
   assignee: { name: string } | null;
-  shop: { name: string; address?: string; phone?: string } | null;
+  shop: { name: string; address?: string; phone?: string; currency?: string } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
 };
@@ -63,6 +64,8 @@ export default function PrintPage({ params }: { params: { id: string } }) {
   );
   if (!order) return null;
 
+  const currency = order.shop?.currency ?? "MAD";
+  const mad = (n: number) => formatCurrency(n, currency);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
   const remaining = grandTotal - order.collected;
   const woNumber = `WO-${new Date(order.createdAt).getFullYear()}-${order.orderNumber.slice(0, 6).toUpperCase()}`;

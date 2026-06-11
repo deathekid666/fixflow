@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import UpgradeModal from "@/components/UpgradeModal";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type WorkOrder = {
   id: string; orderNumber: string; customerName: string; customerPhone: string;
@@ -43,6 +45,9 @@ function SlaBadge({ o }: { o: WorkOrder }) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -165,7 +170,7 @@ export default function DashboardPage() {
     { label: "Received", value: orders.filter(o => o.status === "RECEIVED").length, sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: "📥", filter: "RECEIVED" },
     { label: "In Progress", value: orders.filter(o => ["DIAGNOSING", "REPAIRING"].includes(o.status)).length, sub: `${overdue} overdue`, color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: "🔧", filter: "DIAGNOSING" },
     { label: "Ready", value: orders.filter(o => o.status === "DONE").length, sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: "✅", filter: "DONE" },
-    { label: "Revenue", value: `${totalRevenue.toFixed(0)} MAD`, sub: `${pendingPayment.toFixed(0)} pending`, color: "text-emerald-600 dark:text-emerald-400", icon: "💰", filter: null, href: "/dashboard/analytics" },
+    { label: "Revenue", value: formatCurrency(totalRevenue, currency, 0), sub: `${formatCurrency(pendingPayment, currency, 0)} pending`, color: "text-emerald-600 dark:text-emerald-400", icon: "💰", filter: null, href: "/dashboard/analytics" },
     { label: "Delivered", value: orders.filter(o => o.status === "DELIVERED").length, sub: "this period", color: "text-slate-500", icon: "📦", filter: "DELIVERED" },
     { label: "Cancelled", value: orders.filter(o => o.status === "CANCELLED").length, sub: "this period", color: "text-red-600 dark:text-red-400", icon: "🚫", filter: "CANCELLED" },
   ];
@@ -375,7 +380,7 @@ export default function DashboardPage() {
             {/* Row 4: amount + date + link */}
             <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-slate-700 dark:text-slate-300 font-medium">{o.total > 0 ? `${o.total.toFixed(0)} MAD` : "—"}</span>
+                <span className="text-slate-700 dark:text-slate-300 font-medium">{o.total > 0 ? formatCurrency(o.total, currency, 0) : "—"}</span>
                 {o.total > o.collected && o.status === "DELIVERED" && (
                   <span className="text-red-600 dark:text-red-400">({(o.total - o.collected).toFixed(0)} due)</span>
                 )}
@@ -456,7 +461,7 @@ export default function DashboardPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs font-medium">
-                  {o.total > 0 ? `${o.total.toFixed(0)} MAD` : "—"}
+                  {o.total > 0 ? formatCurrency(o.total, currency, 0) : "—"}
                   {o.total > o.collected && o.status === "DELIVERED" && (
                     <span className="text-red-600 dark:text-red-400 ml-1 text-xs">({(o.total - o.collected).toFixed(0)} due)</span>
                   )}

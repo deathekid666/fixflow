@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loyaltyTier } from "@/lib/loyaltyTier";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type Customer = {
   name: string; phone: string; email: string;
@@ -25,6 +27,9 @@ type SortKey = "totalOrders" | "totalSpent" | "lastVisit" | "name";
 
 export default function CustomersPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -150,11 +155,11 @@ export default function CustomersPage() {
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Total Billed</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalRevenue.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalRevenue, currency, 0)}</p>
         </div>
         <div className={`border rounded-xl p-4 ${outstanding > 0 ? "bg-red-500/10 border-red-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
           <p className="text-xs text-slate-500 mb-1">Outstanding</p>
-          <p className={`text-2xl font-bold ${outstanding > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500"}`}>{outstanding.toFixed(0)} <span className="text-sm font-normal text-slate-500">MAD</span></p>
+          <p className={`text-2xl font-bold ${outstanding > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500"}`}>{formatCurrency(outstanding, currency, 0)}</p>
         </div>
       </div>
 
@@ -326,7 +331,7 @@ export default function CustomersPage() {
                 </div>
                 <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
                   <p className="text-base font-bold text-slate-700 dark:text-slate-200">{c.totalSpent.toFixed(0)}</p>
-                  <p className="text-xs text-slate-500">MAD spent</p>
+                  <p className="text-xs text-slate-500">{currency} spent</p>
                 </div>
                 <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg py-2">
                   <p className="text-base font-bold text-slate-600 dark:text-slate-300">{new Date(c.lastVisit).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</p>
@@ -341,7 +346,7 @@ export default function CustomersPage() {
               {due > 0.01 && (
                 <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-500/10 rounded-lg px-2 py-1.5">
                   <span>⚠</span>
-                  <span>{due.toFixed(0)} MAD outstanding</span>
+                  <span>{formatCurrency(due, currency, 0)} outstanding</span>
                 </div>
               )}
             </div>
@@ -429,10 +434,10 @@ export default function CustomersPage() {
                       <span className="text-xs text-slate-500 ml-1">visit{c.totalOrders !== 1 ? "s" : ""}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-slate-900 dark:text-white font-medium">{c.totalSpent.toFixed(2)} MAD</span>
-                      {due > 0.01 && <div className="text-xs text-red-600 dark:text-red-400 mt-0.5">{due.toFixed(0)} due</div>}
+                      <span className="text-slate-900 dark:text-white font-medium">{fmt(c.totalSpent)}</span>
+                      {due > 0.01 && <div className="text-xs text-red-600 dark:text-red-400 mt-0.5">{formatCurrency(due, currency, 0)} due</div>}
                     </td>
-                    <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{c.totalCollected.toFixed(2)} MAD</td>
+                    <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{fmt(c.totalCollected)}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs">{new Date(c.lastVisit).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-xs text-purple-600 dark:text-purple-400 font-medium">{customerSince(c.firstVisit)}</td>
                     <td className="px-4 py-3">

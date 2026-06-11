@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type SparePart = {
   id: string; name: string; partNumber: string;
@@ -16,6 +17,8 @@ const LOW_STOCK_THRESHOLD = 5;
 
 export default function SparePartsPage() {
   const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [parts, setParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -265,7 +268,7 @@ export default function SparePartsPage() {
             {[
               { label: "Name *", field: "name", placeholder: "e.g. Screen Assembly" },
               { label: "Part Number", field: "partNumber", placeholder: "e.g. SCR-AN10D" },
-              { label: "Unit Price (MAD) *", field: "unitPrice", placeholder: "0.00" },
+              { label: `Unit Price (${currency}) *`, field: "unitPrice", placeholder: "0.00" },
               { label: "Stock Qty", field: "stock", placeholder: "0" },
             ].map(f => (
               <div key={f.field}>
@@ -362,7 +365,7 @@ export default function SparePartsPage() {
                     {p.description && <p className="text-xs text-slate-500 font-normal mt-0.5">{p.description}</p>}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-400">{p.partNumber || "—"}</td>
-                  <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{p.unitPrice.toFixed(2)} MAD</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{fmt(p.unitPrice)}</td>
                   <td className="px-4 py-3">
                     <span className={`font-bold text-base ${p.stock === 0 ? "text-red-600 dark:text-red-400" : p.stock < LOW_STOCK_THRESHOLD ? "text-yellow-600 dark:text-yellow-400" : "text-slate-900 dark:text-white"}`}>
                       {p.stock}
@@ -420,7 +423,7 @@ export default function SparePartsPage() {
                               className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Unit Price (MAD) *</label>
+                            <label className="text-xs text-slate-500 mb-1 block">Unit Price ({currency}) *</label>
                             <input type="number" min="0" step="0.01" value={editPartForm.unitPrice} onChange={e => setEditPartForm(prev => ({ ...prev, unitPrice: e.target.value }))}
                               className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                           </div>
@@ -469,7 +472,7 @@ export default function SparePartsPage() {
                               value={reorderQty} onChange={e => setReorderQty(e.target.value)} />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Unit Cost (MAD)</label>
+                            <label className="text-xs text-slate-500 mb-1 block">Unit Cost ({currency})</label>
                             <input type="number" min="0" step="0.01"
                               className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                               value={reorderCost} onChange={e => setReorderCost(e.target.value)} />
@@ -483,7 +486,7 @@ export default function SparePartsPage() {
                         </div>
                         {reorderQty && reorderCost && (
                           <p className="text-xs text-slate-500">
-                            Total: <strong className="text-slate-900 dark:text-white">{(parseInt(reorderQty || "0") * parseFloat(reorderCost || "0")).toFixed(2)} MAD</strong>
+                            Total: <strong className="text-slate-900 dark:text-white">{fmt(parseInt(reorderQty || "0") * parseFloat(reorderCost || "0"))}</strong>
                           </p>
                         )}
                         <div className="flex gap-2">
@@ -508,7 +511,7 @@ export default function SparePartsPage() {
                         <p className="text-xs text-slate-500 font-medium">Edit part — changes save immediately</p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Unit Price (MAD)</label>
+                            <label className="text-xs text-slate-500 mb-1 block">Unit Price ({currency})</label>
                             <input type="number" min="0" step="0.01"
                               className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                               value={adjPrice} onChange={e => setAdjPrice(e.target.value)} />

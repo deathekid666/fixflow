@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/lib/currency";
 
 type WorkOrder = {
   id: string; orderNumber: string; deviceBrand: string; deviceModel: string;
@@ -13,7 +14,7 @@ type WorkOrder = {
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
   checklist: { id: string; item: string; status: string }[];
-  shop: { name: string; address: string | null; phone: string | null; email: string | null; logoUrl: string | null } | null;
+  shop: { name: string; address: string | null; phone: string | null; email: string | null; logoUrl: string | null; currency?: string } | null;
 };
 
 export default function HealthReportPage({ params }: { params: { id: string } }) {
@@ -34,6 +35,8 @@ export default function HealthReportPage({ params }: { params: { id: string } })
   const checkOK = order.checklist.filter(c => c.status === "OK");
   const checkIssue = order.checklist.filter(c => c.status === "ISSUE");
   const checkNA = order.checklist.filter(c => c.status === "NA");
+  const currency = order.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const grandTotal = order.subtotal + order.quotationItems - order.discount;
 
   return (
@@ -127,7 +130,7 @@ export default function HealthReportPage({ params }: { params: { id: string } })
                     <td className="py-2 font-medium">{p.sparePart.name}</td>
                     <td className="py-2 text-gray-500 font-mono text-xs">{p.sparePart.partNumber || "—"}</td>
                     <td className="py-2 text-right">{p.quantity}</td>
-                    <td className="py-2 text-right font-medium">{p.total.toFixed(2)} MAD</td>
+                    <td className="py-2 text-right font-medium">{fmt(p.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -161,12 +164,12 @@ export default function HealthReportPage({ params }: { params: { id: string } })
 
         {/* Total */}
         <div className="mb-6 border-t border-gray-200 pt-4">
-          {order.parts.length > 0 && <div className="flex justify-between text-sm text-gray-500 mb-1"><span>Parts</span><span>{order.subtotal.toFixed(2)} MAD</span></div>}
+          {order.parts.length > 0 && <div className="flex justify-between text-sm text-gray-500 mb-1"><span>Parts</span><span>{fmt(order.subtotal)}</span></div>}
           {order.lineItems.map(item => (
-            <div key={item.id} className="flex justify-between text-sm text-gray-500 mb-1"><span>{item.label}</span><span>{item.amount.toFixed(2)} MAD</span></div>
+            <div key={item.id} className="flex justify-between text-sm text-gray-500 mb-1"><span>{item.label}</span><span>{fmt(item.amount)}</span></div>
           ))}
-          {order.discount > 0 && <div className="flex justify-between text-sm text-gray-500 mb-1"><span>Discount</span><span>-{order.discount.toFixed(2)} MAD</span></div>}
-          <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-2 mt-2"><span>Total</span><span>{grandTotal.toFixed(2)} MAD</span></div>
+          {order.discount > 0 && <div className="flex justify-between text-sm text-gray-500 mb-1"><span>Discount</span><span>-{fmt(order.discount)}</span></div>}
+          <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-2 mt-2"><span>Total</span><span>{fmt(grandTotal)}</span></div>
         </div>
 
         {/* Footer */}

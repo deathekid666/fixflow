@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type Supplier = {
   id: string; name: string; phone: string | null; email: string | null;
@@ -28,6 +30,9 @@ const STATUS_STYLES: Record<string, string> = {
 const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
 
 export default function SuppliersPage() {
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [parts, setParts] = useState<SparePart[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -476,7 +481,7 @@ export default function SuppliersPage() {
                       placeholder="Notes (optional)" value={poNotes} onChange={e => setPONotes(e.target.value)} />
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-500">Total: <strong className="text-slate-900 dark:text-white">{poTotal.toFixed(2)} MAD</strong></span>
+                      <span className="text-xs text-slate-500">Total: <strong className="text-slate-900 dark:text-white">{fmt(poTotal)}</strong></span>
                       <button onClick={submitPO} disabled={submittingPO || poItems.every(i => !i.sparePartId)}
                         className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
                         {submittingPO ? "Creating..." : "Create Draft PO"}
@@ -532,7 +537,7 @@ export default function SuppliersPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{o.totalAmount.toFixed(2)} MAD</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{fmt(o.totalAmount)}</span>
                     {o.status === "DRAFT" && (
                       <button onClick={() => updateStatus(o.id, "SENT")} disabled={updatingPO === o.id}
                         className="text-xs px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-600 dark:text-blue-400 rounded-lg transition-colors disabled:opacity-50">
@@ -624,7 +629,7 @@ export default function SuppliersPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-slate-500">
                         Total: <strong className="text-slate-900 dark:text-white">
-                          {editItems.reduce((sum, i) => sum + (parseInt(i.quantity) || 0) * (parseFloat(i.unitCost) || 0), 0).toFixed(2)} MAD
+                          {fmt(editItems.reduce((sum, i) => sum + (parseInt(i.quantity) || 0) * (parseFloat(i.unitCost) || 0), 0))}
                         </strong>
                       </span>
                       <div className="flex gap-2">

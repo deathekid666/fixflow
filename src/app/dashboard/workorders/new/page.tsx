@@ -4,6 +4,7 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type CustomerHistory = {
   name: string; phone: string; email: string;
@@ -27,6 +28,7 @@ const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dar
 
 export default function NewWorkOrderPage() {
   const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState({ limit: 50, current: 50 });
   const router = useRouter();
@@ -276,7 +278,7 @@ export default function NewWorkOrderPage() {
                   <p className="text-sm font-medium text-slate-900 dark:text-white">{t.name}</p>
                   {(t.deviceBrand || t.deviceModel) && <p className="text-xs text-slate-500">{t.deviceBrand} {t.deviceModel}</p>}
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {t.defaultPrice > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400">{t.defaultPrice} MAD</span>}
+                    {t.defaultPrice > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400">{formatCurrency(t.defaultPrice, currency)}</span>}
                     {t.estimatedDuration > 0 && <span className="text-xs text-blue-600 dark:text-blue-400">⏱ {formatDuration(t.estimatedDuration)}</span>}
                     {Array.isArray(t.defaultParts) && t.defaultParts.length > 0 && <span className="text-xs text-slate-500">🔧 {t.defaultParts.length} parts</span>}
                     {Array.isArray(t.defaultLineItems) && t.defaultLineItems.length > 0 && <span className="text-xs text-slate-500">💰 {t.defaultLineItems.length} services</span>}

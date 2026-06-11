@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type Expense = {
   id: string; title: string; amount: number; category: string;
@@ -21,6 +22,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function ExpensesPage() {
   const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
+  const fmt = (n: number) => formatCurrency(n, currency);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -164,14 +167,14 @@ export default function ExpensesPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 col-span-2">
           <p className="text-xs text-slate-500 mb-1">Total Expenses</p>
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400">{totalExpenses.toFixed(2)} MAD</p>
+          <p className="text-3xl font-bold text-red-600 dark:text-red-400">{fmt(totalExpenses)}</p>
           <p className="text-xs text-slate-400 mt-1">{expenses.length} entries</p>
         </div>
         {byCategory.slice(0, 2).map(c => (
           <div key={c.cat} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
             <p className="text-xs text-slate-500 mb-1">{c.cat.replace("_", " ")}</p>
             <p className="text-xl font-bold text-slate-900 dark:text-white">{c.total.toFixed(0)}</p>
-            <p className="text-xs text-slate-400">MAD</p>
+            <p className="text-xs text-slate-400">{currency}</p>
           </div>
         ))}
       </div>
@@ -188,7 +191,7 @@ export default function ExpensesPage() {
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Amount (MAD) *</label>
+              <label className="text-xs text-slate-400 mb-1 block">Amount ({currency}) *</label>
               <input type="number" min="0" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
                 placeholder="0.00"
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
@@ -300,7 +303,7 @@ export default function ExpensesPage() {
                       {e.category.replace("_", " ")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-red-600 dark:text-red-400 font-medium">{e.amount.toFixed(2)} MAD</td>
+                  <td className="px-4 py-3 text-red-600 dark:text-red-400 font-medium">{fmt(e.amount)}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">{e.note || "—"}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">{e.user.name}</td>
                   <td className="px-4 py-3">
@@ -325,7 +328,7 @@ export default function ExpensesPage() {
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                         </div>
                         <div>
-                          <label className="text-xs text-slate-400 mb-1 block">Amount (MAD) *</label>
+                          <label className="text-xs text-slate-400 mb-1 block">Amount ({currency}) *</label>
                           <input type="number" min="0" value={editForm.amount} onChange={e => setEditForm(p => ({ ...p, amount: e.target.value }))}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                         </div>

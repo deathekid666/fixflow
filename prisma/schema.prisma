@@ -47,6 +47,7 @@ model Shop {
   plan               String   @default("FREE")
   trialEndsAt        DateTime?
   onboardingComplete Boolean  @default(false)
+  currency           String   @default("MAD")
   createdAt          DateTime @default(now())
 
   users          User[]

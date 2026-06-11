@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 type SparePart = { id: string; name: string; partNumber: string | null; unitPrice: number };
 type DefaultPart = { sparePartId: string; quantity: number };
@@ -33,6 +34,7 @@ const CATEGORIES = ["", "Apple", "Samsung", "Huawei", "Honor", "Xiaomi", "Other"
 export default function TemplatesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const currency = user?.shop?.currency ?? "MAD";
   const [templates, setTemplates] = useState<Template[]>([]);
   const [spareParts, setSpareParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,7 +191,7 @@ export default function TemplatesPage() {
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Default Price (MAD)</label>
+              <label className="text-xs text-slate-400 mb-1 block">Default Price ({currency})</label>
               <input type="number" placeholder="0.00" value={form.defaultPrice} onChange={e => set("defaultPrice", e.target.value)}
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
@@ -220,7 +222,7 @@ export default function TemplatesPage() {
               <select value={newPartId} onChange={e => setNewPartId(e.target.value)}
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
                 <option value="">Select part...</option>
-                {spareParts.map(p => <option key={p.id} value={p.id}>{p.name} — {p.unitPrice.toFixed(2)} MAD</option>)}
+                {spareParts.map(p => <option key={p.id} value={p.id}>{p.name} — {formatCurrency(p.unitPrice, currency)}</option>)}
               </select>
               <input type="number" min="1" value={newPartQty} onChange={e => setNewPartQty(e.target.value)}
                 className="w-16 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none" placeholder="Qty" />
@@ -235,7 +237,7 @@ export default function TemplatesPage() {
                     <div key={dp.sparePartId} className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 text-xs">
                       <span className="text-slate-600 dark:text-slate-300">{part?.name} × {dp.quantity}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-slate-500">{((part?.unitPrice ?? 0) * dp.quantity).toFixed(2)} MAD</span>
+                        <span className="text-slate-500">{formatCurrency((part?.unitPrice ?? 0) * dp.quantity, currency)}</span>
                         <button onClick={() => removeDefaultPart(dp.sparePartId)} className="text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300">×</button>
                       </div>
                     </div>
@@ -262,7 +264,7 @@ export default function TemplatesPage() {
                   <div key={i} className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 text-xs">
                     <span className="text-slate-600 dark:text-slate-300">{li.label}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-slate-500">{li.amount.toFixed(2)} MAD</span>
+                      <span className="text-slate-500">{formatCurrency(li.amount, currency)}</span>
                       <button onClick={() => removeDefaultLineItem(i)} className="text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300">×</button>
                     </div>
                   </div>
@@ -317,7 +319,7 @@ export default function TemplatesPage() {
                   {(t.deviceBrand || t.deviceModel) && <p className="text-xs text-slate-400 mt-0.5">{t.deviceBrand} {t.deviceModel}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {t.defaultPrice > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t.defaultPrice} MAD</span>}
+                  {t.defaultPrice > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{formatCurrency(t.defaultPrice, currency)}</span>}
                   {isAdmin && <button onClick={() => handleDelete(t.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300">Delete</button>}
                 </div>
               </div>
@@ -352,7 +354,7 @@ export default function TemplatesPage() {
                   <p className="text-xs text-slate-500 mb-1">💰 Default Services ({t.defaultLineItems.length})</p>
                   <div className="flex flex-wrap gap-1">
                     {(t.defaultLineItems as DefaultLineItem[]).map((li, i) => (
-                      <span key={i} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded">{li.label}: {li.amount} MAD</span>
+                      <span key={i} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded">{li.label}: {formatCurrency(li.amount, currency)}</span>
                     ))}
                   </div>
                 </div>
