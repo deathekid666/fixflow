@@ -44,6 +44,7 @@ export async function GET(req: Request) {
     totalOrders: number;
     totalSpent: number;
     totalCollected: number;
+    firstVisit: string;
     lastVisit: string;
     statuses: string[];
   }>();
@@ -55,6 +56,8 @@ export async function GET(req: Request) {
       existing.totalSpent += o.total;
       existing.totalCollected += o.collected;
       existing.statuses.push(o.status);
+      // orders are desc, so later iterations are older — overwrite firstVisit each time
+      existing.firstVisit = o.createdAt.toISOString();
     } else {
       customerMap.set(o.customerPhone, {
         name: o.customerName,
@@ -63,6 +66,7 @@ export async function GET(req: Request) {
         totalOrders: 1,
         totalSpent: o.total,
         totalCollected: o.collected,
+        firstVisit: o.createdAt.toISOString(),
         lastVisit: o.createdAt.toISOString(),
         statuses: [o.status],
       });

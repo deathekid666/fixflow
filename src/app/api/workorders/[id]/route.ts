@@ -50,7 +50,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     where: { customerPhone: order.customerPhone, shopId: order.shopId },
   });
 
-  return Response.json({ ...order, tatDays, isOverdue, customerOrderCount });
+  const customerFirstOrder = await prisma.workOrder.findFirst({
+    where: { customerPhone: order.customerPhone, shopId: order.shopId },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+  });
+  const customerFirstVisit = customerFirstOrder?.createdAt ?? order.createdAt;
+
+  return Response.json({ ...order, tatDays, isOverdue, customerOrderCount, customerFirstVisit });
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {

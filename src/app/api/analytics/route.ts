@@ -83,6 +83,26 @@ export async function GET(req: Request) {
     orderBy: { stock: "asc" },
   });
 
+  // Loyalty milestones
+  const now = new Date();
+  const allFirstOrders = await prisma.workOrder.groupBy({
+    by: ["customerPhone"],
+    where: shopFilter,
+    _min: { createdAt: true },
+  });
+  const anniversaryThisMonth = allFirstOrders.filter(c => {
+    const d = c._min.createdAt;
+    return d && d.getMonth() === now.getMonth() && d.getFullYear() < now.getFullYear();
+  }).length;
+
+  const orderCountsByPhone = await prisma.workOrder.groupBy({
+    by: ["customerPhone"],
+    where: shopFilter,
+    _count: { id: true },
+  });
+  const tenPlusCount = orderCountsByPhone.filter(c => (c._count.id) >= 10).length;
+  const goldCount = orderCountsByPhone.filter(c => (c._count.id) >= 6).length;
+
   // SLA compliance — for completed/delivered orders that had a deadline
   const slaOrders = await prisma.workOrder.findMany({
     where: { ...shopFilter, slaDeadline: { not: null }, status: { in: ["DONE", "DELIVERED"] } },
@@ -108,5 +128,6 @@ export async function GET(req: Request) {
     engineerStats,
     lowStock,
     sla: { total: slaTotal, met: slaMet, breached: slaBreached, compliance: slaCompliance },
+    milestones: { anniversaryThisMonth, tenPlusCustomers: tenPlusCount, goldCustomers: goldCount },
   });
 }
