@@ -25,30 +25,37 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (!part) return Response.json({ error: "Part not found" }, { status: 404 });
 
-  if (part.stock < quantity) {
-    return Response.json({ error: "Insufficient stock" }, { status: 400 });
+  let workOrderPart;
+  try {
+    workOrderPart = await prisma.$transaction(async (tx) => {
+      // Re-read stock inside the transaction to avoid a race condition
+      const current = await tx.sparePart.findUnique({ where: { id: sparePartId } });
+      if (!current || current.stock < quantity) {
+        throw new Error("Insufficient stock");
+      }
+      await tx.sparePart.update({
+        where: { id: sparePartId },
+        data: { stock: { decrement: quantity } },
+      });
+      return tx.workOrderPart.create({
+        data: {
+          workOrderId: params.id,
+          sparePartId,
+          quantity,
+          unitPrice: current.unitPrice,
+          total: current.unitPrice * quantity,
+        },
+        include: {
+          sparePart: { select: { id: true, name: true, partNumber: true } },
+        },
+      });
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "Insufficient stock") {
+      return Response.json({ error: "Insufficient stock" }, { status: 400 });
+    }
+    throw err;
   }
-
-  const total = part.unitPrice * quantity;
-
-  const [workOrderPart] = await prisma.$transaction([
-    prisma.workOrderPart.create({
-      data: {
-        workOrderId: params.id,
-        sparePartId,
-        quantity,
-        unitPrice: part.unitPrice,
-        total,
-      },
-      include: {
-        sparePart: { select: { id: true, name: true, partNumber: true } },
-      },
-    }),
-    prisma.sparePart.update({
-      where: { id: sparePartId },
-      data: { stock: { decrement: quantity } },
-    }),
-  ]);
 
   // Recalculate order totals
   const allParts = await prisma.workOrderPart.findMany({

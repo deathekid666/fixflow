@@ -46,13 +46,15 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   });
   if (!item) return Response.json({ error: "Not found" }, { status: 404 });
 
+  const order = await prisma.workOrder.findUnique({ where: { id: params.id } });
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
   await prisma.quotationLineItem.delete({ where: { id: itemId } });
 
   // Recalculate totals
-  const order = await prisma.workOrder.findUnique({ where: { id: params.id } });
   const allItems = await prisma.quotationLineItem.findMany({ where: { workOrderId: params.id } });
   const quotationItems = allItems.reduce((sum, i) => sum + i.amount, 0);
-  const total = (order?.subtotal ?? 0) + quotationItems - (order?.discount ?? 0);
+  const total = order.subtotal + quotationItems - order.discount;
 
   await prisma.workOrder.update({
     where: { id: params.id },

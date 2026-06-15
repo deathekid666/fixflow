@@ -22,6 +22,7 @@ export async function GET(req: Request) {
 
   const orders = await prisma.workOrder.findMany({
     where: {
+      deletedAt: null,
       shopId: user.shopId ?? undefined,
       ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
       ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
   const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE;
 
   if (!user.isSuperAdmin && limits.workOrders !== Infinity) {
-    const count = await prisma.workOrder.count({ where: { shopId: user.shopId } });
+    const count = await prisma.workOrder.count({ where: { shopId: user.shopId, deletedAt: null } });
     if (count >= limits.workOrders) {
       return Response.json({
         error: `You've reached the ${plan} plan limit of ${limits.workOrders} work orders. Upgrade to PRO for unlimited orders.`,

@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const shopFilter = user.shopId ? { shopId: user.shopId } : {};
+  const shopFilter = { deletedAt: null, ...(user.shopId ? { shopId: user.shopId } : {}) };
 
   const [total, received, diagnosing, repairing, done, delivered, cancelled] = await Promise.all([
     prisma.workOrder.count({ where: shopFilter }),
@@ -32,15 +32,15 @@ export async function GET(req: Request) {
     take: 5,
   });
 
-  const topPartsWithNames = await Promise.all(
-    topParts.map(async (p) => {
-      const part = await prisma.sparePart.findUnique({
-        where: { id: p.sparePartId },
-        select: { name: true, partNumber: true },
-      });
-      return { ...p, part };
-    })
-  );
+  const partRecords = await prisma.sparePart.findMany({
+    where: { id: { in: topParts.map((p) => p.sparePartId) } },
+    select: { id: true, name: true, partNumber: true },
+  });
+  const partMap = new Map(partRecords.map((p) => [p.id, { name: p.name, partNumber: p.partNumber }]));
+  const topPartsWithNames = topParts.map((p) => ({
+    ...p,
+    part: partMap.get(p.sparePartId) ?? null,
+  }));
 
   // Engineer performance
   const engineers = await prisma.user.findMany({

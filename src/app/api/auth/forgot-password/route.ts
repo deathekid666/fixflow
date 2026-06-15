@@ -38,7 +38,10 @@ export async function POST(req: Request) {
         </div>
       `,
     });
-  } catch { /* ignore if email fails */ }
+  } catch (emailErr) {
+    console.error("[forgot-password] Email send failed:", emailErr);
+    // Don't expose email failure to user for security, but do log it
+  }
 
   return Response.json({ success: true });
 }

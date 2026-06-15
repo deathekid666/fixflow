@@ -6,6 +6,17 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
 
+  const order = await prisma.workOrder.findFirst({
+    where: { id: params.id },
+    select: { id: true, shopId: true },
+  });
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
+  // Authenticated shop users may only access work orders in their own shop
+  if (user && user.shopId !== order.shopId) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   if (user) {
     // Shop is reading — mark all CUSTOMER messages as read
     await prisma.customerMessage.updateMany({

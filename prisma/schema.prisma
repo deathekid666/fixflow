@@ -20,7 +20,7 @@ model User {
   emailVerifyToken   String?
   resetPasswordToken String?
 
-  shop             Shop?             @relation(fields: [shopId], references: [id])
+  shop             Shop?             @relation(fields: [shopId], references: [id], onDelete: Cascade)
   createdOrders    WorkOrder[]       @relation("CreatedBy")
   assignedOrders   WorkOrder[]       @relation("AssignedTo")
   logs             OperationLog[]
@@ -33,6 +33,8 @@ model User {
   customerNotes    CustomerNote[]
   purchaseOrders   PurchaseOrder[]
   commissions      EngineerCommission[]
+
+  @@index([shopId])
 }
 
 model Shop {
@@ -115,6 +117,8 @@ model WorkOrder {
   lastReminderAt DateTime?
   slaDeadline    DateTime?
 
+  deletedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -122,7 +126,7 @@ model WorkOrder {
   userId     String
   assignedTo String?
 
-  shop          Shop                  @relation(fields: [shopId], references: [id])
+  shop          Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
   creator       User                  @relation("CreatedBy", fields: [userId], references: [id])
   assignee      User?                 @relation("AssignedTo", fields: [assignedTo], references: [id])
   parts         WorkOrderPart[]
@@ -137,6 +141,10 @@ model WorkOrder {
   payments      Payment[]
   checklist     DiagnosisCheck[]
   messages      CustomerMessage[]
+
+  @@index([shopId])
+  @@index([customerPhone])
+  @@index([status])
 }
 
 model CustomerMessage {
@@ -147,7 +155,7 @@ model CustomerMessage {
   createdAt  DateTime @default(now())
 
   workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
 
 model QuotationLineItem {
@@ -156,7 +164,7 @@ model QuotationLineItem {
   amount Float
 
   workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 }
@@ -168,7 +176,7 @@ model BounceRepair {
   createdAt DateTime @default(now())
 
   workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -178,7 +186,7 @@ model Notification {
   read    Boolean @default(false)
 
   workOrderId String?
-  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
+  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
@@ -195,13 +203,15 @@ model SparePart {
   stock       Int     @default(0)
 
   shopId      String
-  shop        Shop              @relation(fields: [shopId], references: [id])
+  shop        Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
   usages             WorkOrderPart[]
   adjustments        StockAdjustment[]
   purchaseOrderItems PurchaseOrderItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([shopId])
 }
 
 model WorkOrderPart {
@@ -213,7 +223,7 @@ model WorkOrderPart {
   workOrderId String
   sparePartId String
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   sparePart SparePart @relation(fields: [sparePartId], references: [id])
 
   createdAt DateTime @default(now())
@@ -229,7 +239,7 @@ model OperationLog {
   workOrderId String
   userId      String
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
 }
 
@@ -242,7 +252,7 @@ model WorkOrderAttachment {
   createdAt DateTime @default(now())
 
   workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
 
 model InternalNote {
@@ -254,7 +264,7 @@ model InternalNote {
   workOrderId String
   userId      String
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
 }
 
@@ -281,7 +291,7 @@ model SatisfactionRating {
 
   createdAt DateTime @default(now())
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
 
 model SmsNotification {
@@ -295,7 +305,7 @@ model SmsNotification {
 
   createdAt DateTime @default(now())
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
 
 model Shift {
@@ -402,6 +412,8 @@ model Appointment {
   createdAt        DateTime @default(now())
 
   shop Shop @relation(fields: [shopId], references: [id])
+
+  @@index([shopId])
 }
 
 model ShopAvailability {
