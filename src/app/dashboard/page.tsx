@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import UpgradeModal from "@/components/UpgradeModal";
 import { useAuth } from "@/context/AuthContext";
@@ -64,6 +64,28 @@ export default function DashboardPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo] = useState({ limit: 50, current: 50 });
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+
+  // Pull-to-refresh (mobile)
+  const touchStartY = useRef(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.scrollY > 0) return; // only at top of page
+    const distance = e.touches[0].clientY - touchStartY.current;
+    if (distance > 0) setPullDistance(Math.min(distance, 80));
+  };
+  const handleTouchEnd = async () => {
+    if (pullDistance > 60) {
+      setRefreshing(true);
+      await load();
+      setRefreshing(false);
+    }
+    setPullDistance(0);
+  };
 
   useEffect(() => { setPage(1); }, [search, statusFilter, noContactFilter]);
   useEffect(() => {
@@ -218,7 +240,17 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6"
+      onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      {(pullDistance > 0 || refreshing) && (
+        <div className="md:hidden" style={{
+          textAlign: "center", padding: "8px", fontSize: 13,
+          color: "#94a3b8", transform: `translateY(${pullDistance}px)`,
+          transition: refreshing ? "none" : "transform 0.2s",
+        }}>
+          {refreshing ? "🔄 Refreshing..." : pullDistance > 60 ? "↑ Release to refresh" : "↓ Pull to refresh"}
+        </div>
+      )}
       {showUpgradeModal && (
         <UpgradeModal onClose={() => setShowUpgradeModal(false)} feature="work orders" limit={upgradeInfo.limit} current={upgradeInfo.current} />
       )}

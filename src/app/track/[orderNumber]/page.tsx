@@ -146,7 +146,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
     : [];
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", fontFamily: "'Segoe UI', Arial, sans-serif", padding: "20px 16px 40px" }}>
+    <div style={{ minHeight: "100dvh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", fontFamily: "'Segoe UI', Arial, sans-serif", padding: "20px 16px max(40px, env(safe-area-inset-bottom))" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
 
         {/* Header */}
@@ -410,7 +410,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
               </div>
 
               {/* Input */}
-              <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8, alignItems: "center", background: "rgba(0,0,0,0.15)" }}>
+              <div style={{ padding: "10px 12px", paddingBottom: "max(10px, env(safe-area-inset-bottom))", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8, alignItems: "center", background: "rgba(0,0,0,0.15)" }}>
                 <input
                   value={newMsg}
                   onChange={e => setNewMsg(e.target.value)}

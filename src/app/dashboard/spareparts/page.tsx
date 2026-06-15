@@ -21,6 +21,7 @@ export default function SparePartsPage() {
   const fmt = (n: number) => formatCurrency(n, currency);
   const [parts, setParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [showForm, setShowForm] = useState(false);
@@ -63,12 +64,19 @@ export default function SparePartsPage() {
 
   async function load() {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    const res = await fetch(`/api/spareparts?${params}`, { credentials: "include" });
-    const data = await res.json();
-    setParts(Array.isArray(data) ? data : []);
-    setLoading(false);
+    setError("");
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/spareparts?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setParts(Array.isArray(data) ? data : []);
+    } catch {
+      setError("Could not load spare parts. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleCreate() {
@@ -315,9 +323,27 @@ export default function SparePartsPage() {
         </div>
       </div>
 
+      {error && (
+        <div style={{
+          textAlign: "center", padding: "60px 20px",
+          background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)",
+          borderRadius: 16, margin: "20px 0",
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+          <p style={{ color: "#f87171", fontWeight: 600, fontSize: 16, margin: "0 0 6px" }}>Something went wrong</p>
+          <p style={{ color: "#94a3b8", fontSize: 13, margin: "0 0 20px" }}>{error}</p>
+          <button onClick={() => { setError(""); load(); }} style={{
+            background: "#2563eb", color: "white", border: "none", borderRadius: 8,
+            padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer",
+          }}>
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto ${error ? "hidden" : ""}`}>
+        <table className="w-full text-sm min-w-[640px] md:min-w-0">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
               {["Name", "Part #", "Unit Price", "Stock", "Status", "Actions"].map(h => (

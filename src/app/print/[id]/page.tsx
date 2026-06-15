@@ -45,13 +45,21 @@ type WorkOrder = {
 export default function PrintPage({ params }: { params: { id: string } }) {
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [origin, setOrigin] = useState("");
+
+  function loadOrder() {
+    setLoading(true);
+    setError("");
+    fetch(`/api/workorders/${params.id}`, { credentials: "include" })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(data => { setOrder(data); setLoading(false); })
+      .catch(() => { setError("Could not load this receipt. Please try again."); setLoading(false); });
+  }
 
   useEffect(() => {
     setOrigin(window.location.origin);
-    fetch(`/api/workorders/${params.id}`, { credentials: "include" })
-      .then(r => r.json())
-      .then(data => { setOrder(data); setLoading(false); });
+    loadOrder();
   }, []);
 
   useEffect(() => {
@@ -59,8 +67,18 @@ export default function PrintPage({ params }: { params: { id: string } }) {
   }, [loading, order]);
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "Arial" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "Arial", color: "#475569" }}>
       Preparing receipt...
+    </div>
+  );
+  if (error) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "Arial", gap: 16, padding: 20, textAlign: "center" }}>
+      <div style={{ fontSize: 40 }}>⚠️</div>
+      <p style={{ color: "#dc2626", fontWeight: 600, fontSize: 16, margin: 0 }}>Something went wrong</p>
+      <p style={{ color: "#64748b", fontSize: 13, margin: 0 }}>{error}</p>
+      <button onClick={loadOrder} style={{ background: "#2563eb", color: "white", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+        Try again
+      </button>
     </div>
   );
   if (!order) return null;
@@ -86,11 +104,29 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         .btn-print { background: #2563eb; color: white; }
         @media print {
           .no-print { display: none !important; }
+          .mobile-print-bar { display: none !important; }
           body { background: white; }
           @page { margin: 12mm; size: A4; }
         }
         .receipt { max-width: 720px; margin: 24px auto; padding: 36px; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         @media print { .receipt { margin: 0; box-shadow: none; border-radius: 0; padding: 0; } }
+        /* Sticky mobile print button — hidden on desktop and when printing */
+        .mobile-print-bar { display: none; }
+        @media screen and (max-width: 767px) {
+          .receipt { margin: 12px; padding: 18px; max-width: 100%; padding-bottom: 88px; }
+          .two-col, .bottom-grid { grid-template-columns: 1fr; gap: 12px; }
+          .footer-row { flex-direction: column; align-items: stretch; gap: 16px; }
+          .qr-block { align-self: center; }
+          .mobile-print-bar {
+            display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: #1e293b;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+          }
+          .mobile-print-bar button {
+            flex: 1; padding: 12px; border-radius: 10px; border: none; cursor: pointer;
+            font-size: 15px; font-weight: 600; background: #2563eb; color: white;
+          }
+        }
         .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 3px solid #1e293b; }
         .shop-name { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         .shop-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
@@ -319,6 +355,11 @@ export default function PrintPage({ params }: { params: { id: string } }) {
             <div className="qr-label">Scan to track repair</div>
           </div>
         </div>
+      </div>
+
+      {/* Sticky print button for mobile */}
+      <div className="mobile-print-bar">
+        <button onClick={() => window.print()}>🖨️ Print / Save PDF</button>
       </div>
     </>
   );

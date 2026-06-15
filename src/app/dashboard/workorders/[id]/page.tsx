@@ -118,6 +118,19 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [slaCountdown, setSlaCountdown] = useState("");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [bounceTouched, setBounceTouched] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Scrolls a focused input into view above the mobile keyboard.
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const target = e.target;
+    setTimeout(() => { target.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300);
+  };
 
   useEffect(() => {
     if (!order?.slaDeadline || ["DELIVERED", "CANCELLED"].includes(order.status)) return;
@@ -373,7 +386,34 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setDeletingAttachmentId(null); await load();
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-slate-500 text-sm">Loading...</div>;
+  if (loading) return (
+    <div className="p-6 space-y-5 max-w-5xl mx-auto">
+      <style>{`@keyframes skeleton-pulse { 0% { opacity: 0.4 } 50% { opacity: 0.8 } 100% { opacity: 0.4 } }`}</style>
+      <div className="flex items-center gap-3" style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }}>
+        <div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="h-6 w-48 bg-slate-200 dark:bg-slate-700 rounded" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3"
+              style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }}>
+              <div className="h-3 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[...Array(4)].map((_, j) => <div key={j} className="h-10 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="border border-slate-200 dark:border-slate-800 rounded-xl p-5 h-32"
+              style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
   if (!order) return null;
 
   const selectedPartData = spareParts.find(p => p.id === selectedPart);
@@ -513,13 +553,13 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
 
           {/* Device info */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Device Information</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <Info label="Brand" value={order.deviceBrand} />
               <Info label="Model" value={order.deviceModel} />
               <Info label="Serial Number" value={order.serialNumber || "—"} />
@@ -532,7 +572,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Customer info */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Customer Information</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-slate-500">Name</p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -560,7 +600,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Fault & service */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Fault & Service</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-3">
               <Info label="Service Type" value={order.serviceType} />
               <Info label="Repair Type" value={order.repairType || "—"} />
               <Info label="Fault Level" value={order.faultLevel} />
@@ -1090,6 +1130,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     <label className="text-xs text-slate-500 mb-1 block">Amount ({currency}) *</label>
                     <input type="number" min="0" placeholder="0.00"
                       className={INPUT_INNER_FOCUS_GREEN}
+                      onFocus={handleInputFocus}
                       value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
                   </div>
                   {paymentMethod === "CARD" && (
@@ -1290,6 +1331,23 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           </div>
         </div>
+      )}
+
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          style={{
+            position: "fixed", bottom: 24, right: 24, zIndex: 50,
+            width: 44, height: 44, borderRadius: "50%",
+            background: "#2563eb", border: "none", color: "white",
+            fontSize: 20, cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "opacity 0.2s",
+          }}
+          aria-label="Back to top"
+        >
+          ↑
+        </button>
       )}
     </div>
   );
