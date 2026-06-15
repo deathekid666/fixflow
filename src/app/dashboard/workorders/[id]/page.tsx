@@ -120,10 +120,34 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [bounceTouched, setBounceTouched] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // AI Repair Assistant
+  type AiResult = {
+    likelyCause: string;
+    repairSteps: string[];
+    partsNeeded: { name: string; quantity: number; note?: string }[];
+    estimatedTime: string;
+    successRate: string;
+    commonMistakes: string[];
+    suggestedPrice: { min: number; max: number };
+    difficulty: string;
+  };
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiAddingNote, setAiAddingNote] = useState(false);
+  const [aiAddingParts, setAiAddingParts] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 400);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowAiPanel(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   // Scrolls a focused input into view above the mobile keyboard.
@@ -376,6 +400,64 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   }
 
   function cancelUpload() { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }
+
+  async function runAiAssist() {
+    setShowAiPanel(true);
+    setAiLoading(true);
+    setAiResult(null);
+    setAiError(null);
+    try {
+      const res = await fetch(`/api/workorders/${params.id}/ai-assist`, {
+        method: "POST", credentials: "include",
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAiResult(data);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "AI service error");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  async function aiAddToNotes() {
+    if (!aiResult) return;
+    setAiAddingNote(true);
+    const text = [
+      `🤖 AI Repair Analysis — ${order!.deviceBrand} ${order!.deviceModel}`,
+      `Likely cause: ${aiResult.likelyCause}`,
+      `Difficulty: ${aiResult.difficulty} | Time: ${aiResult.estimatedTime} | Success rate: ${aiResult.successRate}`,
+      `Steps: ${aiResult.repairSteps.map((s, i) => `${i + 1}. ${s}`).join(" ")}`,
+      aiResult.commonMistakes.length ? `Watch out: ${aiResult.commonMistakes.join("; ")}` : "",
+      `Suggested price: ${aiResult.suggestedPrice.min}–${aiResult.suggestedPrice.max} ${currency}`,
+    ].filter(Boolean).join("\n");
+    await fetch(`/api/workorders/${params.id}/notes`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ message: text }),
+    });
+    await load();
+    setAiAddingNote(false);
+  }
+
+  async function aiAddParts() {
+    if (!aiResult || !aiResult.partsNeeded.length) return;
+    setAiAddingParts(true);
+    for (const part of aiResult.partsNeeded) {
+      const match = spareParts.find(sp =>
+        sp.name.toLowerCase().includes(part.name.toLowerCase()) ||
+        part.name.toLowerCase().includes(sp.name.toLowerCase())
+      );
+      if (match) {
+        await fetch(`/api/workorders/${params.id}/parts`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          credentials: "include", body: JSON.stringify({ sparePartId: match.id, quantity: part.quantity }),
+        });
+      }
+    }
+    await load();
+    setAiAddingParts(false);
+  }
 
   async function deleteAttachment(attachmentId: string) {
     setDeletingAttachmentId(attachmentId);
@@ -1348,6 +1430,183 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         >
           ↑
         </button>
+      )}
+
+      {/* AI Assist floating button */}
+      <button
+        onClick={runAiAssist}
+        style={{
+          position: "fixed", bottom: showBackToTop ? 80 : 24, right: 24, zIndex: 50,
+          transition: "bottom 0.2s",
+        }}
+        className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-full shadow-lg shadow-violet-500/30"
+        aria-label="AI Repair Assistant"
+      >
+        <span>🤖</span>
+        <span>AI Assist</span>
+      </button>
+
+      {/* AI Repair Assistant slide-in panel */}
+      {showAiPanel && (
+        <div className="fixed inset-0 z-[60] flex" onClick={() => setShowAiPanel(false)}>
+          <div className="flex-1" />
+          <div
+            className="w-full max-w-md h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-violet-600 to-purple-600">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🤖</span>
+                <div>
+                  <p className="text-white font-semibold text-sm">AI Repair Assistant</p>
+                  <p className="text-violet-200 text-xs">{order.deviceBrand} {order.deviceModel}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAiPanel(false)} className="text-white/70 hover:text-white text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">×</button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {aiLoading && (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <div className="w-10 h-10 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+                  <p className="text-sm text-slate-500">Analyzing repair...</p>
+                </div>
+              )}
+
+              {aiError && !aiLoading && (
+                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4 text-center">
+                  <p className="text-red-600 dark:text-red-400 text-sm font-medium mb-1">Analysis failed</p>
+                  <p className="text-red-500 dark:text-red-500 text-xs">{aiError}</p>
+                  <button onClick={runAiAssist} className="mt-3 px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg">Retry</button>
+                </div>
+              )}
+
+              {aiResult && !aiLoading && (
+                <>
+                  {/* Likely cause */}
+                  <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">Likely Cause</p>
+                    <p className="text-sm text-slate-800 dark:text-slate-200">{aiResult.likelyCause}</p>
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Difficulty", value: aiResult.difficulty, color: aiResult.difficulty === "Easy" ? "text-green-600 dark:text-green-400" : aiResult.difficulty === "Medium" ? "text-yellow-600 dark:text-yellow-400" : aiResult.difficulty === "Hard" ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400" },
+                      { label: "Est. Time", value: aiResult.estimatedTime, color: "text-blue-600 dark:text-blue-400" },
+                      { label: "Success", value: aiResult.successRate, color: "text-emerald-600 dark:text-emerald-400" },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+                        <p className="text-xs text-slate-500 mb-1">{label}</p>
+                        <p className={`text-sm font-bold ${color}`}>{value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Repair steps */}
+                  <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Repair Steps</p>
+                    <ol className="space-y-2">
+                      {aiResult.repairSteps.map((step, i) => (
+                        <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+                          <span className="flex-shrink-0 w-5 h-5 bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400 rounded-full text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  {/* Parts needed */}
+                  {aiResult.partsNeeded.length > 0 && (
+                    <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Parts Needed</p>
+                      <div className="space-y-2">
+                        {aiResult.partsNeeded.map((p, i) => {
+                          const matched = spareParts.find(sp =>
+                            sp.name.toLowerCase().includes(p.name.toLowerCase()) ||
+                            p.name.toLowerCase().includes(sp.name.toLowerCase())
+                          );
+                          return (
+                            <div key={i} className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${matched ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"}`} />
+                                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{p.name}</span>
+                                {p.note && <span className="text-xs text-slate-400 truncate">({p.note})</span>}
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-xs text-slate-500">×{p.quantity}</span>
+                                {matched ? (
+                                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">In stock</span>
+                                ) : (
+                                  <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded">Not in inv.</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggested price */}
+                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1">Suggested Price</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{aiResult.suggestedPrice.min}–{aiResult.suggestedPrice.max} <span className="text-sm font-normal text-slate-500">{currency}</span></p>
+                  </div>
+
+                  {/* Common mistakes */}
+                  {aiResult.commonMistakes.length > 0 && (
+                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                      <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-2">Watch Out</p>
+                      <ul className="space-y-1">
+                        {aiResult.commonMistakes.map((m, i) => (
+                          <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex gap-2">
+                            <span className="text-amber-500 flex-shrink-0">⚠</span>
+                            <span>{m}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer actions */}
+            {aiResult && !aiLoading && (
+              <div className="border-t border-slate-200 dark:border-slate-800 px-5 py-4 flex gap-2">
+                <button
+                  onClick={aiAddToNotes}
+                  disabled={aiAddingNote}
+                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+                >
+                  {aiAddingNote ? "Saving..." : "Add to Notes"}
+                </button>
+                {aiResult.partsNeeded.some(p => spareParts.some(sp =>
+                  sp.name.toLowerCase().includes(p.name.toLowerCase()) ||
+                  p.name.toLowerCase().includes(sp.name.toLowerCase())
+                )) && (
+                  <button
+                    onClick={aiAddParts}
+                    disabled={aiAddingParts}
+                    className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    {aiAddingParts ? "Adding..." : "Add Parts"}
+                  </button>
+                )}
+                <button
+                  onClick={runAiAssist}
+                  className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 text-xs rounded-lg transition-colors"
+                  title="Refresh analysis"
+                >
+                  ↺
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
