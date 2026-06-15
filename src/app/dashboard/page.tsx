@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [bulkEngineer, setBulkEngineer] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo] = useState({ limit: 50, current: 50 });
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -160,11 +161,11 @@ export default function DashboardPage() {
   }
 
   async function bulkDelete() {
-    if (!confirm(`Delete ${selected.size} work order${selected.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
     setBulkLoading(true);
     await runBulk([...selected], id =>
       fetch(`/api/workorders/${id}/edit`, { method: "DELETE", credentials: "include" }), "Deleted");
     await load(); setBulkLoading(false);
+    setDeleteConfirm(false);
   }
 
   function exportSelected() {
@@ -222,6 +223,28 @@ export default function DashboardPage() {
         <UpgradeModal onClose={() => setShowUpgradeModal(false)} feature="work orders" limit={upgradeInfo.limit} current={upgradeInfo.current} />
       )}
 
+      {/* Bulk delete confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !bulkLoading && setDeleteConfirm(false)}>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Delete work orders</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Delete {selected.size} order{selected.size === 1 ? "" : "s"}? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirm(false)} disabled={bulkLoading}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button onClick={bulkDelete} disabled={bulkLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+                {bulkLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
@@ -273,17 +296,21 @@ export default function DashboardPage() {
         value={search} onChange={(e) => setSearch(e.target.value)} />
 
       {/* Status filter pills — horizontally scrollable on mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-none">
-        {["", ...STATUS_OPTIONS].map((s) => (
-          <button key={s} onClick={() => { setStatusFilter(s); setNoContactFilter(false); }}
-            className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${!noContactFilter && statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
-            {s || "All"}
+      <div className="relative md:overflow-visible" style={{ position: "relative" }}>
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-none">
+          {["", ...STATUS_OPTIONS].map((s) => (
+            <button key={s} onClick={() => { setStatusFilter(s); setNoContactFilter(false); }}
+              className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${!noContactFilter && statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+              {s || "All"}
+            </button>
+          ))}
+          <button onClick={() => { setNoContactFilter(v => !v); setStatusFilter(""); }}
+            className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+            ⏰ No contact 3d+
           </button>
-        ))}
-        <button onClick={() => { setNoContactFilter(v => !v); setStatusFilter(""); }}
-          className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
-          ⏰ No contact 3d+
-        </button>
+        </div>
+        {/* Right-edge fade hint — only relevant while pills scroll on mobile */}
+        <div className="md:hidden" style={{ position: "absolute", right: 0, top: 0, bottom: 4, width: 40, background: "linear-gradient(to right, transparent, #0f172a)", pointerEvents: "none" }} />
       </div>
 
       {/* Bulk result message */}
@@ -319,7 +346,7 @@ export default function DashboardPage() {
             <button onClick={exportSelected} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">
               ⬇ Export ({selected.size})
             </button>
-            <button onClick={bulkDelete} disabled={bulkLoading}
+            <button onClick={() => setDeleteConfirm(true)} disabled={bulkLoading}
               className="px-3 py-1.5 bg-red-100 dark:bg-red-700/40 hover:bg-red-200 dark:hover:bg-red-700/70 disabled:opacity-50 text-red-600 dark:text-red-400 text-xs rounded-lg transition-colors">
               🗑 Delete ({selected.size})
             </button>

@@ -290,6 +290,25 @@ export default function NewWorkOrderPage() {
         </div>
       )}
 
+      {/* Step progress indicator */}
+      <div className="flex items-center justify-between">
+        {[
+          { n: 1, label: "Device Info" },
+          { n: 2, label: "Customer" },
+          { n: 3, label: "Fault & Photos" },
+        ].map((step, i, arr) => (
+          <div key={step.n} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+              <div className="w-7 h-7 rounded-full border-2 border-blue-500 bg-blue-600 text-white text-xs font-semibold flex items-center justify-center">
+                {step.n}
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{step.label}</span>
+            </div>
+            {i < arr.length - 1 && <div className="flex-1 h-0.5 bg-blue-500/40 mx-2 mb-5" />}
+          </div>
+        ))}
+      </div>
+
       {error && <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
 
       {/* Device Info */}
@@ -337,7 +356,10 @@ export default function NewWorkOrderPage() {
               <p className="text-xs text-slate-400 mt-1">Front, back, sides, any existing damage</p>
             </button>
             {photoError && (
-              <p className="text-sm font-medium text-red-500 dark:text-red-400">⚠ Device photo is required</p>
+              <>
+                <p className="text-sm font-medium text-red-500 dark:text-red-400">⚠ Device photo is required</p>
+                <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>At least one device photo is required</p>
+              </>
             )}
           </>
         ) : (
