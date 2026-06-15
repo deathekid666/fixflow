@@ -4,6 +4,21 @@ import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
+// Fields any authorized user (admin or owning engineer) may edit
+const EDITABLE_FIELDS = [
+  "faultDescription", "appearance", "remarks", "repairType",
+  "faultLevel", "assignedTo", "serviceType",
+  "subtotal", "quotationItems", "discount", "total", "collected", "quotationRemarks",
+  "warrantyStart", "warrantyEnd", "isUnderWarranty",
+] as const;
+
+// Additional fields only an admin may edit
+const ADMIN_ONLY_FIELDS = [
+  "deviceBrand", "deviceModel", "serialNumber", "imei",
+  "customerName", "customerPhone", "customerEmail",
+  "shopId", "userId",
+] as const;
+
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
@@ -21,23 +36,12 @@ export async function PATCH(
   const body = await req.json();
 
   const sharedFields: Record<string, unknown> = {};
-  const allowed = [
-    "faultDescription", "appearance", "remarks", "repairType",
-    "faultLevel", "assignedTo", "serviceType",
-    "subtotal", "quotationItems", "discount", "total", "collected", "quotationRemarks",
-    "warrantyStart", "warrantyEnd", "isUnderWarranty",
-  ];
-  for (const key of allowed) {
+  for (const key of EDITABLE_FIELDS) {
     if (body[key] !== undefined) sharedFields[key] = body[key];
   }
 
   if (user.role === "ADMIN") {
-    const adminOnly = [
-      "deviceBrand", "deviceModel", "serialNumber", "imei",
-      "customerName", "customerPhone", "customerEmail",
-      "shopId", "userId",
-    ];
-    for (const key of adminOnly) {
+    for (const key of ADMIN_ONLY_FIELDS) {
       if (body[key] !== undefined) sharedFields[key] = body[key];
     }
   }
@@ -64,7 +68,8 @@ export async function PATCH(
   return Response.json(updated);
 }
 
-// DELETE — admin only, cascades all related records first
+// DELETE — admin only, soft delete (sets deletedAt). Related records are kept
+// so the order can be restored or audited; list queries filter deletedAt: null.
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
@@ -78,19 +83,19 @@ export async function DELETE(
   const order = await prisma.workOrder.findUnique({ where: { id: params.id } });
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
-  // Delete all related records first to avoid FK constraint errors
-  await prisma.$transaction([
-    prisma.workOrderPart.deleteMany({      where: { workOrderId: params.id } }),
-    prisma.quotationLineItem.deleteMany({  where: { workOrderId: params.id } }),
-    prisma.operationLog.deleteMany({       where: { workOrderId: params.id } }),
-    prisma.workOrderAttachment.deleteMany({ where: { workOrderId: params.id } }),
-    prisma.bounceRepair.deleteMany({       where: { workOrderId: params.id } }),
-    prisma.internalNote.deleteMany({       where: { workOrderId: params.id } }),
-    prisma.notification.deleteMany({       where: { workOrderId: params.id } }),
-    prisma.satisfactionRating.deleteMany({ where: { workOrderId: params.id } }),
-    prisma.smsNotification.deleteMany({    where: { workOrderId: params.id } }),
-    prisma.workOrder.delete({              where: { id: params.id } }),
-  ]);
+  await prisma.workOrder.update({
+    where: { id: params.id },
+    data: { deletedAt: new Date() },
+  });
+
+  await prisma.operationLog.create({
+    data: {
+      action: "DELETED",
+      description: "Work order deleted (soft delete)",
+      workOrderId: order.id,
+      userId: user.id,
+    },
+  });
 
   return Response.json({ message: "Work order deleted" });
 }

@@ -41,6 +41,18 @@ export async function POST(req: Request) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  if (duration !== undefined && duration !== null && duration !== "") {
+    const dur = parseInt(duration);
+    if (Number.isNaN(dur) || dur <= 0 || dur > 480) {
+      return Response.json({ error: "Duration must be between 1 and 480 minutes" }, { status: 400 });
+    }
+  }
+
+  const scheduledDate = new Date(scheduledAt);
+  if (Number.isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
+    return Response.json({ error: "Appointment must be scheduled in the future" }, { status: 400 });
+  }
+
   const appointment = await prisma.appointment.create({
     data: {
       shopId,

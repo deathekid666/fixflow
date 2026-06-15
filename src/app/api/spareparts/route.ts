@@ -9,16 +9,34 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search");
+  const page = Math.max(parseInt(searchParams.get("page") ?? "1") || 1, 1);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50") || 50, 200);
+  const skip = (page - 1) * limit;
 
-  const parts = await prisma.sparePart.findMany({
-    where: {
-      shopId: user.shopId ?? undefined,
-      ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+  const where = {
+    shopId: user.shopId ?? undefined,
+    ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+
+  const [parts, total] = await Promise.all([
+    prisma.sparePart.findMany({
+      where,
+      orderBy: { name: "asc" },
+      take: limit,
+      skip,
+    }),
+    prisma.sparePart.count({ where }),
+  ]);
+
+  // Return an array for backward compatibility with existing clients;
+  // pagination metadata is exposed via response headers.
+  return Response.json(parts, {
+    headers: {
+      "X-Total-Count": String(total),
+      "X-Page": String(page),
+      "X-Limit": String(limit),
     },
-    orderBy: { name: "asc" },
   });
-
-  return Response.json(parts);
 }
 
 export async function POST(req: Request) {

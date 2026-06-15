@@ -2,7 +2,26 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(ip: string, max = 20, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= max) return false;
+  entry.count++;
+  return true;
+}
+
 export async function GET(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  if (!checkRateLimit(ip)) {
+    return Response.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   const { searchParams } = new URL(req.url);
   const orderNumber = searchParams.get("orderNumber");
 

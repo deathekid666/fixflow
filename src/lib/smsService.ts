@@ -18,6 +18,10 @@ class MockSmsProvider implements SmsProvider {
 // class TwilioProvider implements SmsProvider {
 //   private client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
 //   async send(to: string, message: string) {
+//     if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+//       console.warn("[SMS] Twilio not configured, skipping SMS");
+//       return { success: false, error: "Twilio not configured" };
+//     }
 //     try {
 //       const msg = await this.client.messages.create({
 //         body: message,

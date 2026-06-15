@@ -18,10 +18,9 @@ export async function POST(req: Request) {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return Response.json({ error: "Invalid credentials" }, { status: 401 });
 
-  // Email verification temporarily disabled
-  // if (!user.emailVerified && !user.isSuperAdmin) {
-  //   return Response.json({ error: "Please verify your email before logging in. Check your inbox." }, { status: 403 });
-  // }
+  if (!user.emailVerified && !user.isSuperAdmin) {
+    return Response.json({ error: "Please verify your email before logging in. Check your inbox." }, { status: 403 });
+  }
 
   // Check shop status
   if (!user.isSuperAdmin && user.shop) {

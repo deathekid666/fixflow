@@ -22,8 +22,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const { amount, method, note } = await req.json();
 
-  if (!amount || amount <= 0) {
-    return Response.json({ error: "Amount must be greater than 0" }, { status: 400 });
+  const amountNum = parseFloat(amount);
+  if (Number.isNaN(amountNum) || amountNum <= 0 || amountNum > 1_000_000) {
+    return Response.json({ error: "Amount must be between 0 and 1,000,000" }, { status: 400 });
   }
 
   const order = await prisma.workOrder.findFirst({
@@ -33,20 +34,25 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
+  const totalCollected = order.payments.reduce((s, p) => s + p.amount, 0) + amountNum;
+  const calculatedTotal = order.subtotal + order.quotationItems - order.discount;
+  const finalTotal = calculatedTotal > 0 ? calculatedTotal : order.total > 0 ? order.total : totalCollected;
+
+  // Reject overpayment (allow 1% tolerance for rounding)
+  if (finalTotal > 0 && totalCollected > finalTotal * 1.01) {
+    return Response.json({ error: "Payment exceeds order total" }, { status: 400 });
+  }
+
   const payment = await prisma.payment.create({
     data: {
       workOrderId: params.id,
-      amount: parseFloat(amount),
+      amount: amountNum,
       method: method ?? "CASH",
       note: note ?? null,
       collectedBy: user.id,
     },
     include: { collector: { select: { id: true, name: true } } },
   });
-
-  const totalCollected = order.payments.reduce((s, p) => s + p.amount, 0) + parseFloat(amount);
-  const calculatedTotal = order.subtotal + order.quotationItems - order.discount;
-  const finalTotal = calculatedTotal > 0 ? calculatedTotal : order.total > 0 ? order.total : totalCollected;
 
   await prisma.workOrder.update({
     where: { id: params.id },
@@ -60,7 +66,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   await prisma.operationLog.create({
     data: {
       action: "PAYMENT_COLLECTED",
-      description: `${parseFloat(amount).toFixed(2)} MAD collected via ${method ?? "CASH"}`,
+      description: `${amountNum.toFixed(2)} MAD collected via ${method ?? "CASH"}`,
       workOrderId: params.id,
       userId: user.id,
     },

@@ -208,7 +208,12 @@ export async function POST(req: Request) {
     return Response.json({ error: 'type must be "spareparts" or "customers"' }, { status: 400 });
   }
 
-  const csvText = await file.text();
+  let csvText: string;
+  try {
+    csvText = await file.text();
+  } catch {
+    return Response.json({ error: "Failed to read uploaded file" }, { status: 400 });
+  }
   if (!csvText.trim()) return Response.json({ error: "CSV file is empty" }, { status: 400 });
 
   let rows = parseCSV(csvText);

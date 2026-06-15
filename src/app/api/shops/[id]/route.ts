@@ -7,6 +7,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (user.shopId !== params.id && !user.isSuperAdmin) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json();
   const { name, address, phone, email, googleMapsUrl, currency, onboardingComplete, taxEnabled, taxRate, taxLabel } = body;

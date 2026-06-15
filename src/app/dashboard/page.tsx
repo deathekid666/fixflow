@@ -59,11 +59,17 @@ export default function DashboardPage() {
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkEngineer, setBulkEngineer] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo] = useState({ limit: 50, current: 50 });
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => { setPage(1); }, [search, statusFilter, noContactFilter]);
+  useEffect(() => {
+    if (!bulkMsg) return;
+    const t = setTimeout(() => setBulkMsg(null), 4000);
+    return () => clearTimeout(t);
+  }, [bulkMsg]);
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
     return () => clearTimeout(timer);
@@ -110,36 +116,54 @@ export default function DashboardPage() {
     else setSelected(new Set(orders.map(o => o.id)));
   }
 
+  // Runs an operation per selected id, tracking per-item success/failure so a
+  // partial failure doesn't silently disappear.
+  async function runBulk(
+    ids: string[],
+    op: (id: string) => Promise<Response>,
+    verb: string,
+  ) {
+    const results = await Promise.all(ids.map(id =>
+      op(id)
+        .then(res => ({ ok: res.ok }))
+        .catch(() => ({ ok: false }))
+    ));
+    const succeeded = results.filter(r => r.ok).length;
+    const failed = results.length - succeeded;
+    setBulkMsg(
+      failed === 0
+        ? `${verb} ${succeeded} order${succeeded === 1 ? "" : "s"}.`
+        : `${verb} ${succeeded} order${succeeded === 1 ? "" : "s"}, ${failed} failed.`
+    );
+  }
+
   async function applyBulkStatus() {
     if (!bulkStatus || selected.size === 0) return;
     setBulkLoading(true);
-    await Promise.all([...selected].map(id =>
+    await runBulk([...selected], id =>
       fetch(`/api/workorders/${id}/status`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include", body: JSON.stringify({ status: bulkStatus }),
-      })
-    ));
+      }), "Updated");
     setBulkStatus(""); await load(); setBulkLoading(false);
   }
 
   async function applyBulkEngineer() {
     if (!bulkEngineer || selected.size === 0) return;
     setBulkLoading(true);
-    await Promise.all([...selected].map(id =>
+    await runBulk([...selected], id =>
       fetch(`/api/workorders/${id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         credentials: "include", body: JSON.stringify({ assignedTo: bulkEngineer }),
-      })
-    ));
+      }), "Assigned");
     setBulkEngineer(""); await load(); setBulkLoading(false);
   }
 
   async function bulkDelete() {
     if (!confirm(`Delete ${selected.size} work order${selected.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
     setBulkLoading(true);
-    await Promise.all([...selected].map(id =>
-      fetch(`/api/workorders/${id}/edit`, { method: "DELETE", credentials: "include" })
-    ));
+    await runBulk([...selected], id =>
+      fetch(`/api/workorders/${id}/edit`, { method: "DELETE", credentials: "include" }), "Deleted");
     await load(); setBulkLoading(false);
   }
 
@@ -261,6 +285,13 @@ export default function DashboardPage() {
           ⏰ No contact 3d+
         </button>
       </div>
+
+      {/* Bulk result message */}
+      {bulkMsg && (
+        <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-700 dark:text-slate-300">
+          {bulkMsg}
+        </div>
+      )}
 
       {/* Bulk actions */}
       {selected.size > 0 && (

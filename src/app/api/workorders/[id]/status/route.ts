@@ -54,6 +54,9 @@ export async function POST(
   const isNowDone = status === "DONE";
   const autoStartTimer = status === "REPAIRING" && !order.startedAt;
   const autoStopTimer = status === "DONE" && !!order.startedAt && !order.completedAt;
+  // When a previously bounced order is completed again, clear the active bounce
+  // flag so it isn't permanently locked. bounceCount remains as a historical record.
+  const resolveBounce = isNowDone && order.isBounce;
 
   const updated = await prisma.workOrder.update({
     where: { id: params.id },
@@ -64,6 +67,7 @@ export async function POST(
       ...(isNowDone && !order.doneAt ? { doneAt: now } : {}),
       ...(autoStartTimer ? { startedAt: now } : {}),
       ...(autoStopTimer ? { completedAt: now } : {}),
+      ...(resolveBounce ? { isBounce: false } : {}),
     },
   });
 

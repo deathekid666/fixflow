@@ -9,6 +9,9 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search");
+  const page = Math.max(parseInt(searchParams.get("page") ?? "1") || 1, 1);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50") || 50, 200);
+  const skip = (page - 1) * limit;
 
   const shopFilter = user.shopId ? { shopId: user.shopId } : {};
 
@@ -16,6 +19,7 @@ export async function GET(req: Request) {
   const orders = await prisma.workOrder.findMany({
     where: {
       ...shopFilter,
+      deletedAt: null,
       ...(search ? {
         OR: [
           { customerName: { contains: search, mode: "insensitive" } },
@@ -73,7 +77,17 @@ export async function GET(req: Request) {
     }
   }
 
-  return Response.json(Array.from(customerMap.values()));
+  // Customers are grouped in-memory by phone, so paginate the grouped result.
+  const allCustomers = Array.from(customerMap.values());
+  const paged = allCustomers.slice(skip, skip + limit);
+
+  return Response.json(paged, {
+    headers: {
+      "X-Total-Count": String(allCustomers.length),
+      "X-Page": String(page),
+      "X-Limit": String(limit),
+    },
+  });
 }
 
 export async function PATCH(req: Request) {

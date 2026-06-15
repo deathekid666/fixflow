@@ -22,25 +22,40 @@ export async function GET(req: Request) {
     orderBy: { name: "asc" },
   });
 
-  const results = await Promise.all(engineers.map(async (eng) => {
-    const orders = await prisma.workOrder.findMany({
-      where: {
-        ...shopFilter,
-        assignedTo: eng.id,
-        status: { in: ["DONE", "DELIVERED"] },
-        updatedAt: { gte: start, lt: end },
-      },
-      select: { total: true, collected: true },
-    });
+  const engineerIds = engineers.map((e) => e.id);
 
+  // Batch: fetch all qualifying orders for all engineers in one query
+  const allOrders = await prisma.workOrder.findMany({
+    where: {
+      ...shopFilter,
+      assignedTo: { in: engineerIds },
+      status: { in: ["DONE", "DELIVERED"] },
+      updatedAt: { gte: start, lt: end },
+    },
+    select: { assignedTo: true, total: true, collected: true },
+  });
+
+  const ordersByEngineer = new Map<string, { total: number; collected: number }[]>();
+  for (const o of allOrders) {
+    if (!o.assignedTo) continue;
+    const arr = ordersByEngineer.get(o.assignedTo) ?? [];
+    arr.push({ total: o.total, collected: o.collected });
+    ordersByEngineer.set(o.assignedTo, arr);
+  }
+
+  // Batch: fetch all locked snapshots in one query
+  const lockedRows = await prisma.engineerCommission.findMany({
+    where: { shopId: user.shopId!, month, userId: { in: engineerIds } },
+  });
+  const lockedByEngineer = new Map(lockedRows.map((l) => [l.userId, l]));
+
+  const results = engineers.map((eng) => {
+    const orders = ordersByEngineer.get(eng.id) ?? [];
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
     const commissionAmount = (totalRevenue * eng.commissionRate) / 100;
 
-    // Check if a locked snapshot exists
-    const locked = await prisma.engineerCommission.findUnique({
-      where: { userId_shopId_month: { userId: eng.id, shopId: user.shopId!, month } },
-    });
+    const locked = lockedByEngineer.get(eng.id);
 
     return {
       userId: eng.id,
@@ -53,7 +68,7 @@ export async function GET(req: Request) {
       commissionAmount,
       locked: locked ? { totalOrders: locked.totalOrders, totalRevenue: locked.totalRevenue, commissionRate: locked.commissionRate, commissionAmount: locked.commissionAmount } : null,
     };
-  }));
+  });
 
   return Response.json(results);
 }
