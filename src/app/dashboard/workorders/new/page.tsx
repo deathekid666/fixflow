@@ -542,10 +542,15 @@ export default function NewWorkOrderPage() {
 function Field({ label, value, onChange, placeholder, type = "text" }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const target = e.target;
+    setTimeout(() => { target.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300);
+  };
   return (
     <div>
       <label className="text-xs text-slate-500 mb-1 block">{label}</label>
       <input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
+        onFocus={handleFocus}
         className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
     </div>
   );

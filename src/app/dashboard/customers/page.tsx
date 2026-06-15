@@ -32,6 +32,7 @@ export default function CustomersPage() {
   const fmt = (n: number) => formatCurrency(n, currency);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("totalOrders");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -40,19 +41,34 @@ export default function CustomersPage() {
   const [editForm, setEditForm] = useState({ name: "", email: "" });
   const [savingEdit, setSavingEdit] = useState(false);
 
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   async function load() {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    const res = await fetch(`/api/customers?${params}`, { credentials: "include" });
-    const data = await res.json();
-    setCustomers(Array.isArray(data) ? data : []);
-    setLoading(false);
+    setError("");
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/customers?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setCustomers(Array.isArray(data) ? data : []);
+    } catch {
+      setError("Could not load customers. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function openEdit(c: Customer, e: React.MouseEvent) {
@@ -235,8 +251,26 @@ export default function CustomersPage() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
+      {error && (
+        <div style={{
+          textAlign: "center", padding: "60px 20px",
+          background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)",
+          borderRadius: 16, margin: "20px 0",
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+          <p style={{ color: "#f87171", fontWeight: 600, fontSize: 16, margin: "0 0 6px" }}>Something went wrong</p>
+          <p style={{ color: "#94a3b8", fontSize: 13, margin: "0 0 20px" }}>{error}</p>
+          <button onClick={() => { setError(""); load(); }} style={{
+            background: "#2563eb", color: "white", border: "none", borderRadius: 8,
+            padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer",
+          }}>
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* ── Mobile card list ── */}
-      <div className="md:hidden space-y-3">
+      <div className={`md:hidden space-y-3 ${error ? "hidden" : ""}`}>
         {loading && [...Array(4)].map((_, i) => (
           <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 animate-pulse">
             <div className="flex items-start justify-between gap-2">
@@ -355,7 +389,7 @@ export default function CustomersPage() {
       </div>
 
       {/* ── Desktop table ── */}
-      <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      <div className={`hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden ${error ? "md:hidden" : ""}`}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -495,6 +529,23 @@ export default function CustomersPage() {
           </tbody>
         </table>
       </div>
+
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          style={{
+            position: "fixed", bottom: 24, right: 24, zIndex: 50,
+            width: 44, height: 44, borderRadius: "50%",
+            background: "#2563eb", border: "none", color: "white",
+            fontSize: 20, cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "opacity 0.2s",
+          }}
+          aria-label="Back to top"
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 }

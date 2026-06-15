@@ -62,20 +62,27 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState("monthly");
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => { loadAll(); }, [period, dateRange]);
 
   async function loadAll() {
     setLoading(true);
-    const [a, r, c] = await Promise.all([
-      fetch(`/api/analytics?range=${dateRange}`, { credentials: "include" }).then(x => x.json()),
-      fetch(`/api/reports/revenue?period=${period}&range=${dateRange}`, { credentials: "include" }).then(x => x.json()),
-      fetch(`/api/analytics/comparison`, { credentials: "include" }).then(x => x.json()),
-    ]);
-    setAnalytics(a);
-    setRevenue(r);
-    setComparison(c);
-    setLoading(false);
+    setError("");
+    try {
+      const [a, r, c] = await Promise.all([
+        fetch(`/api/analytics?range=${dateRange}`, { credentials: "include" }).then(x => { if (!x.ok) throw new Error(); return x.json(); }),
+        fetch(`/api/reports/revenue?period=${period}&range=${dateRange}`, { credentials: "include" }).then(x => { if (!x.ok) throw new Error(); return x.json(); }),
+        fetch(`/api/analytics/comparison`, { credentials: "include" }).then(x => x.ok ? x.json() : null),
+      ]);
+      setAnalytics(a);
+      setRevenue(r);
+      setComparison(c);
+    } catch {
+      setError("Could not load analytics. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function exportCSV(type: string) {
@@ -110,8 +117,45 @@ export default function AnalyticsPage() {
   }
 
   if (loading) return (
-    <div className="p-6 flex items-center justify-center h-64">
-      <p className="text-slate-500 text-sm">Loading analytics...</p>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <style>{`@keyframes skeleton-pulse { 0% { opacity: 0.4 } 50% { opacity: 0.8 } 100% { opacity: 0.4 } }`}</style>
+      <div className="h-7 w-40 bg-slate-200 dark:bg-slate-800 rounded" style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }} />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2"
+            style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }}>
+            <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+          </div>
+        ))}
+      </div>
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="border border-slate-200 dark:border-slate-800 rounded-xl p-5 h-64"
+          style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }}>
+          <div className="h-4 w-40 bg-slate-200 dark:bg-slate-700 rounded mb-4" />
+          <div className="h-44 bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+        </div>
+      ))}
+    </div>
+  );
+  if (error) return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div style={{
+        textAlign: "center", padding: "60px 20px",
+        background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)",
+        borderRadius: 16, margin: "20px 0",
+      }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+        <p style={{ color: "#f87171", fontWeight: 600, fontSize: 16, margin: "0 0 6px" }}>Something went wrong</p>
+        <p style={{ color: "#94a3b8", fontSize: 13, margin: "0 0 20px" }}>{error}</p>
+        <button onClick={() => loadAll()} style={{
+          background: "#2563eb", color: "white", border: "none", borderRadius: 8,
+          padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer",
+        }}>
+          Try again
+        </button>
+      </div>
     </div>
   );
   if (!analytics || !revenue) return null;
@@ -297,7 +341,8 @@ export default function AnalyticsPage() {
         {revenue.data.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-8">No data yet.</p>
         ) : (
-          <div id="chart-revenue">
+          <div id="chart-revenue" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <div style={{ minWidth: 500 }}>
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={revenue.data}>
                 <defs>
@@ -329,6 +374,7 @@ export default function AnalyticsPage() {
                 <Area type="monotone" dataKey="profit" name="Profit" stroke="#34d399" fill="url(#profitGrad)" strokeWidth={2} strokeDasharray="5 3" />
               </AreaChart>
             </ResponsiveContainer>
+            </div>
           </div>
         )}
       </div>
@@ -346,7 +392,8 @@ export default function AnalyticsPage() {
           </div>
           <p className="text-xs text-slate-500 mb-4">Number of orders per period</p>
           {revenue.data.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">No data yet.</p> : (
-            <div id="chart-orders">
+            <div id="chart-orders" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <div style={{ minWidth: 400 }}>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={revenue.data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -356,6 +403,7 @@ export default function AnalyticsPage() {
                   <Line type="monotone" dataKey="count" name="Orders" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: "#8b5cf6", r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
@@ -371,7 +419,7 @@ export default function AnalyticsPage() {
           </div>
           <p className="text-xs text-slate-500 mb-4">Current distribution</p>
           {pieData.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">No data.</p> : (
-            <div id="chart-status" className="flex items-center gap-4">
+            <div id="chart-status" className="flex flex-col sm:flex-row items-center gap-4">
               <ResponsiveContainer width="60%" height={180}>
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" paddingAngle={3}>
