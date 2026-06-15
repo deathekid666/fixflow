@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { PageHeader } from "@/components/PageHeader";
 
 type SparePart = {
   id: string; name: string; partNumber: string;
@@ -203,18 +204,18 @@ export default function SparePartsPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Spare Parts</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage your parts catalog and stock</p>
-        </div>
-        {user?.role === "ADMIN" && (
-          <button onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-            + Add Part
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Spare Parts"
+        subtitle="Manage your parts catalog and stock"
+        actions={
+          user?.role === "ADMIN" ? (
+            <button onClick={() => setShowForm(!showForm)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
+              + Add Part
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Reorder Reminder */}
       {alertData && !alertDismissed && (

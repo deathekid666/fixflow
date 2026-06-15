@@ -21,3 +21,25 @@ body {
 .fade-in-fast {
   animation: fadeInUp 0.15s ease-out both;
 }
+
+.page-enter {
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+}
+
+.row-hover {
+  transition: background 0.15s ease;
+}
+.row-hover:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+:is(.dark) .row-hover:hover {
+  background: rgba(255, 255, 255, 0.04);
+}

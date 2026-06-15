@@ -7,6 +7,8 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import TrialBanner from "@/components/TrialBanner";
+import { CommandPalette } from "@/components/CommandPalette";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type Notification = {
   id: string;
@@ -25,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [pendingApptCount, setPendingApptCount] = useState(0);
 
   useEffect(() => { refresh(); }, []);
@@ -140,41 +143,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100" style={{ fontFamily }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" />
+      <CommandPalette />
 
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside className={`
+      <aside
+        className={`
         fixed lg:static inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50
-        w-56 flex-shrink-0 bg-white dark:bg-slate-900
+        flex-shrink-0 bg-white dark:bg-slate-900
         border-r border-slate-200 dark:border-slate-800 rtl:border-r-0 rtl:border-l
-        flex flex-col transform transition-transform duration-200 ease-in-out
+        flex flex-col transform transition-all duration-200 ease-in-out
         ${slideClass}
-      `}>
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity">
-            <div className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">FixFlow</div>
-            <div className="text-xs text-slate-500 mt-0.5">{user.name}</div>
+      `}
+        style={{ width: collapsed ? 56 : 224 }}
+      >
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between overflow-hidden">
+          <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity min-w-0">
+            <div className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{collapsed ? "F" : "FixFlow"}</div>
+            {!collapsed && <div className="text-xs text-slate-500 mt-0.5 truncate">{user.name}</div>}
           </button>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none">✕</button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
           {nav.map((item) => {
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${collapsed ? "justify-center" : ""} ${
                   active
-                    ? "bg-blue-600 text-white"
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}>
-                <span>{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
-                {item.href === "/dashboard/appointments" && pendingApptCount > 0 && (
-                  <span className={`text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 ${active ? "bg-white/25 text-white" : "bg-yellow-500 text-white"}`}>
+                }`}
+                style={active ? { background: "rgba(37,99,235,0.15)", borderLeft: "3px solid #2563eb", paddingLeft: collapsed ? 9 : 9 } : undefined}>
+                <span className="flex-shrink-0">{item.icon}</span>
+                {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                {!collapsed && item.href === "/dashboard/appointments" && pendingApptCount > 0 && (
+                  <span className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 bg-yellow-500 text-white">
                     {pendingApptCount > 9 ? "9+" : pendingApptCount}
                   </span>
                 )}
@@ -183,20 +192,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1 overflow-hidden">
           <button onClick={() => setShowNotifications(!showNotifications)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <div className="flex items-center gap-3"><span>🔔</span>{t("notifications")}</div>
-            {unread > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>}
+            title={collapsed ? t("notifications") : undefined}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
+            <div className="flex items-center gap-3"><span>🔔</span>{!collapsed && t("notifications")}</div>
+            {!collapsed && unread > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>}
           </button>
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <span>🚪</span>{t("logout")}
+            title={collapsed ? t("logout") : undefined}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
+            <span>🚪</span>{!collapsed && t("logout")}
+          </button>
+          <button onClick={() => setCollapsed(c => !c)}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`hidden lg:flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
+            <span>{collapsed ? "→" : "←"}</span>{!collapsed && <span className="flex-1 text-left">Collapse</span>}
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Desktop header */}
+        <header className="hidden lg:flex items-center justify-end gap-2 px-6 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+          <button
+            onClick={() => { const e = new KeyboardEvent("keydown", { key: "k", ctrlKey: true }); window.dispatchEvent(e); }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Command palette">
+            🔍 Search
+            <kbd className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">Ctrl K</kbd>
+          </button>
+          <NotificationBell />
+        </header>
+
         {/* Mobile header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <button onClick={() => setSidebarOpen(true)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1">
@@ -217,7 +245,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <TrialBanner />
 
-        <main className="flex-1 overflow-auto relative pb-16 lg:pb-0">
+        <main key={pathname} className="page-enter flex-1 overflow-auto relative pb-16 lg:pb-0">
           {showNotifications && (
             <div className="absolute top-0 right-0 rtl:right-auto rtl:left-0 w-full sm:w-96 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 rtl:border-l-0 rtl:border-r z-50 flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">

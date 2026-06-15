@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loyaltyTier } from "@/lib/loyaltyTier";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { PageHeader } from "@/components/PageHeader";
 
 type Customer = {
   name: string; phone: string; email: string;
@@ -153,10 +154,7 @@ export default function CustomersPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Customers</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Customer profiles and repair history</p>
-      </div>
+      <PageHeader title="Customers" subtitle="Customer profiles and repair history" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -307,7 +305,7 @@ export default function CustomersPage() {
           return (
             <div key={c.phone}
               onClick={() => !isEditing && router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`)}
-              className="fade-in bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-50 dark:active:bg-slate-800 cursor-pointer"
+              className="fade-in card-hover bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 active:bg-slate-50 dark:active:bg-slate-800 cursor-pointer"
               style={{ animationDelay: `${i * 40}ms` }}>
               {/* Name + badge */}
               <div className="flex items-start justify-between gap-2">

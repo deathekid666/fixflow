@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { PageHeader } from "@/components/PageHeader";
 
 type RevenueData = {
   data: { label: string; total: number; collected: number; count: number; expenses: number; profit: number }[];
@@ -184,10 +185,7 @@ export default function AnalyticsPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Analytics</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Revenue, expenses, profit and insights</p>
-        </div>
+        <PageHeader title="Analytics" subtitle="Revenue, expenses, profit and insights" />
         <div className="flex gap-2 flex-wrap">
           {["7d", "30d", "90d", "all"].map(r => (
             <button key={r} onClick={() => setDateRange(r)}

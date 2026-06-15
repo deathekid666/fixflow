@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import UpgradeModal from "@/components/UpgradeModal";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusBadge } from "@/components/StatusBadge";
 
 type WorkOrder = {
   id: string; orderNumber: string; customerName: string; customerPhone: string;
@@ -18,12 +21,6 @@ type WorkOrder = {
 
 type Engineer = { id: string; name: string };
 
-const STATUS_COLORS: Record<string, string> = {
-  RECEIVED: "bg-blue-500/20 text-blue-600 dark:text-blue-400", DIAGNOSING: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
-  REPAIRING: "bg-orange-500/20 text-orange-600 dark:text-orange-400", DONE: "bg-green-500/20 text-green-600 dark:text-green-400",
-  DELIVERED: "bg-slate-500/20 text-slate-500", CANCELLED: "bg-red-500/20 text-red-600 dark:text-red-400",
-};
-
 const FAULT_COLORS: Record<string, string> = {
   LOW: "text-green-600 dark:text-green-400", MEDIUM: "text-yellow-600 dark:text-yellow-400", HIGH: "text-red-600 dark:text-red-400",
 };
@@ -35,6 +32,17 @@ function orderLabel(o: WorkOrder) {
   return o.orderNumber.startsWith("wo-") ? o.orderNumber.toUpperCase() : o.orderNumber.slice(0, 8).toUpperCase();
 }
 
+function timeAgo(date: string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 function SlaBadge({ o }: { o: WorkOrder }) {
   if (!o.slaDeadline || ["DELIVERED", "CANCELLED"].includes(o.status)) return null;
   const diffMs = new Date(o.slaDeadline).getTime() - Date.now();
@@ -44,11 +52,34 @@ function SlaBadge({ o }: { o: WorkOrder }) {
   return null;
 }
 
+function SortableTh({ label, sortField, sortKey, sortDir, onSort }: {
+  label: string; sortField: string; sortKey: string; sortDir: "asc" | "desc"; onSort: (k: string) => void;
+}) {
+  const indicator = sortKey === sortField ? (sortDir === "asc" ? "↑" : "↓") : "↕";
+  return (
+    <th onClick={() => onSort(sortField)}
+      className="text-left px-4 py-3 text-xs text-slate-500 font-medium hover:text-slate-700 dark:hover:text-slate-300"
+      style={{ cursor: "pointer", userSelect: "none" }}>
+      {label} <span className="text-slate-400">{indicator}</span>
+    </th>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const [orders, setOrders] = useState<WorkOrder[]>([]);
+  const [todayAppts, setTodayAppts] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [sortKey, setSortKey] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [visibleCols, setVisibleCols] = useState({
+    orderNumber: true, customer: true, device: true, fault: true, status: true,
+    assignee: true, total: true, received: true,
+  });
+  const [showColPicker, setShowColPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -109,6 +140,58 @@ export default function DashboardPage() {
   async function loadUnread() {
     const res = await fetch("/api/messages/unread", { credentials: "include" });
     if (res.ok) setUnreadCounts(await res.json());
+  }
+
+  // Today's appointments + recent activity widgets
+  useEffect(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+    fetch(`/api/appointments?start=${start}&end=${end}`, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setTodayAppts(d.slice(0, 5)); })
+      .catch(() => {});
+    fetch("/api/activity?limit=10", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setRecentActivity(d); })
+      .catch(() => {});
+  }, []);
+
+  // Keyboard shortcuts: N = new order, / = focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
+      if (e.key === "n" || e.key === "N") {
+        router.push("/dashboard/workorders/new");
+      }
+      if (e.key === "/") {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>('input[placeholder*="Search"]')?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [router]);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  function sortValue(o: WorkOrder, key: string): string | number {
+    switch (key) {
+      case "orderNumber": return orderLabel(o);
+      case "customer": return o.customerName;
+      case "status": return o.status;
+      case "assignee": return o.assignee?.name ?? "";
+      case "total": return o.total;
+      case "createdAt": return new Date(o.createdAt).getTime();
+      default: {
+        const v = (o as any)[key];
+        return v ?? "";
+      }
+    }
   }
 
   async function load() {
@@ -207,6 +290,15 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
+  const sortedOrders = [...orders].sort((a, b) => {
+    const valA = sortValue(a, sortKey);
+    const valB = sortValue(b, sortKey);
+    let cmp: number;
+    if (typeof valA === "number" && typeof valB === "number") cmp = valA - valB;
+    else cmp = String(valA).localeCompare(String(valB));
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   const active = orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status));
   const totalRevenue = orders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + o.total, 0);
   const pendingPayment = orders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + (o.total - o.collected), 0);
@@ -278,22 +370,22 @@ export default function DashboardPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Work Orders</h1>
-          <p className="text-sm text-slate-500 mt-0.5 hidden sm:block">Manage repair work orders</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => load()} className="p-2 md:px-3 md:py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors" title="Refresh">
-            <span className="hidden md:inline">🔄 Refresh</span>
-            <span className="md:hidden">🔄</span>
-          </button>
-          <Link href="/dashboard/workorders/new" className="px-3 py-2 md:px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium whitespace-nowrap">
-            <span className="hidden sm:inline">+ New Work Order</span>
-            <span className="sm:hidden">+ New</span>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Work Orders"
+        subtitle="Manage all repair jobs"
+        actions={
+          <>
+            <button onClick={() => load()} className="p-2 md:px-3 md:py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors" title="Refresh">
+              <span className="hidden md:inline">🔄 Refresh</span>
+              <span className="md:hidden">🔄</span>
+            </button>
+            <Link href="/dashboard/workorders/new" className="px-3 py-2 md:px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium whitespace-nowrap">
+              <span className="hidden sm:inline">+ New Work Order</span>
+              <span className="sm:hidden">+ New</span>
+            </Link>
+          </>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
@@ -319,6 +411,55 @@ export default function DashboardPage() {
             <button key={s.label} onClick={() => setStatusFilter(s.filter as string)} className={cardClass}>{inner}</button>
           );
         })}
+      </div>
+
+      {/* Today's appointments + Recent activity widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">📅 Today&apos;s Appointments</h2>
+            <Link href="/dashboard/appointments" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500">View all →</Link>
+          </div>
+          {todayAppts.length === 0 ? (
+            <p className="text-sm text-slate-400 py-3 text-center">No appointments today</p>
+          ) : (
+            <div className="space-y-2">
+              {todayAppts.map(a => (
+                <div key={a.id} className="flex items-center gap-3 text-sm">
+                  <span className="font-mono text-xs text-slate-500 w-12 flex-shrink-0">
+                    {new Date(a.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  <span className="text-slate-900 dark:text-white font-medium truncate">{a.customerName}</span>
+                  <span className="text-xs text-slate-500 truncate">{a.deviceBrand} {a.deviceModel}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">🕑 Recent Activity</h2>
+          {recentActivity.length === 0 ? (
+            <p className="text-sm text-slate-400 py-3 text-center">No recent activity</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {recentActivity.map(a => (
+                <div key={a.id} className="flex items-start gap-2 text-xs">
+                  <span className="flex-shrink-0">📝</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-slate-700 dark:text-slate-300 truncate">
+                      {a.description || a.action}
+                      <span className="text-slate-400 font-mono ml-1">
+                        {String(a.orderNumber).startsWith("wo-") ? String(a.orderNumber).toUpperCase() : String(a.orderNumber).slice(0, 8).toUpperCase()}
+                      </span>
+                    </p>
+                    <p className="text-slate-400">{timeAgo(a.createdAt)}{a.userName ? ` · ${a.userName}` : ""}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search */}
@@ -428,9 +569,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {orders.map((o, i) => (
+        {sortedOrders.map((o, i) => (
           <div key={o.id}
-            className={`fade-in bg-white dark:bg-slate-900 border rounded-xl p-4 space-y-3 transition-colors ${selected.has(o.id) ? "border-blue-600/50 bg-blue-50 dark:bg-blue-950/20" : "border-slate-200 dark:border-slate-800"}`}
+            className={`fade-in card-hover bg-white dark:bg-slate-900 border rounded-xl p-4 space-y-3 ${selected.has(o.id) ? "border-blue-600/50 bg-blue-50 dark:bg-blue-950/20" : "border-slate-200 dark:border-slate-800"}`}
             style={{ animationDelay: `${i * 35}ms` }}>
             {/* Row 1: checkbox + order # + badges + status */}
             <div className="flex items-start justify-between gap-2">
@@ -449,7 +590,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${STATUS_COLORS[o.status]}`}>{o.status}</span>
+              <span className="flex-shrink-0"><StatusBadge status={o.status} /></span>
             </div>
 
             {/* Row 2: customer */}
@@ -486,6 +627,30 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Desktop table ── */}
+      <div className="hidden md:flex items-center justify-end">
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowColPicker(o => !o)}
+            className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            Columns ▾
+          </button>
+          {showColPicker && (
+            <>
+              <div onClick={() => setShowColPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 20 }} />
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                style={{ position: "absolute", top: "100%", right: 0, zIndex: 30, borderRadius: 10, padding: 8, minWidth: 170, marginTop: 4, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
+                {Object.keys(visibleCols).map(col => (
+                  <label key={col} className="text-slate-700 dark:text-slate-300" style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>
+                    <input type="checkbox"
+                      checked={visibleCols[col as keyof typeof visibleCols]}
+                      onChange={() => setVisibleCols(v => ({ ...v, [col]: !v[col as keyof typeof v] }))} />
+                    {col.charAt(0).toUpperCase() + col.slice(1).replace(/([A-Z])/g, " $1")}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
       <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
@@ -494,9 +659,15 @@ export default function DashboardPage() {
                 <input type="checkbox" checked={orders.length > 0 && selected.size === orders.length}
                   onChange={toggleSelectAll} className="rounded border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-pointer" />
               </th>
-              {["Order #", "Customer", "Device", "Fault", "Status", "Assigned To", "Total", "Date", ""].map((h) => (
-                <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
-              ))}
+              {visibleCols.orderNumber && <SortableTh label="Order #" sortField="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.customer && <SortableTh label="Customer" sortField="customer" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.device && <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Device</th>}
+              {visibleCols.fault && <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Fault</th>}
+              {visibleCols.status && <SortableTh label="Status" sortField="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.assignee && <SortableTh label="Assigned To" sortField="assignee" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.total && <SortableTh label="Total" sortField="total" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.received && <SortableTh label="Date" sortField="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium"></th>
             </tr>
           </thead>
           <tbody>
@@ -515,48 +686,64 @@ export default function DashboardPage() {
               </tr>
             ))}
             {!loading && orders.length === 0 && emptyState(10)}
-            {orders.map((o, i) => (
-              <tr key={o.id} className={`fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${selected.has(o.id) ? "bg-blue-50 dark:bg-blue-950/20" : ""}`}
+            {sortedOrders.map((o, i) => (
+              <tr key={o.id} className={`fade-in row-hover border-b border-slate-200/50 dark:border-slate-800/50 ${selected.has(o.id) ? "bg-blue-50 dark:bg-blue-950/20" : ""}`}
                 style={{ animationDelay: `${i * 30}ms` }}>
                 <td className="px-4 py-3">
                   <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleSelect(o.id)}
                     className="rounded border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-pointer" />
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
-                    {o.isUnderWarranty && <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
-                    {o.isOverdue && <span className="text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
-                    <SlaBadge o={o} />
-                    {unreadCounts[o.id] > 0 && (
-                      <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                        💬 {unreadCounts[o.id]}
-                      </span>
+                {visibleCols.orderNumber && (
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-mono text-xs text-slate-400">{orderLabel(o)}</span>
+                      {o.isUnderWarranty && <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">W</span>}
+                      {o.isOverdue && <span className="text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">⚠</span>}
+                      <SlaBadge o={o} />
+                      {unreadCounts[o.id] > 0 && (
+                        <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                          💬 {unreadCounts[o.id]}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                )}
+                {visibleCols.customer && (
+                  <td className="px-4 py-3">
+                    <div className="text-slate-900 dark:text-white font-medium">{o.customerName}</div>
+                    <div className="text-xs text-slate-500">{o.customerPhone}</div>
+                  </td>
+                )}
+                {visibleCols.device && (
+                  <td className="px-4 py-3">
+                    <div className="text-slate-900 dark:text-white">{o.deviceBrand}</div>
+                    <div className="text-xs text-slate-500">{o.deviceModel}</div>
+                  </td>
+                )}
+                {visibleCols.fault && (
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-medium ${FAULT_COLORS[o.faultLevel]}`}>{o.faultLevel}</span>
+                  </td>
+                )}
+                {visibleCols.status && (
+                  <td className="px-4 py-3">
+                    <StatusBadge status={o.status} />
+                  </td>
+                )}
+                {visibleCols.assignee && (
+                  <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
+                )}
+                {visibleCols.total && (
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs font-medium">
+                    {o.total > 0 ? formatCurrency(o.total, currency, 0) : "—"}
+                    {o.total > o.collected && o.status === "DELIVERED" && (
+                      <span className="text-red-600 dark:text-red-400 ml-1 text-xs">({(o.total - o.collected).toFixed(0)} due)</span>
                     )}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="text-slate-900 dark:text-white font-medium">{o.customerName}</div>
-                  <div className="text-xs text-slate-500">{o.customerPhone}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="text-slate-900 dark:text-white">{o.deviceBrand}</div>
-                  <div className="text-xs text-slate-500">{o.deviceModel}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-medium ${FAULT_COLORS[o.faultLevel]}`}>{o.faultLevel}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[o.status]}`}>{o.status}</span>
-                </td>
-                <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs font-medium">
-                  {o.total > 0 ? formatCurrency(o.total, currency, 0) : "—"}
-                  {o.total > o.collected && o.status === "DELIVERED" && (
-                    <span className="text-red-600 dark:text-red-400 ml-1 text-xs">({(o.total - o.collected).toFixed(0)} due)</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-slate-500 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
+                  </td>
+                )}
+                {visibleCols.received && (
+                  <td className="px-4 py-3 text-slate-500 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
+                )}
                 <td className="px-4 py-3">
                   <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">View →</Link>
                 </td>
@@ -579,6 +766,13 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Keyboard shortcuts hint */}
+      <p className="hidden md:block text-center text-slate-400 dark:text-slate-600" style={{ fontSize: 11, marginTop: 8 }}>
+        Press <kbd className="bg-slate-100 dark:bg-slate-800" style={{ padding: "1px 5px", borderRadius: 4, fontSize: 10 }}>N</kbd> for new order ·{" "}
+        <kbd className="bg-slate-100 dark:bg-slate-800" style={{ padding: "1px 5px", borderRadius: 4, fontSize: 10 }}>/</kbd> to search ·{" "}
+        <kbd className="bg-slate-100 dark:bg-slate-800" style={{ padding: "1px 5px", borderRadius: 4, fontSize: 10 }}>Ctrl+K</kbd> command palette
+      </p>
     </div>
   );
 }
