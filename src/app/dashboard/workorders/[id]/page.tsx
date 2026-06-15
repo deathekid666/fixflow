@@ -116,6 +116,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [slaCountdown, setSlaCountdown] = useState("");
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [bounceTouched, setBounceTouched] = useState(false);
 
   useEffect(() => {
     if (!order?.slaDeadline || ["DELIVERED", "CANCELLED"].includes(order.status)) return;
@@ -334,7 +336,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   }
 
   async function submitBounce() {
-    if (!bounceReason || !bounceScenario) return;
+    if (!bounceReason || !bounceScenario) { setBounceTouched(true); return; }
     setSubmittingBounce(true);
     await fetch(`/api/workorders/${params.id}/bounce`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -437,22 +439,22 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             </div>
           )}
           {order.status === "RECEIVED" && (
-            <button onClick={() => changeStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
+            <button onClick={() => setPendingStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
               → Start Diagnosis
             </button>
           )}
           {order.status === "DIAGNOSING" && (
-            <button onClick={() => changeStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
+            <button onClick={() => setPendingStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
               → Start Repair
             </button>
           )}
           {order.status === "REPAIRING" && (
-            <button onClick={() => changeStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
+            <button onClick={() => setPendingStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
               → Mark Done
             </button>
           )}
           {order.status === "DONE" && (
-            <button onClick={() => changeStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
+            <button onClick={() => setPendingStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
               → Mark Delivered
             </button>
           )}
@@ -474,14 +476,18 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 <option value="">Select...</option>
                 {BOUNCE_SCENARIOS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
+              {bounceTouched && !bounceScenario && <p style={{ color: "#ef4444", fontSize: 11 }}>Required</p>}
             </div>
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Reason</label>
               <input className={INPUT} placeholder="Describe..." value={bounceReason} onChange={(e) => setBounceReason(e.target.value)} />
+              {bounceTouched && !bounceReason && <p style={{ color: "#ef4444", fontSize: 11 }}>Required</p>}
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={submitBounce} disabled={submittingBounce || !bounceReason || !bounceScenario} className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs rounded-lg">{submittingBounce ? "..." : "Submit"}</button>
+            <button onClick={submitBounce} disabled={submittingBounce}
+              style={(!bounceReason || !bounceScenario) ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg">{submittingBounce ? "..." : "Submit"}</button>
             <button onClick={() => setShowBounceForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
           </div>
         </div>
@@ -1262,6 +1268,28 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       {showRating && (
         <RatingModal workOrderId={order.id} orderNumber={order.orderNumber} customerName={order.customerName}
           onClose={() => setShowRating(false)} onSubmitted={() => { setShowRating(false); load(); }} />
+      )}
+
+      {/* Status change confirmation modal */}
+      {pendingStatus !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setPendingStatus(null)}>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Confirm status change</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Change status to {pendingStatus}? This will update the TAT timer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setPendingStatus(null)}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => { const s = pendingStatus; setPendingStatus(null); if (s) changeStatus(s); }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

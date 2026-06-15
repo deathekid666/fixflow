@@ -338,8 +338,8 @@ export default function AppointmentsPage() {
               })}
             </div>
 
-            {/* Scrollable grid */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto">
+            {/* Scrollable grid — viewport-responsive height so it never collapses */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto" style={{ height: "calc(100vh - 200px)", minHeight: 400 }}>
               <div className="flex" style={{ height: HOURS.length * HOUR_H }}>
                 {/* Time labels */}
                 <div className="w-14 flex-shrink-0 relative">
