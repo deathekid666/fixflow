@@ -15,7 +15,7 @@ type TrackData = {
   faultDescription: string;
   repairType: string | null;
   assignee: { name: string } | null;
-  shop: { name: string; phone: string | null; address: string | null } | null;
+  shop: { name: string; phone: string | null; address: string | null; logoUrl: string | null } | null;
   logs: { action: string; description: string; createdAt: string }[];
   rating: { rating: number; comment: string | null } | null;
   attachments: { id: string; path: string; filename: string; createdAt: string }[];
@@ -24,70 +24,63 @@ type TrackData = {
 const STATUS_STEPS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED"];
 
 const STATUS_CONFIG: Record<string, { label: string; icon: string; color: string; bg: string; message: string }> = {
-  RECEIVED: { label: "Received", icon: "📥", color: "#2563eb", bg: "#dbeafe", message: "We've received your device and will begin diagnosis shortly." },
-  DIAGNOSING: { label: "Diagnosing", icon: "🔍", color: "#d97706", bg: "#fef3c7", message: "Our technician is diagnosing your device to identify the issue." },
-  REPAIRING: { label: "In Repair", icon: "🔧", color: "#ea580c", bg: "#ffedd5", message: "Your device is currently being repaired by our technician." },
-  DONE: { label: "Ready for Pickup", icon: "✅", color: "#16a34a", bg: "#dcfce7", message: "Great news! Your device is ready. Please come pick it up." },
-  DELIVERED: { label: "Delivered", icon: "🎉", color: "#475569", bg: "#f1f5f9", message: "Your device has been delivered. Thank you for choosing us!" },
-  CANCELLED: { label: "Cancelled", icon: "❌", color: "#dc2626", bg: "#fee2e2", message: "This repair order has been cancelled. Please contact us for more information." },
+  RECEIVED:  { label: "Received",         icon: "📥", color: "#2563eb", bg: "#dbeafe", message: "We've received your device and will begin diagnosis shortly." },
+  DIAGNOSING:{ label: "Diagnosing",       icon: "🔍", color: "#d97706", bg: "#fef3c7", message: "Our technician is diagnosing your device to identify the issue." },
+  REPAIRING: { label: "In Repair",        icon: "🔧", color: "#ea580c", bg: "#ffedd5", message: "Your device is currently being repaired by our technician." },
+  DONE:      { label: "Ready for Pickup", icon: "✅", color: "#16a34a", bg: "#dcfce7", message: "Great news! Your device is ready. Please come pick it up." },
+  DELIVERED: { label: "Delivered",        icon: "🎉", color: "#475569", bg: "#f1f5f9", message: "Your device has been delivered. Thank you for choosing us!" },
+  CANCELLED: { label: "Cancelled",        icon: "❌", color: "#dc2626", bg: "#fee2e2", message: "This repair order has been cancelled. Please contact us for more information." },
 };
 
 export default function TrackPage({ params }: { params: { orderNumber: string } }) {
-  const [data, setData] = useState<TrackData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [data, setData]               = useState<TrackData | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState("");
   const [hoveredStar, setHoveredStar] = useState(0);
   const [selectedStar, setSelectedStar] = useState(0);
-  const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [comment, setComment]         = useState("");
+  const [submitting, setSubmitting]   = useState(false);
+  const [submitted, setSubmitted]     = useState(false);
+  const [ratingError, setRatingError] = useState("");
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<{ id: string; message: string; senderType: string; createdAt: string }[]>([]);
-  const [newMsg, setNewMsg] = useState("");
-  const [sendingMsg, setSendingMsg] = useState(false);
+  const [newMsg, setNewMsg]           = useState("");
+  const [sendingMsg, setSendingMsg]   = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const prevMsgCountRef = useRef(0);
+  const prevMsgCountRef  = useRef(0);
 
+  // Initial load: fetch status then messages in sequence
   useEffect(() => {
     fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
       .then(r => r.json())
       .then(d => {
-        if (d.error) setError(d.error);
-        else setData(d);
+        if (d.error) { setError(d.error); return; }
+        setData(d);
+        return fetch(`/api/workorders/${d.id}/messages`)
+          .then(r => r.json())
+          .then(msgs => { if (Array.isArray(msgs)) setChatMessages(msgs); });
       })
       .finally(() => setLoading(false));
   }, []);
 
-  // Poll status every 3 seconds
-  useEffect(() => {
-    const id = setInterval(() => {
-      fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
-        .then(r => r.json())
-        .then(d => { if (!d.error) setData(d); });
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Load messages once data.id is known
+  // Single combined poll: status + messages every 3 seconds
   useEffect(() => {
     if (!data?.id) return;
-    fetch(`/api/workorders/${data.id}/messages`)
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setChatMessages(d); });
-  }, [data?.id]);
-
-  // Poll messages every 3 seconds
-  useEffect(() => {
-    if (!data?.id) return;
+    const orderId      = data.id;
+    const orderNumber  = params.orderNumber.toLowerCase();
     const id = setInterval(() => {
-      fetch(`/api/workorders/${data.id}/messages`)
-        .then(r => r.json())
-        .then(d => { if (Array.isArray(d)) setChatMessages(d); });
+      Promise.all([
+        fetch(`/api/track?orderNumber=${orderNumber}`).then(r => r.json()),
+        fetch(`/api/workorders/${orderId}/messages`).then(r => r.json()),
+      ]).then(([statusData, msgs]) => {
+        if (!statusData.error) setData(statusData);
+        if (Array.isArray(msgs)) setChatMessages(msgs);
+      }).catch(() => { /* ignore transient poll errors */ });
     }, 3000);
     return () => clearInterval(id);
   }, [data?.id]);
 
-  // Auto-scroll chat container only when new messages arrive
+  // Auto-scroll chat only when new messages arrive
   useEffect(() => {
     if (chatMessages.length > prevMsgCountRef.current) {
       const el = chatContainerRef.current;
@@ -99,21 +92,27 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   async function sendChat() {
     if (!newMsg.trim() || !data?.id) return;
     setSendingMsg(true);
-    await fetch(`/api/workorders/${data.id}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: newMsg }),
-    });
-    setNewMsg("");
-    const res = await fetch(`/api/workorders/${data.id}/messages`);
-    const msgs = await res.json();
-    if (Array.isArray(msgs)) setChatMessages(msgs);
-    setSendingMsg(false);
+    try {
+      await fetch(`/api/workorders/${data.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: newMsg }),
+      });
+      setNewMsg("");
+      const res  = await fetch(`/api/workorders/${data.id}/messages`);
+      const msgs = await res.json();
+      if (Array.isArray(msgs)) setChatMessages(msgs);
+    } catch {
+      // send failed — input preserved so the customer can retry
+    } finally {
+      setSendingMsg(false);
+    }
   }
 
   async function submitRating() {
     if (!selectedStar || !data) return;
     setSubmitting(true);
+    setRatingError("");
     try {
       await fetch("/api/ratings", {
         method: "POST",
@@ -126,13 +125,25 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
       });
       setSubmitted(true);
       setData(prev => prev ? { ...prev, rating: { rating: selectedStar, comment: comment.trim() || null } } : prev);
-    } catch { /* ignore */ }
-    setSubmitting(false);
+    } catch {
+      setRatingError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const currentStep = data ? STATUS_STEPS.indexOf(data.status) : -1;
-  const config = data ? (STATUS_CONFIG[data.status] ?? STATUS_CONFIG.RECEIVED) : null;
-  const progressPct = data?.status === "CANCELLED" ? 0 : Math.max(0, Math.min(100, ((currentStep + 1) / STATUS_STEPS.length) * 100));
+  const currentStep  = data ? STATUS_STEPS.indexOf(data.status) : -1;
+  const config       = data ? (STATUS_CONFIG[data.status] ?? STATUS_CONFIG.RECEIVED) : null;
+  const progressPct  = data?.status === "CANCELLED" ? 0 : Math.max(0, Math.min(100, ((currentStep + 1) / STATUS_STEPS.length) * 100));
+
+  // Deduplicate attachments by id, keep only image paths
+  const photoAttachments = data?.attachments
+    ? [...new Map(
+        data.attachments
+          .filter(a => a.path.startsWith("data:image") || a.path.startsWith("https://"))
+          .map(a => [a.id, a])
+      ).values()]
+    : [];
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", fontFamily: "'Segoe UI', Arial, sans-serif", padding: "20px 16px 40px" }}>
@@ -141,8 +152,8 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.05)", borderRadius: 99, padding: "8px 20px", marginBottom: 12 }}>
-            {(data?.shop as any)?.logoUrl ? (
-              <img src={(data?.shop as any)?.logoUrl} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
+            {data?.shop?.logoUrl ? (
+              <img src={data.shop.logoUrl} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
             ) : (
               <span style={{ fontSize: 18 }}>🔧</span>
             )}
@@ -169,7 +180,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
         {data && config && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {/* Ready for pickup banner */}
+            {/* Ready for pickup banner — only when status is exactly DONE */}
             {data.status === "DONE" && (
               <div style={{ background: "linear-gradient(135deg, #14532d 0%, #166534 100%)", border: "2px solid #22c55e", borderRadius: 20, padding: "24px 20px", textAlign: "center", boxShadow: "0 0 40px rgba(34,197,94,0.25)" }}>
                 <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
@@ -244,8 +255,8 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {STATUS_STEPS.map((step, i) => {
                     const stepConfig = STATUS_CONFIG[step];
-                    const done = i < currentStep;
-                    const active = i === currentStep;
+                    const done    = i < currentStep;
+                    const active  = i === currentStep;
                     const pending = i > currentStep;
                     return (
                       <div key={step} style={{ display: "flex", gap: 14, position: "relative" }}>
@@ -267,11 +278,11 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
             )}
 
             {/* Repair Photos */}
-            {data.attachments && data.attachments.filter(a => a.path.startsWith("data:image") || a.path.startsWith("https://")).length > 0 && (
+            {photoAttachments.length > 0 && (
               <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20 }}>
                 <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Repair Photos</p>
                 <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
-                  {data.attachments.filter(a => a.path.startsWith("data:image") || a.path.startsWith("https://")).map(a => (
+                  {photoAttachments.map(a => (
                     <img
                       key={a.id}
                       src={a.path}
@@ -294,7 +305,6 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                 <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "white", textAlign: "center" }}>How was your experience?</p>
                 <p style={{ margin: "0 0 16px", fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Your feedback helps us improve.</p>
 
-                {/* Stars */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 16 }}>
                   {[1, 2, 3, 4, 5].map(star => (
                     <span
@@ -325,6 +335,9 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                         style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "white", fontSize: 13, resize: "none", outline: "none", boxSizing: "border-box" }}
                       />
                     </div>
+                    {ratingError && (
+                      <p style={{ margin: "0 0 10px", fontSize: 12, color: "#f87171", textAlign: "center" }}>{ratingError}</p>
+                    )}
                     <button
                       onClick={submitRating}
                       disabled={submitting}
@@ -367,7 +380,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                 {chatMessages.length === 0 && (
                   <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ fontSize: 13, color: "#475569", textAlign: "center" }}>
-                      No messages yet.{"\n"}Send us a message below!
+                      No messages yet.<br />Send us a message below!
                     </p>
                   </div>
                 )}
