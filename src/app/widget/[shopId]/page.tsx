@@ -11,8 +11,10 @@ type ShopInfo = {
 export default function WidgetPage({ params }: { params: { shopId: string } }) {
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [orderNumber, setOrderNumber] = useState("");
+  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
+    setOrigin(window.location.origin);
     fetch(`/api/public/shops/${params.shopId}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setShop(d); })
@@ -21,10 +23,10 @@ export default function WidgetPage({ params }: { params: { shopId: string } }) {
 
   function track() {
     if (!orderNumber.trim()) return;
-    window.open(`/track/${orderNumber.trim().toLowerCase()}`, "_blank");
+    window.open(`${origin}/track/${orderNumber.trim().toLowerCase()}`, "_blank");
   }
 
-  const bookingUrl = `https://fixflow-ruddy.vercel.app/book/${params.shopId}`;
+  const bookingUrl = `${origin}/book/${params.shopId}`;
 
   return (
     <div style={{

@@ -51,7 +51,7 @@ export default function PrintPage({ params }: { params: { id: string } }) {
   function loadOrder() {
     setLoading(true);
     setError("");
-    fetch(`/api/workorders/${params.id}`, { credentials: "include" })
+    fetch(`/api/print/${params.id}`)
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(data => { setOrder(data); setLoading(false); })
       .catch(() => { setError("Could not load this receipt. Please try again."); setLoading(false); });
