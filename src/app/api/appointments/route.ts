@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
+import { pushToUser } from "@/lib/pushNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -69,15 +70,21 @@ export async function POST(req: Request) {
     },
   });
 
-  // Notify shop admins of new appointment
+  // Notify shop admins of new appointment (in-app + push)
   const adminIds = await getShopAdminIds(shopId);
   const apptTime = new Date(scheduledAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   await Promise.all(
-    adminIds.map((uid) =>
-      createNotification(uid, "NEW_APPOINTMENT", `New appointment: ${customerName} — ${apptTime}`, {
+    adminIds.map(async (uid) => {
+      await createNotification(uid, "NEW_APPOINTMENT", `New appointment: ${customerName} — ${apptTime}`, {
         link: "/dashboard/appointments",
-      })
-    )
+      });
+      await pushToUser(uid, {
+        title: "📅 New Appointment",
+        body: `${customerName} — ${deviceBrand} ${deviceModel} at ${apptTime}`,
+        url: "/dashboard/appointments",
+        tag: "appointment",
+      });
+    })
   );
 
   return Response.json(appointment, { status: 201 });

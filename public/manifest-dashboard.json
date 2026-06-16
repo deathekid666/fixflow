@@ -1,0 +1,46 @@
+{
+  "name": "FixFlow Dashboard",
+  "short_name": "FixFlow",
+  "description": "Repair shop management — work orders, inventory, customers, and analytics.",
+  "start_url": "/dashboard",
+  "scope": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Work Order",
+      "short_name": "New Order",
+      "url": "/dashboard/workorders/new",
+      "icons": [{ "src": "/icons/pwa-icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Work Orders",
+      "short_name": "Orders",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/pwa-icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Spare Parts",
+      "short_name": "Parts",
+      "url": "/dashboard/spareparts",
+      "icons": [{ "src": "/icons/pwa-icon.svg", "sizes": "any" }]
+    }
+  ]
+}

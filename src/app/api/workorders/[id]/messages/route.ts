@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
+import { pushToUser } from "@/lib/pushNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -62,17 +63,23 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     data: { message: body.message.trim(), senderType, workOrderId: params.id },
   });
 
-  // Notify shop admins when a customer sends a message
+  // Notify shop admins when a customer sends a message (in-app + push)
   if (senderType === "CUSTOMER" && order.shopId) {
     const adminIds = await getShopAdminIds(order.shopId);
     const shortId = params.id.slice(0, 8).toUpperCase();
     await Promise.all(
-      adminIds.map((uid) =>
-        createNotification(uid, "NEW_MESSAGE", `Customer message on order ${shortId}`, {
+      adminIds.map(async (uid) => {
+        await createNotification(uid, "NEW_MESSAGE", `Customer message on order ${shortId}`, {
           workOrderId: params.id,
           link: `/dashboard/workorders/${params.id}`,
-        })
-      )
+        });
+        await pushToUser(uid, {
+          title: "💬 New Customer Message",
+          body: body.message.trim().slice(0, 100),
+          url: `/dashboard/workorders/${params.id}`,
+          tag: `msg-${params.id}`,
+        });
+      })
     );
   }
 

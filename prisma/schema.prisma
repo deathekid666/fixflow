@@ -36,7 +36,8 @@ model User {
   commissions      EngineerCommission[]
   enrollments      Enrollment[]
   lessonProgress   LessonProgress[]
-  certificates     AcademyCertificate[]
+  certificates      AcademyCertificate[]
+  pushSubscriptions PushSubscription[]
 
   @@index([shopId])
 }
@@ -640,4 +641,15 @@ model AcademyCertificate {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

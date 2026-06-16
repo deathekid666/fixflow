@@ -11,6 +11,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
 import CertBadge from "@/components/CertBadge";
 import OnboardingTour from "@/components/OnboardingTour";
+import DashboardPWA from "@/components/DashboardPWA";
 
 type Notification = {
   id: string;
@@ -168,6 +169,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100" style={{ fontFamily }}>
+      {/* PWA: manifest, SW, install prompt, pull-to-refresh, push */}
+      <link rel="manifest" href="/manifest-dashboard.json" />
+      <meta name="theme-color" content="#0f172a" />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="apple-mobile-web-app-title" content="FixFlow" />
+      <link rel="apple-touch-icon" href="/icons/pwa-icon.svg" />
+      <DashboardPWA userId={user.id} />
       <CommandPalette />
 
       {sidebarOpen && (
@@ -284,7 +294,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <TrialBanner />
 
-        <main key={pathname} className="page-enter flex-1 overflow-auto relative pb-16 lg:pb-0">
+        <main id="dashboard-main" key={pathname} className="page-enter flex-1 overflow-auto relative pb-16 lg:pb-0">
           {showNotifications && (
             <div className="absolute top-0 right-0 rtl:right-auto rtl:left-0 w-full sm:w-96 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 rtl:border-l-0 rtl:border-r z-50 flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
