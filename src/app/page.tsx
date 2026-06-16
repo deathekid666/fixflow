@@ -286,8 +286,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#020817] text-white overflow-x-hidden" style={{ fontFamily: "'DM Sans',system-ui,sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
       {/* ── CSS ── */}
       <style>{`
         [data-animate]{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
