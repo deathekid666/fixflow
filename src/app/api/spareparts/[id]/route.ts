@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     },
   });
 
+  if (updated.stock <= 5) {
+    await createNotification(user.id, "LOW_STOCK", `Low stock: ${updated.name} (${updated.stock} left)`, {
+      link: "/dashboard/spareparts",
+    });
+  }
+
   return Response.json(updated);
 }
 
@@ -49,6 +56,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       stock: body.stock !== undefined ? Number(body.stock) : part.stock,
     },
   });
+
+  if (updated.stock <= 5) {
+    await createNotification(user.id, "LOW_STOCK", `Low stock: ${updated.name} (${updated.stock} left)`, {
+      link: "/dashboard/spareparts",
+    });
+  }
 
   return Response.json(updated);
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { createNotification, getShopAdminIds } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -56,13 +57,24 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return Response.json({ error: "Unauthorized" }, { status: 403 });
   }
 
+  const senderType = user ? "SHOP" : "CUSTOMER";
   const msg = await prisma.customerMessage.create({
-    data: {
-      message: body.message.trim(),
-      senderType: user ? "SHOP" : "CUSTOMER",
-      workOrderId: params.id,
-    },
+    data: { message: body.message.trim(), senderType, workOrderId: params.id },
   });
+
+  // Notify shop admins when a customer sends a message
+  if (senderType === "CUSTOMER" && order.shopId) {
+    const adminIds = await getShopAdminIds(order.shopId);
+    const shortId = params.id.slice(0, 8).toUpperCase();
+    await Promise.all(
+      adminIds.map((uid) =>
+        createNotification(uid, "NEW_MESSAGE", `Customer message on order ${shortId}`, {
+          workOrderId: params.id,
+          link: `/dashboard/workorders/${params.id}`,
+        })
+      )
+    );
+  }
 
   return Response.json(msg, { status: 201 });
 }

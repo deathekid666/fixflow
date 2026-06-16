@@ -155,6 +155,14 @@ export default function SettingsPage() {
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
 
+  // Notification preferences
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({
+    newMessage: true, lowStock: true, newAppointment: true,
+    slaBreach: true, orderOverdue: true, certification: true, newRating: true,
+  });
+  const [savingNotifPrefs, setSavingNotifPrefs] = useState(false);
+  const [notifPrefsMsg, setNotifPrefsMsg] = useState("");
+
   // Appointments / availability
   const [days, setDays] = useState<DayAvailability[]>(DEFAULT_DAYS);
   const [slotDuration, setSlotDuration] = useState(60);
@@ -189,6 +197,15 @@ export default function SettingsPage() {
         .catch(() => {});
     }
   }, [user]);
+
+  useEffect(() => {
+    if (tab === "preferences") {
+      fetch("/api/notifications/preferences", { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setNotifPrefs(d); })
+        .catch(() => {});
+    }
+  }, [tab]);
 
   useEffect(() => {
     if (tab === "appointments" && user?.shopId) {
@@ -917,6 +934,55 @@ export default function SettingsPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Notification preferences */}
+          <div className="border-t border-slate-200 dark:border-slate-800 pt-5">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Notification Preferences</p>
+            <p className="text-xs text-slate-500 mb-4">Choose which in-app notifications you receive</p>
+            {notifPrefsMsg && <Alert type="success" msg={notifPrefsMsg} />}
+            <div className="space-y-3">
+              {([
+                ["newMessage",     "💬", "New customer message",  "Customer sends a message on a work order"],
+                ["lowStock",       "📦", "Low stock alert",       "Part stock drops to 5 or below"],
+                ["newAppointment", "📅", "New appointment",       "A customer books an appointment"],
+                ["slaBreach",      "⚠️",  "SLA breach warning",   "Order deadline within 2 hours"],
+                ["orderOverdue",   "🕐", "Order overdue",         "Open order older than 7 days"],
+                ["certification",  "🏆", "Certification achieved","Shop earns or upgrades a cert level"],
+                ["newRating",      "⭐", "New rating received",   "Customer submits a satisfaction rating"],
+              ] as [string, string, string, string][]).map(([key, icon, label, desc]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base flex-shrink-0">{icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-slate-900 dark:text-white">{label}</p>
+                      <p className="text-xs text-slate-500 truncate">{desc}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setNotifPrefs(p => ({ ...p, [key]: !p[key] }))}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ml-4 ${notifPrefs[key] ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${notifPrefs[key] ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              disabled={savingNotifPrefs}
+              onClick={async () => {
+                setSavingNotifPrefs(true);
+                const res = await fetch("/api/notifications/preferences", {
+                  method: "PUT", headers: { "Content-Type": "application/json" },
+                  credentials: "include", body: JSON.stringify(notifPrefs),
+                });
+                if (res.ok) { setNotifPrefsMsg("Preferences saved."); setTimeout(() => setNotifPrefsMsg(""), 3000); }
+                setSavingNotifPrefs(false);
+              }}
+              className="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              {savingNotifPrefs ? "Saving…" : "Save Preferences"}
+            </button>
           </div>
         </div>
       )}

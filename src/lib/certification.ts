@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { createNotification, getShopAdminIds } from "./notifications";
 
 export type CertLevel = "BRONZE" | "SILVER" | "GOLD";
 
@@ -57,13 +58,25 @@ export async function recalculateCertification(shopId: string): Promise<CertLeve
   }
 
   if (level) {
+    const existing = await prisma.certification.findUnique({ where: { shopId } });
     await prisma.certification.upsert({
       where: { shopId },
       create: { shopId, level, earnedAt: new Date() },
       update: { level, updatedAt: new Date() },
     });
-    // Cache on shop.certification for fast access
     await prisma.shop.update({ where: { id: shopId }, data: { certification: level } });
+    // Notify admins only when level actually changes or is newly earned
+    if (!existing || existing.level !== level) {
+      const meta = CERT_META[level];
+      const adminIds = await getShopAdminIds(shopId);
+      await Promise.all(
+        adminIds.map((uid) =>
+          createNotification(uid, "CERTIFICATION", `${meta.emoji} ${meta.label} certification achieved!`, {
+            link: "/dashboard/certification",
+          })
+        )
+      );
+    }
   } else {
     // Remove cert if no longer qualifies
     await prisma.certification.deleteMany({ where: { shopId } });

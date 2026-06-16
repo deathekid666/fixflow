@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { createNotification, getShopAdminIds } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,18 @@ export async function POST(req: Request) {
       workOrder: { select: { orderNumber: true, customerName: true, deviceModel: true } },
     },
   });
+
+  // Notify shop admins of new rating
+  const adminIds = await getShopAdminIds(order.shopId);
+  const stars = "⭐".repeat(rating);
+  await Promise.all(
+    adminIds.map((uid) =>
+      createNotification(uid, "NEW_RATING", `${stars} rated by ${created.workOrder.customerName} for ${created.workOrder.deviceModel}`, {
+        workOrderId: order.id,
+        link: `/dashboard/workorders/${order.id}`,
+      })
+    )
+  );
 
   return Response.json(created, { status: 201 });
 }

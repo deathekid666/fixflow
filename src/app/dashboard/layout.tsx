@@ -30,7 +30,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [pendingApptCount, setPendingApptCount] = useState(0);
+  const [lowStockCount, setLowStockCount] = useState(0);
 
   useEffect(() => { refresh(); }, []);
 
@@ -50,42 +53,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user]);
 
   useEffect(() => {
-    if (user) loadNotifications();
-    const interval = setInterval(() => { if (user) loadNotifications(); }, 30000);
+    if (user) loadNotificationsForPanel();
+    const interval = setInterval(() => { if (user) loadNotificationsForPanel(); }, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
   useEffect(() => {
-    if (user && !user.isSuperAdmin) loadPendingAppts();
-    const interval = setInterval(() => { if (user && !user.isSuperAdmin) loadPendingAppts(); }, 60000);
+    if (user && !user.isSuperAdmin) loadUnreadCounts();
+    const interval = setInterval(() => { if (user && !user.isSuperAdmin) loadUnreadCounts(); }, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
-  async function loadPendingAppts() {
+  async function loadUnreadCounts() {
     try {
-      const res = await fetch("/api/appointments?status=PENDING", { credentials: "include" });
+      const res = await fetch("/api/notifications/unread", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setPendingApptCount(Array.isArray(data) ? data.length : 0);
+        setUnreadCount(data.count ?? 0);
+        setUnreadMessages(data.unreadMessages ?? 0);
+        setPendingApptCount(data.pendingAppts ?? 0);
+        setLowStockCount(data.lowStockCount ?? 0);
       }
     } catch { /* ignore */ }
   }
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
-  async function loadNotifications() {
+  async function loadNotificationsForPanel() {
     const res = await fetch("/api/notifications", { credentials: "include" });
     if (res.ok) setNotifications(await res.json());
   }
 
   async function markAllRead() {
     await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({}) });
-    await loadNotifications();
+    await loadNotificationsForPanel();
+    setUnreadCount(0);
   }
 
   async function markRead(id: string) {
     await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ notificationId: id }) });
-    await loadNotifications();
+    await loadNotificationsForPanel();
   }
 
   if (loading || !user) return (
@@ -140,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
   ];
 
-  const unread = notifications.filter(n => !n.read).length;
+  const panelUnread = notifications.filter(n => !n.read).length;
 
   const slideClass = sidebarOpen
     ? "translate-x-0"
@@ -204,6 +211,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {pendingApptCount > 9 ? "9+" : pendingApptCount}
                   </span>
                 )}
+                {!collapsed && item.href === "/dashboard/messages" && unreadMessages > 0 && (
+                  <span className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 bg-blue-500 text-white">
+                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                  </span>
+                )}
+                {!collapsed && item.href === "/dashboard/spareparts" && lowStockCount > 0 && (
+                  <span className="w-2 h-2 rounded-full flex-shrink-0 bg-orange-500" title={`${lowStockCount} low stock`} />
+                )}
               </Link>
             );
           })}
@@ -214,7 +229,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             title={collapsed ? t("notifications") : undefined}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
             <div className="flex items-center gap-3"><span>🔔</span>{!collapsed && t("notifications")}</div>
-            {!collapsed && unread > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unread}</span>}
+            {!collapsed && unreadCount > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount > 9 ? "9+" : unreadCount}</span>}
           </button>
           <button onClick={handleLogout}
             title={collapsed ? t("logout") : undefined}
@@ -239,7 +254,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             🔍 Search
             <kbd className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">Ctrl K</kbd>
           </button>
-          <NotificationBell />
+          <NotificationBell unreadCount={unreadCount} />
         </header>
 
         {/* Mobile header */}
@@ -253,8 +268,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-1">
             <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white relative p-1">
               <span className="text-lg">🔔</span>
-              {unread > 0 && (
-                <span className="absolute -top-1 -right-1 rtl:right-auto rtl:-left-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unread}</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 rtl:right-auto rtl:-left-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
               )}
             </button>
           </div>
@@ -268,7 +283,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
                 <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("notifications")}</h2>
                 <div className="flex items-center gap-3">
-                  {unread > 0 && (
+                  {panelUnread > 0 && (
                     <button onClick={markAllRead} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
                       {t("markAllRead")}
                     </button>
