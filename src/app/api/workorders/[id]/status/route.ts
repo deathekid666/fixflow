@@ -1,18 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
-import { smsService } from "@/lib/smsService";
+import { buildMessage, sendNotification, shouldNotify, APP_URL, type NotifiableStatus, type SmsLang, type SmsProvider } from "@/lib/smsService";
 import { recalculateCertification } from "@/lib/certification";
 
 export const dynamic = "force-dynamic";
 
-const VALID_STATUSES = [
-  "RECEIVED",
-  "DIAGNOSING",
-  "REPAIRING",
-  "DONE",
-  "DELIVERED",
-  "CANCELLED",
-];
+const VALID_STATUSES = ["RECEIVED", "DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"];
+const NOTIFIABLE: NotifiableStatus[] = ["DIAGNOSING", "REPAIRING", "DONE", "DELIVERED", "CANCELLED"];
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -24,29 +18,18 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { status } = await req.json();
-
-  if (!status || !VALID_STATUSES.includes(status)) {
-    return Response.json(
-      { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
-      { status: 400 }
-    );
-  }
+  if (!status || !VALID_STATUSES.includes(status))
+    return Response.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
 
   const order = await prisma.workOrder.findFirst({
-    where: {
-      id: params.id,
-      shopId: user.role !== "ADMIN" ? (user.shopId ?? undefined) : undefined,
-    },
+    where: { id: params.id, shopId: user.role !== "ADMIN" ? (user.shopId ?? undefined) : undefined },
+    include: { shop: { select: { name: true } } },
   });
-
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
   const now = new Date();
@@ -55,8 +38,6 @@ export async function POST(
   const isNowDone = status === "DONE";
   const autoStartTimer = status === "REPAIRING" && !order.startedAt;
   const autoStopTimer = status === "DONE" && !!order.startedAt && !order.completedAt;
-  // When a previously bounced order is completed again, clear the active bounce
-  // flag so it isn't permanently locked. bounceCount remains as a historical record.
   const resolveBounce = isNowDone && order.isBounce;
 
   const updated = await prisma.workOrder.update({
@@ -83,47 +64,19 @@ export async function POST(
 
   if (autoStartTimer) {
     await prisma.operationLog.create({
-      data: {
-        action: "TIMER_STARTED",
-        description: "Repair timer started",
-        workOrderId: order.id,
-        userId: user.id,
-      },
+      data: { action: "TIMER_STARTED", description: "Repair timer started", workOrderId: order.id, userId: user.id },
     });
   }
 
   if (autoStopTimer) {
     const durationMs = now.getTime() - order.startedAt!.getTime();
     await prisma.operationLog.create({
-      data: {
-        action: "TIMER_STOPPED",
-        description: `Repair timer stopped · ${formatDuration(durationMs)}`,
-        workOrderId: order.id,
-        userId: user.id,
-      },
+      data: { action: "TIMER_STOPPED", description: `Repair timer stopped · ${formatDuration(durationMs)}`, workOrderId: order.id, userId: user.id },
     });
   }
 
+  // In-app notification for delivered
   if (isNowDelivered && !wasDelivered) {
-    if (order.customerPhone) {
-      const message = smsService.buildDeliveryMessage(
-        order.customerName,
-        order.orderNumber,
-        order.deviceModel
-      );
-      const result = await smsService.send(order.customerPhone, message);
-      await prisma.smsNotification.create({
-        data: {
-          workOrderId: order.id,
-          phone: order.customerPhone,
-          message,
-          status: result.success ? "sent" : "failed",
-          provider: "mock",
-          sentAt: result.success ? new Date() : null,
-        },
-      });
-    }
-
     await prisma.notification.create({
       data: {
         type: "DELIVERED",
@@ -134,9 +87,54 @@ export async function POST(
     });
   }
 
-  // Recalculate certification whenever an order is completed/delivered
+  // Certification recalc
   if ((isNowDelivered || isNowDone) && order.shopId) {
     recalculateCertification(order.shopId).catch(() => {});
+  }
+
+  // ── Customer SMS / WhatsApp notification ──────────────────────────────────
+  const isNotifiable = (NOTIFIABLE as string[]).includes(status);
+  if (isNotifiable && order.customerPhone && order.shopId) {
+    // Fire-and-forget — don't block the response
+    (async () => {
+      try {
+        const settings = await prisma.shopSettings.findUnique({ where: { shopId: order.shopId! } });
+        if (!settings?.smsEnabled) return;
+        if (!shouldNotify(status, settings.notifyStatuses)) return;
+
+        const trackingUrl = settings.includeTrackingLink
+          ? `${APP_URL}/track/${order.orderNumber}`
+          : undefined;
+
+        const message = buildMessage(
+          status as NotifiableStatus,
+          {
+            customerName: order.customerName,
+            deviceBrand: order.deviceBrand,
+            deviceModel: order.deviceModel,
+            orderNumber: order.orderNumber,
+            shopName: order.shop?.name ?? "your repair shop",
+            trackingUrl,
+          },
+          (settings.smsLanguage as SmsLang) ?? "en",
+        );
+
+        const result = await sendNotification(order.customerPhone, message, settings.smsProvider as SmsProvider);
+
+        await prisma.smsNotification.create({
+          data: {
+            workOrderId: order.id,
+            phone: order.customerPhone,
+            message,
+            status: result.success ? "sent" : "failed",
+            provider: result.provider,
+            sentAt: result.success ? new Date() : null,
+          },
+        });
+      } catch (err) {
+        console.error("[SMS] Notification error:", err);
+      }
+    })();
   }
 
   return Response.json(updated);

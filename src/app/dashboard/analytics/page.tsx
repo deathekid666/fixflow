@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
+  BarChart, Bar,
   CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { useAuth } from "@/context/AuthContext";
@@ -28,6 +29,21 @@ type Analytics = {
   lowStock: { id: string; name: string; partNumber: string; stock: number; unitPrice: number }[];
   sla: { total: number; met: number; breached: number; compliance: number | null };
   milestones: { anniversaryThisMonth: number; tenPlusCustomers: number; goldCustomers: number };
+};
+
+type BenchmarkMetrics = {
+  avgTat: number; avgOrderValue: number; bounceRate: number;
+  collectionRate: number; returnRate: number; totalOrders: number;
+};
+type BenchmarkData = {
+  shop: BenchmarkMetrics;
+  industry: BenchmarkMetrics & { totalShops: number; hasEnoughData: boolean };
+  insights: {
+    topDevices: { brand: string; count: number }[];
+    commonFaults: { label: string; count: number }[];
+    avgPrices: { service: string; avgPrice: number; count: number }[];
+    month: string;
+  };
 };
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
@@ -64,6 +80,10 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<"overview" | "benchmarks">("overview");
+  const [benchmarks, setBenchmarks] = useState<BenchmarkData | null>(null);
+  const [benchmarksLoading, setBenchmarksLoading] = useState(false);
+  const [benchmarksError, setBenchmarksError] = useState("");
 
   useEffect(() => { loadAll(); }, [period, dateRange]);
 
@@ -83,6 +103,21 @@ export default function AnalyticsPage() {
       setError("Could not load analytics. Please check your connection and try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadBenchmarks() {
+    if (benchmarks) return;
+    setBenchmarksLoading(true);
+    setBenchmarksError("");
+    try {
+      const res = await fetch("/api/benchmarks", { credentials: "include" });
+      if (!res.ok) throw new Error();
+      setBenchmarks(await res.json());
+    } catch {
+      setBenchmarksError("Could not load benchmark data. Please try again.");
+    } finally {
+      setBenchmarksLoading(false);
     }
   }
 
@@ -117,7 +152,7 @@ export default function AnalyticsPage() {
     URL.revokeObjectURL(url);
   }
 
-  if (loading) return (
+  if (loading && tab === "overview") return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <style>{`@keyframes skeleton-pulse { 0% { opacity: 0.4 } 50% { opacity: 0.8 } 100% { opacity: 0.4 } }`}</style>
       <div className="h-7 w-40 bg-slate-200 dark:bg-slate-800 rounded" style={{ animation: "skeleton-pulse 1.5s ease-in-out infinite" }} />
@@ -140,7 +175,7 @@ export default function AnalyticsPage() {
       ))}
     </div>
   );
-  if (error) return (
+  if (error && tab === "overview") return (
     <div className="p-6 max-w-7xl mx-auto">
       <div style={{
         textAlign: "center", padding: "60px 20px",
@@ -159,24 +194,23 @@ export default function AnalyticsPage() {
       </div>
     </div>
   );
-  if (!analytics || !revenue) return null;
 
-  const outstanding = revenue.summary.totalRevenue - revenue.summary.totalCollected;
-  const collectionRate = revenue.summary.totalRevenue > 0
+  const outstanding = revenue ? revenue.summary.totalRevenue - revenue.summary.totalCollected : 0;
+  const collectionRate = revenue && revenue.summary.totalRevenue > 0
     ? Math.round((revenue.summary.totalCollected / revenue.summary.totalRevenue) * 100)
     : 0;
 
-  const pieData = [
+  const pieData = analytics ? [
     { name: "Received", value: analytics.orders.received },
     { name: "Diagnosing", value: analytics.orders.diagnosing },
     { name: "Repairing", value: analytics.orders.repairing },
     { name: "Done", value: analytics.orders.done },
     { name: "Delivered", value: analytics.orders.delivered },
     { name: "Cancelled", value: analytics.orders.cancelled },
-  ].filter(d => d.value > 0);
+  ].filter(d => d.value > 0) : [];
 
-  const activeOrders = analytics.orders.received + analytics.orders.diagnosing + analytics.orders.repairing + analytics.orders.done;
-  const profitMargin = revenue.summary.totalCollected > 0
+  const activeOrders = analytics ? analytics.orders.received + analytics.orders.diagnosing + analytics.orders.repairing + analytics.orders.done : 0;
+  const profitMargin = revenue && revenue.summary.totalCollected > 0
     ? Math.round((revenue.summary.profit / revenue.summary.totalCollected) * 100)
     : 0;
 
@@ -186,6 +220,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <PageHeader title="Analytics" subtitle="Revenue, expenses, profit and insights" />
+        {tab === "overview" && (
         <div className="flex gap-2 flex-wrap">
           {["7d", "30d", "90d", "all"].map(r => (
             <button key={r} onClick={() => setDateRange(r)}
@@ -199,7 +234,22 @@ export default function AnalyticsPage() {
           <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
           <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
         </div>
+        )}
       </div>
+
+      {/* Tab nav */}
+      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
+        {([["overview", "📊 Overview"], ["benchmarks", "🏆 Benchmarks"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => { setTab(id); if (id === "benchmarks") loadBenchmarks(); }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === id ? "border-blue-600 text-blue-600 dark:text-blue-400" : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
+          >{label}</button>
+        ))}
+      </div>
+
+      {/* ── Overview tab ──────────────────────────────────────────────────── */}
+      {tab === "overview" && analytics && revenue && <>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -600,6 +650,304 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      </> /* end overview tab */}
+
+      {/* ── Benchmarks tab ────────────────────────────────────────────────── */}
+      {tab === "benchmarks" && (
+        <div className="space-y-6">
+          {benchmarksLoading && (
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="border border-slate-200 dark:border-slate-800 rounded-xl p-5 h-40 animate-pulse bg-slate-100 dark:bg-slate-800/40" />
+              ))}
+            </div>
+          )}
+
+          {benchmarksError && !benchmarksLoading && (
+            <div className="text-center py-16 space-y-3">
+              <p className="text-3xl">⚠️</p>
+              <p className="text-red-500 dark:text-red-400 text-sm">{benchmarksError}</p>
+              <button onClick={() => { setBenchmarks(null); loadBenchmarks(); }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg">Retry</button>
+            </div>
+          )}
+
+          {benchmarks && !benchmarksLoading && (() => {
+            const { shop: s, industry: ind, insights } = benchmarks;
+            const currency2 = currency;
+            const fmt2 = fmt;
+
+            type Metric = {
+              key: keyof BenchmarkMetrics;
+              label: string; icon: string;
+              format: (v: number) => string;
+              lowerIsBetter: boolean;
+            };
+
+            const METRICS: Metric[] = [
+              { key: "avgTat",          label: "Avg Repair Time",    icon: "⏱",  format: v => `${v.toFixed(1)}d`,            lowerIsBetter: true  },
+              { key: "avgOrderValue",   label: "Avg Order Value",    icon: "💰",  format: v => fmt2(v),                       lowerIsBetter: false },
+              { key: "bounceRate",      label: "Bounce Rate",        icon: "↩️",  format: v => `${v.toFixed(1)}%`,            lowerIsBetter: true  },
+              { key: "collectionRate",  label: "Collection Rate",    icon: "✅",  format: v => `${v.toFixed(1)}%`,            lowerIsBetter: false },
+              { key: "returnRate",      label: "Customer Return Rate", icon: "🔄", format: v => `${v.toFixed(1)}%`,           lowerIsBetter: false },
+            ];
+
+            function pctDiff(mine: number, theirs: number) {
+              if (theirs === 0) return 0;
+              return Math.round(((mine - theirs) / theirs) * 100);
+            }
+
+            function isBetter(mine: number, theirs: number, lower: boolean) {
+              if (lower) return mine < theirs;
+              return mine > theirs;
+            }
+
+            return (
+              <>
+                {/* Privacy note */}
+                <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
+                  <span className="text-blue-500 text-lg flex-shrink-0">🔒</span>
+                  <div>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Anonymous industry data</p>
+                    <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                      Industry averages are computed across {ind.totalShops} shops and {ind.totalOrders.toLocaleString()} orders. No shop names or identifiable information is revealed.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metric comparison cards */}
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Your Shop vs Industry Average</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {METRICS.map(m => {
+                      const myVal = s[m.key] as number;
+                      const indVal = ind[m.key] as number;
+                      const diff = pctDiff(myVal, indVal);
+                      const better = isBetter(myVal, indVal, m.lowerIsBetter);
+                      const noData = !ind.hasEnoughData;
+                      const maxBar = Math.max(myVal, indVal, 0.01);
+
+                      return (
+                        <div key={m.key} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{m.icon}</span>
+                              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{m.label}</span>
+                            </div>
+                            {!noData && myVal > 0 && (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${better ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"}`}>
+                                {better ? "▲" : "▼"} {Math.abs(diff)}%
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-slate-500">Your shop</span>
+                                <span className={`text-sm font-bold ${myVal === 0 ? "text-slate-400" : better && !noData ? "text-emerald-600 dark:text-emerald-400" : !noData ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
+                                  {myVal === 0 ? "—" : m.format(myVal)}
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${better && !noData ? "bg-emerald-500" : !noData ? "bg-red-500" : "bg-blue-500"}`}
+                                  style={{ width: `${maxBar > 0 ? (myVal / maxBar) * 100 : 0}%` }} />
+                              </div>
+                            </div>
+                            {!noData && (
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs text-slate-500">Industry avg</span>
+                                  <span className="text-sm font-semibold text-slate-400">{indVal === 0 ? "—" : m.format(indVal)}</span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                  <div className="h-full rounded-full bg-slate-400 dark:bg-slate-600 transition-all"
+                                    style={{ width: `${maxBar > 0 ? (indVal / maxBar) * 100 : 0}%` }} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {!noData && myVal > 0 && (
+                            <p className={`text-xs ${better ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                              {better
+                                ? `${Math.abs(diff)}% better than industry average`
+                                : `${Math.abs(diff)}% below industry average`}
+                            </p>
+                          )}
+                          {noData && (
+                            <p className="text-xs text-slate-400 italic">More shops needed for comparison</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Side-by-side bar chart */}
+                {ind.hasEnoughData && (
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+                    <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Performance at a Glance</h2>
+                    <p className="text-xs text-slate-500 mb-4">Rates compared to industry — higher is better for all except bounce rate</p>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={[
+                          { name: "Collection Rate", you: s.collectionRate, industry: ind.collectionRate },
+                          { name: "Return Rate", you: s.returnRate, industry: ind.returnRate },
+                          { name: "Bounce Rate (inv.)", you: Math.max(0, 100 - s.bounceRate * 10), industry: Math.max(0, 100 - ind.bounceRate * 10) },
+                        ]}
+                        margin={{ top: 5, right: 10, bottom: 5, left: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} />
+                        <YAxis tick={{ fill: "#64748b", fontSize: 11 }} unit="%" domain={[0, 100]} />
+                        <Tooltip
+                          contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }}
+                          formatter={(val: number, name: string) => [`${val.toFixed(1)}%`, name]}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                        <Bar dataKey="you" name="Your Shop" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="industry" name="Industry Avg" fill="#475569" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Top 10 devices this month */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Top Repaired Devices</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{insights.month} · all shops</p>
+                      </div>
+                      <span className="text-xl">📱</span>
+                    </div>
+                    {insights.topDevices.length === 0 ? (
+                      <p className="text-sm text-slate-500 text-center py-8">No data this month yet.</p>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={insights.topDevices} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                          <XAxis type="number" tick={{ fill: "#64748b", fontSize: 11 }} allowDecimals={false} />
+                          <YAxis type="category" dataKey="brand" tick={{ fill: "#94a3b8", fontSize: 11 }} width={68} />
+                          <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }}
+                            formatter={(v: number) => [v, "Repairs"]} />
+                          <Bar dataKey="count" name="Repairs" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+
+                  {/* Common faults */}
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Most Common Repairs</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{insights.month} · all shops</p>
+                      </div>
+                      <span className="text-xl">🔧</span>
+                    </div>
+                    {insights.commonFaults.length === 0 ? (
+                      <p className="text-sm text-slate-500 text-center py-8">No data this month yet.</p>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {insights.commonFaults.slice(0, 8).map((f, i) => {
+                          const max = insights.commonFaults[0]?.count ?? 1;
+                          return (
+                            <div key={f.label} className="flex items-center gap-3">
+                              <span className="text-xs text-slate-400 w-5 text-right flex-shrink-0">#{i + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs text-slate-700 dark:text-slate-300 truncate">{f.label}</span>
+                                  <span className="text-xs font-semibold text-slate-900 dark:text-white ml-2 flex-shrink-0">{f.count}</span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${(f.count / max) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Average prices by service type */}
+                {insights.avgPrices.length > 0 && (
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Average Repair Prices</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{insights.month} · completed orders · all shops</p>
+                      </div>
+                      <span className="text-xl">💰</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={insights.avgPrices} margin={{ top: 5, right: 10, bottom: 40, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="service" tick={{ fill: "#64748b", fontSize: 10 }} angle={-30} textAnchor="end" interval={0} />
+                        <YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
+                        <Tooltip
+                          contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }}
+                          formatter={(v: number) => [fmt2(v), "Avg Price"]}
+                          labelFormatter={(l) => {
+                            const item = insights.avgPrices.find(p => p.service === l);
+                            return `${l} (${item?.count} orders)`;
+                          }}
+                        />
+                        <Bar dataKey="avgPrice" name="Avg Price" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+                      {insights.avgPrices.map(p => (
+                        <div key={p.service} className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5">
+                          <p className="text-xs text-slate-500 truncate">{p.service}</p>
+                          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt2(p.avgPrice)}</p>
+                          <p className="text-xs text-slate-400">{p.count} order{p.count !== 1 ? "s" : ""}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Industry Insights */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xl">💡</span>
+                    <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Industry Insights</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-white/70 dark:bg-slate-900/60 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{ind.totalShops}</p>
+                      <p className="text-xs text-slate-500 mt-1">Shops on FixFlow</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-slate-900/60 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{ind.totalOrders.toLocaleString()}</p>
+                      <p className="text-xs text-slate-500 mt-1">Total repairs tracked</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-slate-900/60 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{insights.topDevices[0]?.brand ?? "—"}</p>
+                      <p className="text-xs text-slate-500 mt-1">Most repaired brand this month</p>
+                    </div>
+                  </div>
+                  {ind.hasEnoughData && s.bounceRate < ind.bounceRate && s.collectionRate > ind.collectionRate && (
+                    <div className="mt-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-lg p-3 flex items-center gap-3">
+                      <span className="text-xl flex-shrink-0">🏅</span>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                        Your shop beats the industry average on both bounce rate and collection rate — top performer!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
     </div>
   );
 }

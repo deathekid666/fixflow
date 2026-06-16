@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import RatingModal from "@/components/RatingModal";
+import SocialShareModal from "@/components/SocialShareModal";
 import { useAuth } from "@/context/AuthContext";
 import { loyaltyTier } from "@/lib/loyaltyTier";
 import { formatCurrency } from "@/lib/currency";
@@ -33,6 +34,7 @@ type WorkOrder = {
   rating?: { rating: number; comment: string | null } | null;
   payments: Payment[];
   checklist: CheckItem[];
+  shop: { name: string; logoUrl: string | null };
 };
 
 type Engineer = { id: string; name: string };
@@ -137,6 +139,17 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiAddingNote, setAiAddingNote] = useState(false);
   const [aiAddingParts, setAiAddingParts] = useState(false);
+  const [showSocialShare, setShowSocialShare] = useState(false);
+
+  // Price suggestion
+  type PriceSuggestion = {
+    suggestedMin: number; suggestedMax: number; marketAverage: number;
+    reasoning: string; confidence: "HIGH" | "MEDIUM" | "LOW"; currency: string;
+  };
+  const [priceSuggestion, setPriceSuggestion] = useState<PriceSuggestion | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  const [showPricePopover, setShowPricePopover] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 400);
@@ -459,6 +472,32 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     setAiAddingParts(false);
   }
 
+  async function fetchPriceSuggestion() {
+    setLoadingPrice(true);
+    setPriceError(null);
+    setPriceSuggestion(null);
+    setShowPricePopover(true);
+    try {
+      const res = await fetch(`/api/workorders/${params.id}/price-suggestion`, {
+        method: "POST", credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed");
+      setPriceSuggestion(data);
+    } catch (e: unknown) {
+      setPriceError(e instanceof Error ? e.message : "Failed to get price suggestion");
+    } finally {
+      setLoadingPrice(false);
+    }
+  }
+
+  function applyPriceSuggestion(price: number) {
+    setManualTotal(String(Math.round(price)));
+    setEditingQuotation(true);
+    setShowPricePopover(false);
+    setPriceSuggestion(null);
+  }
+
   async function deleteAttachment(attachmentId: string) {
     setDeletingAttachmentId(attachmentId);
     await fetch(`/api/workorders/${params.id}/attachments`, {
@@ -539,6 +578,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 Print</a>
+          {order.status === "DELIVERED" && order.attachments.some(a => a.tag === "intake") && order.attachments.some(a => a.tag === "completion") && (
+            <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 Share</button>
+          )}
           <div className="flex items-center gap-1.5">
             <button onClick={sendReminder} disabled={sendingReminder} className="text-xs px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/35 text-amber-700 dark:text-amber-400 rounded-lg transition-colors disabled:opacity-50">
               {sendingReminder ? "..." : "🔔 Send Reminder"}
@@ -1120,8 +1162,98 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quotation</h2>
-              <button onClick={() => setEditingQuotation(!editingQuotation)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">{editingQuotation ? "Cancel" : "Edit"}</button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchPriceSuggestion}
+                  disabled={loadingPrice}
+                  className="text-xs px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {loadingPrice ? <span className="w-3 h-3 border-2 border-amber-400/40 border-t-amber-500 rounded-full animate-spin inline-block" /> : "💡"}
+                  {loadingPrice ? "Thinking…" : "Price Suggestion"}
+                </button>
+                <button onClick={() => setEditingQuotation(!editingQuotation)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">{editingQuotation ? "Cancel" : "Edit"}</button>
+              </div>
             </div>
+
+            {/* Price suggestion popover */}
+            {showPricePopover && (
+              <div className="mb-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-amber-200 dark:border-amber-800/40 bg-amber-100/60 dark:bg-amber-900/20">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">💡</span>
+                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">AI Price Suggestion</span>
+                  </div>
+                  <button onClick={() => { setShowPricePopover(false); setPriceSuggestion(null); setPriceError(null); }}
+                    className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 text-sm font-bold w-5 h-5 flex items-center justify-center rounded transition-colors">×</button>
+                </div>
+
+                {loadingPrice && (
+                  <div className="flex items-center gap-3 px-3 py-4">
+                    <div className="w-5 h-5 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin flex-shrink-0" />
+                    <p className="text-xs text-amber-600 dark:text-amber-400">Analyzing market rates for this repair…</p>
+                  </div>
+                )}
+
+                {priceError && !loadingPrice && (
+                  <div className="px-3 py-3 flex items-center justify-between gap-3">
+                    <p className="text-xs text-red-600 dark:text-red-400">{priceError}</p>
+                    <button onClick={fetchPriceSuggestion} className="text-xs px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg flex-shrink-0">Retry</button>
+                  </div>
+                )}
+
+                {priceSuggestion && !loadingPrice && (() => {
+                  const { suggestedMin, suggestedMax, marketAverage, reasoning, confidence } = priceSuggestion;
+                  const midpoint = Math.round((suggestedMin + suggestedMax) / 2);
+                  const confidenceStyle = {
+                    HIGH:   { cls: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700", label: "High confidence" },
+                    MEDIUM: { cls: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700", label: "Medium confidence" },
+                    LOW:    { cls: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700", label: "Low confidence" },
+                  }[confidence];
+
+                  return (
+                    <div className="p-3 space-y-3">
+                      {/* Price range + confidence */}
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-bold text-amber-700 dark:text-amber-300">{fmt(suggestedMin)}</span>
+                          <span className="text-xs text-amber-500">–</span>
+                          <span className="text-lg font-bold text-amber-700 dark:text-amber-300">{fmt(suggestedMax)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500">Market avg: <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(marketAverage)}</span></span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${confidenceStyle.cls}`}>
+                            {confidence === "HIGH" ? "●" : confidence === "MEDIUM" ? "◐" : "○"} {confidenceStyle.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Reasoning */}
+                      <p className="text-xs text-amber-700/80 dark:text-amber-300/70 leading-relaxed">{reasoning}</p>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                        <button onClick={() => applyPriceSuggestion(suggestedMin)}
+                          className="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg transition-colors font-medium">
+                          Apply min {fmt(suggestedMin)}
+                        </button>
+                        <button onClick={() => applyPriceSuggestion(midpoint)}
+                          className="text-xs px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors font-medium">
+                          Apply midpoint {fmt(midpoint)}
+                        </button>
+                        <button onClick={() => applyPriceSuggestion(suggestedMax)}
+                          className="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg transition-colors font-medium">
+                          Apply max {fmt(suggestedMax)}
+                        </button>
+                        <button onClick={() => { setShowPricePopover(false); setPriceSuggestion(null); }}
+                          className="text-xs px-3 py-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors ml-auto">
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
             {grandTotal === 0 && (
               <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-300 dark:border-yellow-800/50 rounded-lg px-3 py-2 mb-3 flex items-center gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">⚠</span>
@@ -1392,6 +1524,26 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         <RatingModal workOrderId={order.id} orderNumber={order.orderNumber} customerName={order.customerName}
           onClose={() => setShowRating(false)} onSubmitted={() => { setShowRating(false); load(); }} />
       )}
+
+      {showSocialShare && (() => {
+        const intake = order.attachments.find(a => a.tag === "intake");
+        const completion = order.attachments.find(a => a.tag === "completion");
+        if (!intake || !completion) return null;
+        return (
+          <SocialShareModal
+            deviceBrand={order.deviceBrand}
+            deviceModel={order.deviceModel}
+            repairType={order.repairType}
+            total={order.total}
+            currency={currency}
+            shopName={order.shop?.name ?? user?.shop?.name ?? ""}
+            shopLogoUrl={order.shop?.logoUrl ?? null}
+            intakeUrl={intake.path}
+            completionUrl={completion.path}
+            onClose={() => setShowSocialShare(false)}
+          />
+        );
+      })()}
 
       {/* Status change confirmation modal */}
       {pendingStatus !== null && (
