@@ -298,7 +298,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {user && !user.isSuperAdmin && user.shop && !user.shop.onboardingComplete && (
             <OnboardingWizard shopId={user.shopId ?? ""} shopName={user.shop.name ?? ""} />
           )}
-          {user && !user.isSuperAdmin && (
+          {user && !user.isSuperAdmin && user.shop?.onboardingComplete && (
             <OnboardingTour userId={user.id} userRole={user.role} />
           )}
           {children}
