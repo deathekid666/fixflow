@@ -32,13 +32,14 @@ function Stars({ rating }: { rating: number }) {
 export default function DirectoryPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/directory")
       .then((r) => r.json())
       .then((d) => { setShops(Array.isArray(d) ? d : []); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => { setLoadError(true); setLoading(false); });
   }, []);
 
   const filtered = shops.filter((s) => {
@@ -93,7 +94,16 @@ export default function DirectoryPage() {
         </div>
 
         {/* Grid */}
-        {loading ? (
+        {loadError ? (
+          <div className="text-center py-20 text-slate-500">
+            <p className="text-4xl mb-4">⚠️</p>
+            <p className="text-lg font-medium text-slate-400">Could not load shops</p>
+            <p className="text-sm mt-2">Check your connection and try again.</p>
+            <button onClick={() => { setLoadError(false); setLoading(true); fetch("/api/directory").then(r => r.json()).then(d => { setShops(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => { setLoadError(true); setLoading(false); }); }} className="mt-4 text-sm text-blue-400 hover:text-blue-300 underline">
+              Retry
+            </button>
+          </div>
+        ) : loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 animate-pulse space-y-3">

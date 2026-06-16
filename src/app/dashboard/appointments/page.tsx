@@ -108,6 +108,7 @@ export default function AppointmentsPage() {
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [savingReschedule, setSavingReschedule] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState("");
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -234,6 +235,7 @@ export default function AppointmentsPage() {
 
   async function convertToWorkOrder(appt: Appointment) {
     setConverting(true);
+    setConvertError("");
     const res = await fetch("/api/workorders", {
       method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
       body: JSON.stringify({
@@ -249,7 +251,7 @@ export default function AppointmentsPage() {
       router.push(`/dashboard/workorders/${order.id}`);
     } else {
       const err = await res.json();
-      alert(err.error || "Failed to create work order");
+      setConvertError(err.error || "Failed to create work order");
     }
     setConverting(false);
   }
@@ -688,6 +690,9 @@ export default function AppointmentsPage() {
                     )}
 
                     {/* Convert to work order */}
+                    {convertError && (
+                      <p className="text-xs text-red-500 dark:text-red-400 text-center">{convertError}</p>
+                    )}
                     <button onClick={() => convertToWorkOrder(selected)} disabled={converting}
                       className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
                       {converting

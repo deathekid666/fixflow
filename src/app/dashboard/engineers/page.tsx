@@ -88,7 +88,7 @@ export default function EngineersPage() {
     if (!confirm("Delete this engineer? This cannot be undone.")) return;
     const res = await fetch(`/api/users/${id}`, { method: "DELETE", credentials: "include" });
     const data = await res.json();
-    if (!res.ok) { alert(data.error || "Failed to delete"); return; }
+    if (!res.ok) { setError(data.error || "Failed to delete engineer"); return; }
     setEngineers(prev => prev.filter(e => e.id !== id));
   }
 
