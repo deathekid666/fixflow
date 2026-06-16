@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -17,39 +18,46 @@ export async function GET(req: Request) {
   const status = searchParams.get("status");
   const search = searchParams.get("search");
   const noContact = searchParams.get("noContact") === "true";
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
 
   const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
+  const where: Prisma.WorkOrderWhereInput = {
+    deletedAt: null,
+    shopId: user.shopId ?? undefined,
+    ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
+    ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
+    ...(noContact ? {
+      status: { notIn: ["DELIVERED", "CANCELLED"] },
+      updatedAt: { lt: threeDaysAgo },
+      OR: [
+        { lastReminderAt: null },
+        { lastReminderAt: { lt: threeDaysAgo } },
+      ],
+    } : {}),
+    ...(search ? {
+      OR: [
+        { customerName: { contains: search, mode: "insensitive" } },
+        { customerPhone: { contains: search, mode: "insensitive" } },
+        { deviceModel: { contains: search, mode: "insensitive" } },
+        { deviceBrand: { contains: search, mode: "insensitive" } },
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { assignee: { name: { contains: search, mode: "insensitive" } } },
+      ],
+    } : {}),
+  };
+
   const orders = await prisma.workOrder.findMany({
-    where: {
-      deletedAt: null,
-      shopId: user.shopId ?? undefined,
-      ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
-      ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
-      ...(noContact ? {
-        status: { notIn: ["DELIVERED", "CANCELLED"] },
-        updatedAt: { lt: threeDaysAgo },
-        OR: [
-          { lastReminderAt: null },
-          { lastReminderAt: { lt: threeDaysAgo } },
-        ],
-      } : {}),
-      ...(search ? {
-        OR: [
-          { customerName: { contains: search, mode: "insensitive" } },
-          { customerPhone: { contains: search, mode: "insensitive" } },
-          { deviceModel: { contains: search, mode: "insensitive" } },
-          { orderNumber: { contains: search, mode: "insensitive" } },
-          { assignee: { name: { contains: search, mode: "insensitive" } } },
-        ],
-      } : {}),
-    },
+    where,
     include: {
       creator: { select: { id: true, name: true } },
       assignee: { select: { id: true, name: true } },
       _count: { select: { parts: true, logs: true } },
     },
     orderBy: { createdAt: "desc" },
+    skip: (page - 1) * limit,
+    take: limit,
   });
 
   return Response.json(orders);

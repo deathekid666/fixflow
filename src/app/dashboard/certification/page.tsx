@@ -4,6 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { CERT_CRITERIA, CERT_META } from "@/lib/certification";
 import CertBadge from "@/components/CertBadge";
 
+const CERT_CELEBRATED_KEY = "fixflow_cert_celebrated_";
+
 type Stats = {
   totalCompleted: number;
   avgRating: number;
@@ -42,7 +44,22 @@ export default function CertificationPage() {
     if (!user?.shopId) return;
     fetch(`/api/certification/${user.shopId}`, { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => { setStats(d); setLoading(false); })
+      .then((d) => {
+        setStats(d);
+        setLoading(false);
+        if (d.currentLevel && user?.id) {
+          const key = `${CERT_CELEBRATED_KEY}${user.id}_${d.currentLevel}`;
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, "1");
+            import("canvas-confetti").then(m => {
+              const fire = m.default ?? m;
+              fire({ particleCount: 120, spread: 80, origin: { y: 0.55 } });
+              setTimeout(() => fire({ particleCount: 60, spread: 120, origin: { y: 0.4 }, angle: 60 }), 300);
+              setTimeout(() => fire({ particleCount: 60, spread: 120, origin: { y: 0.4 }, angle: 120 }), 600);
+            });
+          }
+        }
+      })
       .catch(() => setLoading(false));
   }, [user?.shopId]);
 

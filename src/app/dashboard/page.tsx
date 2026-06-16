@@ -95,6 +95,10 @@ export default function DashboardPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo] = useState({ limit: 50, current: 50 });
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [statsData, setStatsData] = useState<{
+    total: number; received: number; diagnosing: number; repairing: number;
+    done: number; delivered: number; cancelled: number; revenue: number; collected: number;
+  } | null>(null);
 
   // Pull-to-refresh (mobile)
   const touchStartY = useRef(0);
@@ -133,9 +137,17 @@ export default function DashboardPage() {
     fetch("/api/users", { credentials: "include" })
       .then(r => r.json()).then(d => setEngineers(Array.isArray(d) ? d : [])).catch(() => {});
     loadUnread();
+    loadStats();
     const pollUnread = setInterval(loadUnread, 15000);
     return () => clearInterval(pollUnread);
   }, []);
+
+  async function loadStats() {
+    try {
+      const res = await fetch("/api/workorders/stats", { credentials: "include" });
+      if (res.ok) setStatsData(await res.json());
+    } catch { /* ignore */ }
+  }
 
   async function loadUnread() {
     const res = await fetch("/api/messages/unread", { credentials: "include" });
@@ -251,7 +263,7 @@ export default function DashboardPage() {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include", body: JSON.stringify({ status: bulkStatus }),
       }), "Updated");
-    setBulkStatus(""); await load(); setBulkLoading(false);
+    setBulkStatus(""); await Promise.all([load(), loadStats()]); setBulkLoading(false);
   }
 
   async function applyBulkEngineer() {
@@ -269,7 +281,7 @@ export default function DashboardPage() {
     setBulkLoading(true);
     await runBulk([...selected], id =>
       fetch(`/api/workorders/${id}/edit`, { method: "DELETE", credentials: "include" }), "Deleted");
-    await load(); setBulkLoading(false);
+    await Promise.all([load(), loadStats()]); setBulkLoading(false);
     setDeleteConfirm(false);
   }
 
@@ -299,19 +311,18 @@ export default function DashboardPage() {
     return sortDir === "asc" ? cmp : -cmp;
   });
 
-  const active = orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status));
-  const totalRevenue = orders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + o.total, 0);
-  const pendingPayment = orders.filter(o => o.status === "DELIVERED").reduce((s, o) => s + (o.total - o.collected), 0);
+  const sd = statsData;
   const overdue = orders.filter(o => o.isOverdue).length;
+  const pendingPayment = sd ? (sd.revenue - sd.collected) : 0;
 
   const stats = [
-    { label: "Total Orders", value: orders.length, sub: `${active.length} active`, color: "text-slate-900 dark:text-white", icon: "📋", filter: "" },
-    { label: "Received", value: orders.filter(o => o.status === "RECEIVED").length, sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: "📥", filter: "RECEIVED" },
-    { label: "In Progress", value: orders.filter(o => ["DIAGNOSING", "REPAIRING"].includes(o.status)).length, sub: `${overdue} overdue`, color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: "🔧", filter: "DIAGNOSING" },
-    { label: "Ready", value: orders.filter(o => o.status === "DONE").length, sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: "✅", filter: "DONE" },
-    { label: "Revenue", value: formatCurrency(totalRevenue, currency, 0), sub: `${formatCurrency(pendingPayment, currency, 0)} pending`, color: "text-emerald-600 dark:text-emerald-400", icon: "💰", filter: null, href: "/dashboard/analytics" },
-    { label: "Delivered", value: orders.filter(o => o.status === "DELIVERED").length, sub: "this period", color: "text-slate-500", icon: "📦", filter: "DELIVERED" },
-    { label: "Cancelled", value: orders.filter(o => o.status === "CANCELLED").length, sub: "this period", color: "text-red-600 dark:text-red-400", icon: "🚫", filter: "CANCELLED" },
+    { label: "Total Orders", value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", icon: "📋", filter: "" },
+    { label: "Received", value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: "📥", filter: "RECEIVED" },
+    { label: "In Progress", value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: "🔧", filter: "DIAGNOSING" },
+    { label: "Ready", value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: "✅", filter: "DONE" },
+    { label: "Revenue", value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", icon: "💰", filter: null, href: "/dashboard/analytics" },
+    { label: "Delivered", value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", icon: "📦", filter: "DELIVERED" },
+    { label: "Cancelled", value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", icon: "🚫", filter: "CANCELLED" },
   ];
 
   const emptyState = (colSpan: number) => (
