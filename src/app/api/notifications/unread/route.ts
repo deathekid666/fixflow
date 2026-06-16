@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
+import { pushToUser } from "@/lib/pushNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +32,9 @@ export async function GET(req: Request) {
       });
       if (!exists) {
         const mins = Math.round((order.slaDeadline!.getTime() - now.getTime()) / 60000);
-        await createNotification(
-          uid,
-          "SLA_BREACH",
-          `SLA deadline in ${mins}m — ${order.orderNumber.slice(0, 8).toUpperCase()}`,
-          { workOrderId: order.id, link: `/dashboard/workorders/${order.id}` }
-        );
+        const msg = `SLA deadline in ${mins}m — ${order.orderNumber.slice(0, 8).toUpperCase()}`;
+        await createNotification(uid, "SLA_BREACH", msg, { workOrderId: order.id, link: `/dashboard/workorders/${order.id}` });
+        await pushToUser(uid, { title: "⚠️ SLA Breach Warning", body: msg, url: `/dashboard/workorders/${order.id}`, tag: `sla-${order.id}` });
       }
     }
   }
@@ -60,12 +58,9 @@ export async function GET(req: Request) {
       });
       if (!exists) {
         const days = Math.round((now.getTime() - order.createdAt.getTime()) / (24 * 60 * 60 * 1000));
-        await createNotification(
-          uid,
-          "ORDER_OVERDUE",
-          `Order open for ${days} days — ${order.orderNumber.slice(0, 8).toUpperCase()}`,
-          { workOrderId: order.id, link: `/dashboard/workorders/${order.id}` }
-        );
+        const msg = `Order open for ${days} days — ${order.orderNumber.slice(0, 8).toUpperCase()}`;
+        await createNotification(uid, "ORDER_OVERDUE", msg, { workOrderId: order.id, link: `/dashboard/workorders/${order.id}` });
+        await pushToUser(uid, { title: "🕐 Overdue Order", body: msg, url: `/dashboard/workorders/${order.id}`, tag: `overdue-${order.id}` });
       }
     }
   }
