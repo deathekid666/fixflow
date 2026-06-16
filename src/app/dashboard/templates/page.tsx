@@ -291,7 +291,21 @@ export default function TemplatesPage() {
       )}
 
       {/* Templates grid */}
-      {loading ? <p className="text-slate-400 text-sm">Loading...</p> : filtered.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+          {[0,1,2,3,4,5].map(i => (
+            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-3/4" />
+              <div className="flex gap-2 pt-1">
+                <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded-full w-16" />
+                <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-full w-12" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center gap-3">
           <span className="text-5xl">🗂️</span>
           <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">

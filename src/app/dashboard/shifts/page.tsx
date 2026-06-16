@@ -98,7 +98,24 @@ export default function ShiftsPage() {
       </div>
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800"><h2 className="font-semibold text-slate-700 dark:text-slate-300 text-sm">History</h2></div>
-        {loading ? <p className="px-6 py-4 text-sm text-slate-400">Loading...</p> : shifts.length === 0 ? <p className="px-6 py-4 text-sm text-slate-400">No shifts yet.</p> : (
+        {loading ? (
+          <div className="animate-pulse divide-y divide-slate-200 dark:divide-slate-800">
+            {[0,1,2].map(i => (
+              <div key={i} className="px-6 py-4 flex gap-6">
+                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-24" />
+                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-32" />
+                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-28" />
+                <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-16" />
+              </div>
+            ))}
+          </div>
+        ) : shifts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-14 text-center">
+            <p className="text-3xl mb-3">🕐</p>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No shifts recorded yet</p>
+            <p className="text-xs text-slate-400 mt-1">Clock in above to start tracking hours</p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-100 dark:bg-slate-800 text-xs text-slate-500 dark:text-slate-400 uppercase">

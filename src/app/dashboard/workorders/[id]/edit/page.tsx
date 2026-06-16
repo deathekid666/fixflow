@@ -64,7 +64,17 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-slate-500 text-sm">Loading...</div>;
+  if (loading) return (
+    <div className="p-6 max-w-3xl mx-auto space-y-4 animate-pulse">
+      <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-40" />
+      {[0,1,2,3].map(i => (
+        <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
+          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-24" />
+          <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded" />
+        </div>
+      ))}
+    </div>
+  );
   if (!form) return null;
 
   return (

@@ -59,8 +59,27 @@ export default function RatingsPage() {
           </div>
         </div>
       )}
-      {loading ? <p className="text-sm text-slate-400">Loading...</p> : error ? <p className="text-sm text-red-400">{error}</p> : ratings.length === 0 ? (
-        <p className="text-sm text-slate-400">No ratings yet. They appear after work orders are delivered.</p>
+      {loading ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 animate-pulse space-y-2">
+              <div className="flex justify-between">
+                <div className="space-y-1.5">
+                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-32" />
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded w-24" />
+                </div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20" />
+              </div>
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-48" />
+            </div>
+          ))}
+        </div>
+      ) : error ? <p className="text-sm text-red-400">{error}</p> : ratings.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⭐</p>
+          <p className="text-base font-semibold text-slate-700 dark:text-slate-200">No ratings yet</p>
+          <p className="text-sm text-slate-400 mt-1 max-w-xs">Customer ratings appear here after work orders are marked as delivered.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {ratings.map((r) => (

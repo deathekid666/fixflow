@@ -83,8 +83,6 @@ async function sendViaTwilio(to: string, message: string, whatsapp: boolean): Pr
     : process.env.TWILIO_PHONE_NUMBER;
 
   if (!sid || !token || !from) {
-    console.warn("[SMS] Twilio credentials not configured — falling back to mock");
-    console.log(`[SMS MOCK] To: ${to} | ${message}`);
     return { success: false, error: "Twilio credentials not configured", provider: whatsapp ? "twilio_whatsapp" : "twilio_sms" };
   }
 
@@ -110,8 +108,7 @@ async function sendViaTwilio(to: string, message: string, whatsapp: boolean): Pr
   }
 }
 
-async function sendMock(to: string, message: string): Promise<SendResult> {
-  console.log(`[SMS MOCK] To: ${to}\n${message}`);
+async function sendMock(_to: string, _message: string): Promise<SendResult> {
   return { success: true, messageId: `mock_${Date.now()}`, provider: "mock" };
 }
 

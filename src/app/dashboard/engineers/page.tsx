@@ -188,9 +188,29 @@ export default function EngineersPage() {
       )}
 
       {loading ? (
-        <p className="text-slate-400 text-sm">Loading...</p>
+        <div className="space-y-4">
+          {[0,1,2].map(i => (
+            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 animate-pulse space-y-3">
+              <div className="flex justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-36" />
+                  <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-48" />
+                </div>
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-20" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[0,1,2].map(j => <div key={j} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-lg" />)}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : engineers.length === 0 ? (
-        <p className="text-slate-400 text-sm">No engineers yet.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">👥</p>
+          <p className="text-base font-semibold text-slate-700 dark:text-slate-200">No team members yet</p>
+          <p className="text-sm text-slate-400 mt-1 max-w-xs">Add engineers to your shop so they can log in and work on orders.</p>
+          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">+ Add Engineer</button>
+        </div>
       ) : (
         <div className="space-y-4">
           {engineers.map((e) => (

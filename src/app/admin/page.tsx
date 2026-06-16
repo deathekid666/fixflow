@@ -87,7 +87,16 @@ export default function SuperAdminPage() {
           <h2 className="text-sm font-semibold text-white">All Shops</h2>
         </div>
         {loading ? (
-          <p className="text-slate-500 text-sm p-5">Loading...</p>
+          <div className="animate-pulse divide-y divide-slate-800">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="px-4 py-4 flex gap-6">
+                <div className="h-3 bg-slate-700 rounded w-32" />
+                <div className="h-3 bg-slate-700 rounded w-24" />
+                <div className="h-3 bg-slate-800 rounded w-16" />
+                <div className="h-3 bg-slate-800 rounded w-20" />
+              </div>
+            ))}
+          </div>
         ) : shops.length === 0 ? (
           <p className="text-slate-500 text-sm p-5">No shops yet.</p>
         ) : (

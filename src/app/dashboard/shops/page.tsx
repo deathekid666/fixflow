@@ -109,7 +109,18 @@ export default function ShopsPage() {
     );
   }
 
-  if (loading) return <div className="p-6 text-slate-500 text-sm">Loading...</div>;
+  if (loading) return (
+    <div className="p-6 space-y-4">
+      <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-40 animate-pulse" />
+      {[0,1,2].map(i => (
+        <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 animate-pulse space-y-3">
+          <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+          <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+          <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/4" />
+        </div>
+      ))}
+    </div>
+  );
 
   const daysLeft = myShop?.trialEndsAt
     ? Math.max(0, Math.ceil((new Date(myShop.trialEndsAt).getTime() - Date.now()) / 86400000))
