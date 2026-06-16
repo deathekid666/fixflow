@@ -176,12 +176,53 @@ export default function LessonPage() {
 
         {/* Lesson Body */}
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-          {/* Video placeholder */}
-          {lesson.videoUrl && (
-            <div className="mb-8 aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
-              <span className="text-slate-400 text-sm">▶ Video player would appear here</span>
-            </div>
-          )}
+          {/* Video embed */}
+          {lesson.videoUrl && (() => {
+            const url = lesson.videoUrl!;
+            // YouTube: watch?v= or youtu.be/
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+            if (ytMatch) {
+              return (
+                <div className="mb-8 aspect-video rounded-xl overflow-hidden">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              );
+            }
+            // Vimeo
+            const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+            if (vimeoMatch) {
+              return (
+                <div className="mb-8 aspect-video rounded-xl overflow-hidden">
+                  <iframe
+                    src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+                    className="w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              );
+            }
+            // Direct video file
+            if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
+              return (
+                <div className="mb-8 aspect-video rounded-xl overflow-hidden bg-black">
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video src={url} controls className="w-full h-full" />
+                </div>
+              );
+            }
+            // Generic iframe fallback
+            return (
+              <div className="mb-8 aspect-video rounded-xl overflow-hidden">
+                <iframe src={url} className="w-full h-full" allowFullScreen />
+              </div>
+            );
+          })()}
 
           {/* Certificate earned banner */}
           {certCode && (

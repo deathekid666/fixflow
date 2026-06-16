@@ -61,6 +61,30 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return Response.json(updated);
   }
 
+  const isReceiving = body.status === "RECEIVED" && order.status !== "RECEIVED";
+
+  if (isReceiving) {
+    const items = await prisma.purchaseOrderItem.findMany({
+      where: { purchaseOrderId: params.id },
+    });
+    const updated = await prisma.$transaction([
+      prisma.purchaseOrder.update({
+        where: { id: params.id },
+        data: {
+          status: "RECEIVED",
+          ...(body.notes !== undefined && { notes: body.notes }),
+        },
+      }),
+      ...items.map(item =>
+        prisma.sparePart.update({
+          where: { id: item.sparePartId },
+          data: { stock: { increment: item.quantity } },
+        })
+      ),
+    ]);
+    return Response.json(updated[0]);
+  }
+
   const updated = await prisma.purchaseOrder.update({
     where: { id: params.id },
     data: {
