@@ -1,4 +1,7 @@
-const CACHE = 'fixflow-dashboard-v2';
+// FixFlow Dashboard Service Worker
+// Version injected at build time by scripts/sw-version.js
+const BUILD = 'mqh8lh6g';
+const CACHE = `fixflow-dashboard-${BUILD}`;
 
 const PRECACHE = [
   '/dashboard',
@@ -26,55 +29,54 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// ── Network-first helper ──────────────────────────────────────────────────────
+async function networkFirst(request, fallback) {
+  const cache = await caches.open(CACHE);
+  try {
+    const res = await fetch(request);
+    if (res.ok) cache.put(request, res.clone());
+    return res;
+  } catch {
+    const cached = await cache.match(request);
+    return cached ?? fallback;
+  }
+}
+
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
 
-  // Skip non-GET, cross-origin, and Next.js internals
+  // Skip non-GET, cross-origin, and HMR
   if (request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/_next/webpack-hmr')) return;
 
-  // Dashboard API: network-first, cache fallback (except auth routes)
-  if (url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth')) {
-    e.respondWith(
-      caches.open(CACHE).then(async (cache) => {
-        try {
-          const res = await fetch(request);
-          if (res.ok) cache.put(request, res.clone());
-          return res;
-        } catch {
-          const cached = await cache.match(request);
-          return cached ?? new Response(JSON.stringify({ error: 'offline' }), {
-            headers: { 'Content-Type': 'application/json', 'X-Offline': '1' },
-            status: 503,
-          });
-        }
+  // Auth routes: always network-only (never cache credentials)
+  if (url.pathname.startsWith('/api/auth')) return;
+
+  // API routes: network-first, offline JSON fallback
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(networkFirst(request,
+      new Response(JSON.stringify({ error: 'offline' }), {
+        headers: { 'Content-Type': 'application/json', 'X-Offline': '1' },
+        status: 503,
       })
-    );
+    ));
     return;
   }
 
   // Navigation: network-first, offline page fallback
   if (request.mode === 'navigate') {
-    e.respondWith(
-      fetch(request)
-        .then((res) => {
-          if (res.ok) {
-            caches.open(CACHE).then((c) => c.put(request, res.clone()));
-          }
-          return res;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          return cached ?? caches.match('/dashboard') ?? new Response('Offline', { status: 503 });
-        })
-    );
+    e.respondWith(networkFirst(request,
+      caches.match('/offline').then((p) => p ?? new Response('Offline', { status: 503 }))
+    ));
     return;
   }
 
-  // Static assets (_next/static): cache-first
+  // Static assets (_next/static): content-hashed by Next.js so safe to
+  // cache-first — a new hash means a new URL, so stale cache is never hit.
+  // Network-first here would fetch every JS chunk on every page load.
   if (url.pathname.startsWith('/_next/static')) {
     e.respondWith(
       caches.match(request).then((cached) => {
@@ -88,19 +90,8 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Images / fonts: stale-while-revalidate
-  if (['image', 'font'].includes(request.destination)) {
-    e.respondWith(
-      caches.open(CACHE).then(async (cache) => {
-        const cached = await cache.match(request);
-        const networkFetch = fetch(request).then((res) => {
-          if (res.ok) cache.put(request, res.clone());
-          return res;
-        }).catch(() => cached);
-        return cached ?? networkFetch;
-      })
-    );
-  }
+  // Everything else (images, fonts, icons): network-first, cache fallback
+  e.respondWith(networkFirst(request, new Response('', { status: 503 })));
 });
 
 // ── Push Notifications ────────────────────────────────────────────────────────
