@@ -107,9 +107,21 @@ interface BeforeInstallPromptEvent extends Event {
 
 const INSTALL_DISMISSED_KEY = "ff_install_dismissed_v1";
 
+function isIOS() {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function isInStandaloneMode() {
+  if (typeof window === "undefined") return false;
+  return ("standalone" in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
+    || window.matchMedia("(display-mode: standalone)").matches;
+}
+
 export default function DashboardPWA({ userId }: Props) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
+  const [showIOSBanner, setShowIOSBanner] = useState(false);
   const [notifState, setNotifState] = useState<"idle" | "requested" | "granted" | "denied">("idle");
   const pullProgress = usePullToRefresh();
   const regRef = useRef<ServiceWorkerRegistration | null>(null);
@@ -119,7 +131,7 @@ export default function DashboardPWA({ userId }: Props) {
     registerSW().then((reg) => { regRef.current = reg; });
   }, []);
 
-  // Capture install prompt
+  // Capture install prompt (Android/Chrome)
   useEffect(() => {
     const dismissed = !!localStorage.getItem(INSTALL_DISMISSED_KEY);
     if (dismissed) return;
@@ -129,12 +141,21 @@ export default function DashboardPWA({ userId }: Props) {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  // Show install banner after 30s
+  // Show install banner after 30s (Android/Chrome fires beforeinstallprompt)
   useEffect(() => {
     if (!deferredPrompt) return;
     const t = setTimeout(() => setShowBanner(true), 30_000);
     return () => clearTimeout(t);
   }, [deferredPrompt]);
+
+  // iOS: show manual instructions after 30s if not already installed
+  useEffect(() => {
+    if (!isIOS() || isInStandaloneMode()) return;
+    const dismissed = !!localStorage.getItem(INSTALL_DISMISSED_KEY);
+    if (dismissed) return;
+    const t = setTimeout(() => setShowIOSBanner(true), 30_000);
+    return () => clearTimeout(t);
+  }, []);
 
   // Request push permission and subscribe after SW is ready
   useEffect(() => {
@@ -162,6 +183,7 @@ export default function DashboardPWA({ userId }: Props) {
   function dismissBanner() {
     localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
     setShowBanner(false);
+    setShowIOSBanner(false);
   }
 
   async function requestPush() {
@@ -222,8 +244,26 @@ export default function DashboardPWA({ userId }: Props) {
         </div>
       )}
 
+      {/* iOS install instructions */}
+      {showIOSBanner && !showBanner && (
+        <div className="fixed bottom-20 lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 lg:w-80 z-50 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl flex-shrink-0">🔧</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white">Install FixFlow</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Tap the <span className="text-white font-medium">Share</span> button (&#x23F6;) at the bottom of Safari, then choose <span className="text-white font-medium">&ldquo;Add to Home Screen&rdquo;</span>.
+              </p>
+            </div>
+            <button onClick={dismissBanner} className="text-slate-500 hover:text-slate-300 text-lg leading-none flex-shrink-0">✕</button>
+          </div>
+          {/* Triangle pointer */}
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-slate-900 border-r border-b border-slate-700 rotate-45" />
+        </div>
+      )}
+
       {/* Push notification permission prompt — shown after 45s if not yet granted */}
-      {notifState === "idle" && !showBanner && (
+      {notifState === "idle" && !showBanner && !showIOSBanner && (
         <PushPrompt onAccept={requestPush} onDismiss={() => setNotifState("denied")} />
       )}
     </>
