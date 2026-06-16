@@ -53,6 +53,11 @@ model Shop {
   taxEnabled         Boolean  @default(false)
   taxRate            Float    @default(0)
   taxLabel           String   @default("TVA")
+  city               String?
+  country            String?
+  lat                Float?
+  lng                Float?
+  certification      String?
   createdAt          DateTime @default(now())
 
   users          User[]

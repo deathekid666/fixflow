@@ -12,7 +12,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const body = await req.json();
-  const { name, address, phone, email, googleMapsUrl, currency, onboardingComplete, taxEnabled, taxRate, taxLabel } = body;
+  const { name, address, phone, email, googleMapsUrl, currency, onboardingComplete, taxEnabled, taxRate, taxLabel, city, country, lat, lng, certification } = body;
 
   const shop = await prisma.shop.update({
     where: { id: params.id },
@@ -27,6 +27,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(taxEnabled !== undefined && { taxEnabled }),
       ...(taxRate !== undefined && { taxRate: parseFloat(taxRate) || 0 }),
       ...(taxLabel && { taxLabel }),
+      city: city !== undefined ? city || null : undefined,
+      country: country !== undefined ? country || null : undefined,
+      lat: lat !== undefined ? (lat !== "" ? parseFloat(lat) : null) : undefined,
+      lng: lng !== undefined ? (lng !== "" ? parseFloat(lng) : null) : undefined,
+      certification: certification !== undefined ? certification || null : undefined,
     },
   });
 

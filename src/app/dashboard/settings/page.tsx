@@ -17,6 +17,9 @@ type Shop = {
   currency: string;
   taxEnabled: boolean; taxRate: number; taxLabel: string;
   plan: string; status: string; trialEndsAt: string | null;
+  city: string | null; country: string | null;
+  lat: number | null; lng: number | null;
+  certification: string | null;
 };
 
 type DayAvailability = {
@@ -78,7 +81,7 @@ export default function SettingsPage() {
 
   // Shop
   const [shop, setShop] = useState<Shop | null>(null);
-  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD", taxEnabled: false, taxRate: 20, taxLabel: "TVA" });
+  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD", taxEnabled: false, taxRate: 20, taxLabel: "TVA", city: "", country: "", lat: "", lng: "", certification: "" });
   const [savingShop, setSavingShop] = useState(false);
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -113,7 +116,7 @@ export default function SettingsPage() {
         .then(r => r.json())
         .then(s => {
           setShop(s);
-          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD", taxEnabled: s.taxEnabled ?? false, taxRate: s.taxRate ?? 20, taxLabel: s.taxLabel ?? "TVA" });
+          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD", taxEnabled: s.taxEnabled ?? false, taxRate: s.taxRate ?? 20, taxLabel: s.taxLabel ?? "TVA", city: s.city ?? "", country: s.country ?? "", lat: s.lat?.toString() ?? "", lng: s.lng?.toString() ?? "", certification: s.certification ?? "" });
         }).catch(() => {});
       fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
@@ -440,6 +443,29 @@ export default function SettingsPage() {
                   <input value={shopForm.googleMapsUrl} onChange={e => setShopForm(p => ({ ...p, googleMapsUrl: e.target.value }))}
                     placeholder="https://maps.google.com/..." className={INPUT} />
                   <p className="text-xs text-slate-500 mt-1">Paste your Google Maps business link — shown as a "Get Directions" button on your booking page.</p>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">City</label>
+                  <input value={shopForm.city} onChange={e => setShopForm(p => ({ ...p, city: e.target.value }))}
+                    placeholder="e.g. Casablanca" className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Country</label>
+                  <input value={shopForm.country} onChange={e => setShopForm(p => ({ ...p, country: e.target.value }))}
+                    placeholder="e.g. Morocco" className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Latitude</label>
+                  <input type="number" step="any" value={shopForm.lat} onChange={e => setShopForm(p => ({ ...p, lat: e.target.value }))}
+                    placeholder="e.g. 33.5731" className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Longitude</label>
+                  <input type="number" step="any" value={shopForm.lng} onChange={e => setShopForm(p => ({ ...p, lng: e.target.value }))}
+                    placeholder="e.g. -7.5898" className={INPUT} />
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-slate-500">Latitude and longitude are used to show your shop pin on the public directory map. You can find your coordinates by right-clicking your location on Google Maps.</p>
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Currency</label>

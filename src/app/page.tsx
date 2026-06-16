@@ -466,6 +466,43 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Shop Directory CTA */}
+      <section className="border-y border-slate-800 bg-slate-900/30">
+        <div className="max-w-5xl mx-auto px-5 py-20 flex flex-col lg:flex-row items-center gap-10">
+          <div className="flex-1 text-center lg:text-left">
+            <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">Shop Directory</p>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Find a Repair Shop Near You</h2>
+            <p className="text-slate-400 text-lg leading-relaxed max-w-xl">
+              Browse verified repair shops powered by FixFlow — with real customer ratings, completed repair counts, and a map to help you find one nearby.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-7 justify-center lg:justify-start">
+              <Link href="/directory"
+                className="px-7 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all shadow-xl shadow-blue-600/25 hover:shadow-blue-600/40 hover:scale-[1.02] text-sm">
+                Browse Repair Shops →
+              </Link>
+              <Link href="/register"
+                className="px-7 py-3.5 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-medium rounded-xl transition-colors text-sm">
+                Add Your Shop
+              </Link>
+            </div>
+          </div>
+          <div className="flex-shrink-0 grid grid-cols-2 gap-3 w-full max-w-xs">
+            {[
+              { icon: "⭐", label: "Real ratings", desc: "From verified customers" },
+              { icon: "✅", label: "Repair stats", desc: "Jobs completed" },
+              { icon: "🗺️", label: "Map view", desc: "Find nearby shops" },
+              { icon: "📅", label: "Book online", desc: "Request a repair" },
+            ].map(item => (
+              <div key={item.label} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <p className="text-xs font-semibold text-white">{item.label}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="max-w-3xl mx-auto px-5 py-24 scroll-mt-16">
         <div className="text-center mb-12">
