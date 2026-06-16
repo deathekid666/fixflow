@@ -10,6 +10,7 @@ import TrialBanner from "@/components/TrialBanner";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
 import CertBadge from "@/components/CertBadge";
+import OnboardingTour from "@/components/OnboardingTour";
 
 type Notification = {
   id: string;
@@ -98,6 +99,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/login");
   }
 
+  const TOUR_IDS: Record<string, string> = {
+    "/dashboard": "tour-step-workorders",
+    "/dashboard/spareparts": "tour-step-spareparts",
+    "/dashboard/analytics": "tour-step-analytics",
+    "/dashboard/engineers": "tour-step-engineers",
+    "/dashboard/settings": "tour-step-settings",
+  };
+
   const nav = [
     { href: "/dashboard", label: t("workOrders"), icon: "📋" },
     { href: "/dashboard/appointments", label: "Appointments", icon: "📅" },
@@ -119,6 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ] : []),
       { href: "/dashboard/expenses", label: t("expenses"), icon: "💸" },
     ] : []),
+    { href: "/dashboard/academy", label: "Academy", icon: "🎓" },
     { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
   ];
 
@@ -162,7 +172,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}
         style={{ width: collapsed ? 56 : 224 }}
       >
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between overflow-hidden">
+        <div id="tour-step-dashboard" className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between overflow-hidden">
           <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity min-w-0">
             <div className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{collapsed ? "F" : "FixFlow"}</div>
             {!collapsed && <div className="text-xs text-slate-500 mt-0.5 truncate">{user.name}</div>}
@@ -180,6 +190,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
+                id={TOUR_IDS[item.href]}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${collapsed ? "justify-center" : ""} ${
                   active
@@ -287,6 +298,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
           {user && !user.isSuperAdmin && user.shop && !user.shop.onboardingComplete && (
             <OnboardingWizard shopId={user.shopId ?? ""} shopName={user.shop.name ?? ""} />
+          )}
+          {user && !user.isSuperAdmin && (
+            <OnboardingTour userId={user.id} userRole={user.role} />
           )}
           {children}
         </main>

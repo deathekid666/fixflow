@@ -1,0 +1,35 @@
+{
+  "name": "FixFlow - My Repairs",
+  "short_name": "My Repairs",
+  "description": "Track all your device repairs from any FixFlow shop — no login needed.",
+  "start_url": "/customer-app/my-repairs",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "My Repairs",
+      "short_name": "Repairs",
+      "description": "View your repair history",
+      "url": "/customer-app/my-repairs",
+      "icons": [{ "src": "/icons/pwa-icon.svg", "sizes": "any" }]
+    }
+  ]
+}

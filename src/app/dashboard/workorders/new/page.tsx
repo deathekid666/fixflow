@@ -207,6 +207,19 @@ export default function NewWorkOrderPage() {
       ]);
     }
 
+    // Fire confetti + flag for first-ever work order
+    const firstWoKey = `fixflow_first_wo_${user?.shopId ?? ""}`;
+    if (!localStorage.getItem(firstWoKey)) {
+      localStorage.setItem(firstWoKey, "1");
+      import("canvas-confetti").then((mod) => {
+        const fire = mod.default ?? mod;
+        fire({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
+        setTimeout(() => fire({ particleCount: 60, spread: 120, origin: { y: 0.45 }, angle: 60 }), 300);
+        setTimeout(() => fire({ particleCount: 60, spread: 120, origin: { y: 0.45 }, angle: 120 }), 600);
+      });
+      await new Promise((r) => setTimeout(r, 900));
+    }
+
     router.push(`/dashboard/workorders/${workOrderId}`);
   }
 

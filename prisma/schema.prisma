@@ -33,6 +33,9 @@ model User {
   customerNotes    CustomerNote[]
   purchaseOrders   PurchaseOrder[]
   commissions      EngineerCommission[]
+  enrollments      Enrollment[]
+  lessonProgress   LessonProgress[]
+  certificates     AcademyCertificate[]
 
   @@index([shopId])
 }
@@ -508,8 +511,16 @@ model ShopSettings {
   id              String   @id @default(cuid())
   shopId          String   @unique
   defaultSlaHours Int      @default(24)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+
+  // Customer SMS/WhatsApp notifications
+  smsEnabled      Boolean  @default(false)
+  smsProvider     String   @default("mock")
+  notifyStatuses  String   @default("DONE,DELIVERED")
+  smsLanguage     String   @default("en")
+  includeTrackingLink Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   shop Shop @relation(fields: [shopId], references: [id])
 }
@@ -540,4 +551,75 @@ model ApiKey {
   isActive  Boolean   @default(true)
 
   shop Shop @relation(fields: [shopId], references: [id])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  thumbnail   String?
+  duration    Int      @default(0)
+  level       String   @default("BEGINNER")
+  category    String   @default("General")
+  instructor  String   @default("FixFlow Team")
+  free        Boolean  @default(true)
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+  certificates AcademyCertificate[]
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  courseId  String
+  title     String
+  content   String   @db.Text
+  videoUrl  String?
+  duration  Int      @default(10)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+}
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model AcademyCertificate {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String
+  issuedAt        DateTime @default(now())
+  certificateCode String   @unique
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
 }

@@ -5,6 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/context/LanguageContext";
 import { CURRENCIES } from "@/lib/currency";
+import { loadSocialSettings, saveSocialSettings } from "@/components/SocialShareModal";
 
 type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys";
 
@@ -57,6 +58,50 @@ function Alert({ type, msg }: { type: "success" | "error"; msg: string }) {
   );
 }
 
+function SocialSharingSettings() {
+  const [s, setS] = useState(loadSocialSettings());
+  function update<K extends keyof ReturnType<typeof loadSocialSettings>>(key: K, val: ReturnType<typeof loadSocialSettings>[K]) {
+    const next = { ...s, [key]: val };
+    saveSocialSettings(next);
+    setS(next);
+  }
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-900 dark:text-white font-medium">Show price on image</p>
+          <p className="text-xs text-slate-500">Display the repair total on the generated card</p>
+        </div>
+        <button onClick={() => update("showPrice", !s.showPrice)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${s.showPrice ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+          <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${s.showPrice ? "translate-x-6" : "translate-x-1"}`} />
+        </button>
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-900 dark:text-white font-medium">Show FixFlow badge</p>
+          <p className="text-xs text-slate-500">Add "Powered by FixFlow" to shared images</p>
+        </div>
+        <button onClick={() => update("showBadge", !s.showBadge)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${s.showBadge ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+          <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${s.showBadge ? "translate-x-6" : "translate-x-1"}`} />
+        </button>
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-900 dark:text-white font-medium">Background color</p>
+          <p className="text-xs text-slate-500">Used when photos don't fill the full frame</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400 font-mono">{s.bgColor}</span>
+          <input type="color" value={s.bgColor} onChange={e => update("bgColor", e.target.value)}
+            className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer p-1 bg-white dark:bg-slate-800" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user, refresh } = useAuth();
   const { theme, toggle } = useTheme();
@@ -91,6 +136,18 @@ export default function SettingsPage() {
   const [savingSla, setSavingSla] = useState(false);
   const [slaMsg, setSlaMsg] = useState("");
 
+  // SMS / WhatsApp notifications
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [smsProvider, setSmsProvider] = useState("mock");
+  const [notifyStatuses, setNotifyStatuses] = useState<string[]>(["DONE", "DELIVERED"]);
+  const [smsLanguage, setSmsLanguage] = useState("en");
+  const [includeTrackingLink, setIncludeTrackingLink] = useState(true);
+  const [savingNotif, setSavingNotif] = useState(false);
+  const [notifMsg, setNotifMsg] = useState("");
+  const [testPhone, setTestPhone] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testMsg, setTestMsg] = useState("");
+
   // API Keys
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [newKeyName, setNewKeyName] = useState("");
@@ -120,7 +177,15 @@ export default function SettingsPage() {
         }).catch(() => {});
       fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) setDefaultSlaHours(d.defaultSlaHours); })
+        .then(d => {
+          if (!d) return;
+          setDefaultSlaHours(d.defaultSlaHours);
+          setSmsEnabled(d.smsEnabled ?? false);
+          setSmsProvider(d.smsProvider ?? "mock");
+          setNotifyStatuses((d.notifyStatuses ?? "DONE,DELIVERED").split(",").map((s: string) => s.trim()).filter(Boolean));
+          setSmsLanguage(d.smsLanguage ?? "en");
+          setIncludeTrackingLink(d.includeTrackingLink ?? true);
+        })
         .catch(() => {});
     }
   }, [user]);
@@ -279,6 +344,37 @@ export default function SettingsPage() {
     });
     setSlaMsg(res.ok ? "SLA setting saved." : "Failed to save.");
     setSavingSla(false);
+  }
+
+  async function saveNotifSettings() {
+    if (!shop) return;
+    setSavingNotif(true); setNotifMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ smsEnabled, smsProvider, notifyStatuses: notifyStatuses.join(","), smsLanguage, includeTrackingLink }),
+    });
+    setNotifMsg(res.ok ? "Notification settings saved." : "Failed to save.");
+    setSavingNotif(false);
+    setTimeout(() => setNotifMsg(""), 3000);
+  }
+
+  async function sendTestSms() {
+    if (!shop || !testPhone.trim()) return;
+    setSendingTest(true); setTestMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/test-sms`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ phone: testPhone.trim() }),
+    });
+    const data = await res.json();
+    setTestMsg(data.success ? "✅ Test message sent!" : `❌ ${data.error ?? "Failed to send"}`);
+    setSendingTest(false);
+  }
+
+  function toggleStatus(status: string) {
+    setNotifyStatuses(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
   }
 
   async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -509,6 +605,124 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Customer Notifications */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Customer Notifications</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">SMS / WhatsApp alerts sent to customers when repair status changes</p>
+                  </div>
+                  <button onClick={() => setSmsEnabled(p => !p)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${smsEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${smsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+
+                {smsEnabled && (
+                  <div className="space-y-4 pl-0">
+                    {/* Provider */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Channel</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([
+                          { value: "twilio_sms",      label: "📱 SMS",       desc: "Twilio SMS" },
+                          { value: "twilio_whatsapp", label: "💬 WhatsApp",  desc: "Twilio WA" },
+                          { value: "mock",            label: "🧪 Test mode", desc: "Log only" },
+                        ] as const).map(p => (
+                          <button key={p.value} onClick={() => setSmsProvider(p.value)}
+                            className={`px-3 py-2.5 rounded-xl border text-left transition-colors ${smsProvider === p.value ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}>
+                            <p className="text-xs font-semibold text-slate-900 dark:text-white">{p.label}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{p.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(smsProvider === "twilio_sms" || smsProvider === "twilio_whatsapp") && (
+                      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3 space-y-1.5">
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Twilio credentials required</p>
+                        <p className="text-xs text-amber-600/80 dark:text-amber-400/70">Set these in your Vercel environment variables:</p>
+                        <div className="font-mono text-xs text-amber-800 dark:text-amber-300 space-y-0.5">
+                          <p>TWILIO_ACCOUNT_SID</p>
+                          <p>TWILIO_AUTH_TOKEN</p>
+                          {smsProvider === "twilio_sms" && <p>TWILIO_PHONE_NUMBER</p>}
+                          {smsProvider === "twilio_whatsapp" && <p>TWILIO_WHATSAPP_FROM</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Language */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Message language</label>
+                      <div className="flex gap-2">
+                        {([["en", "English"], ["fr", "Français"], ["ar", "العربية"]] as const).map(([v, l]) => (
+                          <button key={v} onClick={() => setSmsLanguage(v)}
+                            className={`px-4 py-1.5 text-xs rounded-lg border transition-colors ${smsLanguage === v ? "bg-blue-600 text-white border-blue-600" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"}`}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Which statuses trigger a notification */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Notify customer when status changes to</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {([
+                          ["DIAGNOSING", "🔍 Diagnosing"],
+                          ["REPAIRING",  "🔧 Repairing"],
+                          ["DONE",       "✅ Done"],
+                          ["DELIVERED",  "📦 Delivered"],
+                          ["CANCELLED",  "❌ Cancelled"],
+                        ] as const).map(([s, label]) => (
+                          <label key={s} className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${notifyStatuses.includes(s) ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-slate-200 dark:border-slate-700"}`}>
+                            <input type="checkbox" checked={notifyStatuses.includes(s)} onChange={() => toggleStatus(s)} className="accent-blue-600" />
+                            <span className="text-xs text-slate-700 dark:text-slate-300">{label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Options */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-900 dark:text-white font-medium">Include tracking link</p>
+                        <p className="text-xs text-slate-500">Add a link so customers can track their repair</p>
+                      </div>
+                      <button onClick={() => setIncludeTrackingLink(p => !p)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${includeTrackingLink ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+                        <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${includeTrackingLink ? "translate-x-6" : "translate-x-1"}`} />
+                      </button>
+                    </div>
+
+                    {/* Test SMS */}
+                    <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+                      <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Send a test message</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="tel"
+                          placeholder="+212 6XX XXX XXX"
+                          value={testPhone}
+                          onChange={e => setTestPhone(e.target.value)}
+                          className={INPUT}
+                        />
+                        <button onClick={sendTestSms} disabled={sendingTest || !testPhone.trim()}
+                          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs rounded-lg transition-colors whitespace-nowrap">
+                          {sendingTest ? "Sending…" : "Send Test"}
+                        </button>
+                      </div>
+                      {testMsg && <p className={`text-xs ${testMsg.startsWith("✅") ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{testMsg}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {notifMsg && <p className={`text-xs ${notifMsg.includes("saved") ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>{notifMsg}</p>}
+                <button onClick={saveNotifSettings} disabled={savingNotif}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
+                  {savingNotif ? "Saving…" : "Save Notification Settings"}
+                </button>
+              </div>
+
               {/* Tax Settings */}
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
                 <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Tax Settings</h3>
@@ -552,6 +766,13 @@ export default function SettingsPage() {
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
                   {savingShop ? "Saving..." : "Save Tax Settings"}
                 </button>
+              </div>
+
+              {/* Social Sharing */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Social Sharing</h3>
+                <p className="text-xs text-slate-500">Customize how repair posts look when shared from delivered work orders. Settings are saved in your browser.</p>
+                <SocialSharingSettings />
               </div>
 
               {/* Public links & embed codes */}
@@ -658,6 +879,23 @@ export default function SettingsPage() {
               <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                 theme === "dark" ? "translate-x-5" : "translate-x-0"
               }`} />
+            </button>
+          </div>
+
+          {/* Onboarding tour */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">Onboarding Tour</p>
+              <p className="text-xs text-slate-500 mt-0.5">Replay the guided walkthrough of FixFlow</p>
+            </div>
+            <button
+              onClick={() => {
+                try { localStorage.removeItem(`fixflow_tour_v1_${user?.id ?? ""}`); } catch { /* noop */ }
+                window.dispatchEvent(new CustomEvent("fixflow:start-tour"));
+              }}
+              className="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+            >
+              ▶ Replay Tour
             </button>
           </div>
 
