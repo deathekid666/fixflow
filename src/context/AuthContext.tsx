@@ -20,6 +20,7 @@ type User = {
     name: string;
     onboardingComplete: boolean;
     currency: string;
+    certification: string | null;
   } | null;
 };
 

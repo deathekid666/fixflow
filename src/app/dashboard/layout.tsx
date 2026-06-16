@@ -9,6 +9,7 @@ import OnboardingWizard from "@/components/OnboardingWizard";
 import TrialBanner from "@/components/TrialBanner";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
+import CertBadge from "@/components/CertBadge";
 
 type Notification = {
   id: string;
@@ -105,6 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/customers", label: t("customers"), icon: "👤" },
     { href: "/dashboard/warranties", label: t("warranties"), icon: "🛡️" },
     { href: "/dashboard/ratings", label: t("satisfaction"), icon: "⭐" },
+    { href: "/dashboard/certification", label: "Certification", icon: "🏆" },
     { href: "/dashboard/messages", label: "Messages", icon: "💬" },
     { href: "/dashboard/csv", label: t("csvImport"), icon: "📂" },
     ...(user.role === "ADMIN" ? [
@@ -164,6 +166,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity min-w-0">
             <div className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{collapsed ? "F" : "FixFlow"}</div>
             {!collapsed && <div className="text-xs text-slate-500 mt-0.5 truncate">{user.name}</div>}
+            {!collapsed && user.shop?.certification && (
+              <div className="mt-1.5">
+                <CertBadge level={user.shop.certification} size="xs" />
+              </div>
+            )}
           </button>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none">✕</button>
         </div>

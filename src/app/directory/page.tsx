@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import CertBadge from "@/components/CertBadge";
 
 type Shop = {
   id: string;
@@ -130,11 +131,7 @@ export default function DirectoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h2 className="font-semibold text-white text-sm group-hover:text-blue-400 transition-colors truncate">{shop.name}</h2>
-                        {shop.certification && (
-                          <span className="text-xs bg-amber-500/15 border border-amber-500/30 text-amber-400 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-                            ✦ {shop.certification}
-                          </span>
-                        )}
+                        {shop.certification && <CertBadge level={shop.certification} size="xs" />}
                       </div>
                       {(shop.city || shop.country) && (
                         <p className="text-xs text-slate-500 mt-0.5 truncate">

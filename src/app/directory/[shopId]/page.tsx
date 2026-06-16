@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import CertBadge from "@/components/CertBadge";
 
 const ShopMap = dynamic(() => import("@/components/ShopMap"), { ssr: false });
 
@@ -103,11 +104,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-3 flex-wrap">
                     <h1 className="text-2xl font-bold">{shop.name}</h1>
-                    {shop.certification && (
-                      <span className="mt-1 text-xs bg-amber-500/15 border border-amber-500/30 text-amber-500 px-2 py-1 rounded-full font-semibold">
-                        ✦ {shop.certification}
-                      </span>
-                    )}
+                    {shop.certification && <CertBadge level={shop.certification} size="sm" />}
                   </div>
                   {(shop.city || shop.country) && (
                     <p className="text-sm text-slate-500 mt-1">📍 {[shop.city, shop.country].filter(Boolean).join(", ")}</p>

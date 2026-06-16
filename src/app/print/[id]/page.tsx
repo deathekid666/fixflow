@@ -37,7 +37,7 @@ type WorkOrder = {
   taxRate: number;
   creator: { name: string };
   assignee: { name: string } | null;
-  shop: { name: string; address?: string; phone?: string; currency?: string } | null;
+  shop: { name: string; address?: string; phone?: string; currency?: string; certification?: string | null } | null;
   parts: { id: string; quantity: number; unitPrice: number; total: number; sparePart: { name: string; partNumber: string } }[];
   lineItems: { id: string; label: string; amount: number }[];
 };
@@ -183,7 +183,12 @@ export default function PrintPage({ params }: { params: { id: string } }) {
         <div className="header">
           <div>
             <div className="shop-name">{order.shop?.name ?? "FixFlow"}</div>
-            <div className="shop-sub">Repair Work Order Receipt</div>
+            <div className="shop-sub" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              Repair Work Order Receipt
+              {order.shop?.certification === "GOLD" && <span style={{ background: "#fef9c3", color: "#713f12", border: "1px solid #ca8a04", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥇 Gold Certified</span>}
+              {order.shop?.certification === "SILVER" && <span style={{ background: "#f1f5f9", color: "#374151", border: "1px solid #94a3b8", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥈 Silver Certified</span>}
+              {order.shop?.certification === "BRONZE" && <span style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #d97706", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥉 Bronze Certified</span>}
+            </div>
             {order.shop?.address && <div className="shop-contact">📍 {order.shop.address}</div>}
             {order.shop?.phone && <div className="shop-contact">📞 {order.shop.phone}</div>}
           </div>

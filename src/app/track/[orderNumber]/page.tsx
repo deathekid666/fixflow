@@ -15,7 +15,7 @@ type TrackData = {
   faultDescription: string;
   repairType: string | null;
   assignee: { name: string } | null;
-  shop: { name: string; phone: string | null; address: string | null; logoUrl: string | null } | null;
+  shop: { name: string; phone: string | null; address: string | null; logoUrl: string | null; certification: string | null } | null;
   logs: { action: string; description: string; createdAt: string }[];
   rating: { rating: number; comment: string | null } | null;
   attachments: { id: string; path: string; filename: string; createdAt: string }[];
@@ -159,6 +159,13 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
             )}
             <span style={{ color: "white", fontWeight: 700, fontSize: 18 }}>{data?.shop?.name ?? "FixFlow"}</span>
           </div>
+          {data?.shop?.certification && (
+            <div style={{ marginBottom: 8 }}>
+              {data.shop.certification === "GOLD" && <span style={{ background: "#fef9c3", color: "#713f12", border: "1px solid #ca8a04", borderRadius: 99, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>🥇 Gold Certified</span>}
+              {data.shop.certification === "SILVER" && <span style={{ background: "#f1f5f9", color: "#374151", border: "1px solid #94a3b8", borderRadius: 99, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>🥈 Silver Certified</span>}
+              {data.shop.certification === "BRONZE" && <span style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #d97706", borderRadius: 99, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>🥉 Bronze Certified</span>}
+            </div>
+          )}
           <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>Repair Status Tracker</p>
         </div>
 

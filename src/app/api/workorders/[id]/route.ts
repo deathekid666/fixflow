@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     include: {
       creator: { select: { id: true, name: true, email: true } },
       assignee: { select: { id: true, name: true, email: true } },
-      shop: { select: { id: true, name: true, phone: true, address: true, email: true, logoUrl: true, currency: true } },
+      shop: { select: { id: true, name: true, phone: true, address: true, email: true, logoUrl: true, currency: true, certification: true } },
       parts: {
         include: { sparePart: { select: { id: true, name: true, partNumber: true } } },
       },

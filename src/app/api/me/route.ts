@@ -22,6 +22,7 @@ export async function GET(req: Request) {
           name: true,
           onboardingComplete: true,
           currency: true,
+          certification: true,
         }
       }
     },

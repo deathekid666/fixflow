@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { smsService } from "@/lib/smsService";
+import { recalculateCertification } from "@/lib/certification";
 
 export const dynamic = "force-dynamic";
 
@@ -131,6 +132,11 @@ export async function POST(
         userId: order.assignedTo ?? order.userId,
       },
     });
+  }
+
+  // Recalculate certification whenever an order is completed/delivered
+  if ((isNowDelivered || isNowDone) && order.shopId) {
+    recalculateCertification(order.shopId).catch(() => {});
   }
 
   return Response.json(updated);

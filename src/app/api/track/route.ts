@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       faultDescription: true,
       repairType: true,
       assignee: { select: { name: true } },
-      shop: { select: { name: true, phone: true, address: true, logoUrl: true } },
+      shop: { select: { name: true, phone: true, address: true, logoUrl: true, certification: true } },
       logs: {
         select: { action: true, description: true, createdAt: true },
         orderBy: { createdAt: "asc" },
