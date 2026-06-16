@@ -6,7 +6,12 @@ import { cookies } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const { email, password } = body;
+
+  if (!email || !password) {
+    return Response.json({ error: "Email and password required" }, { status: 400 });
+  }
 
   const user = await prisma.user.findUnique({
     where: { email },
