@@ -29,6 +29,8 @@ function monthLabel(iso: string) {
   return new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString("default", { month: "long", year: "numeric" });
 }
 
+const ACCT_DATE_INPUT = "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500";
+
 export default function ReportsPage() {
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
@@ -39,6 +41,26 @@ export default function ReportsPage() {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [partsFrom, setPartsFrom] = useState("");
   const [partsTo, setPartsTo] = useState("");
+
+  // Accounting export
+  const thisYear = new Date().getFullYear();
+  const [acctFrom, setAcctFrom] = useState(`${thisYear}-01-01`);
+  const [acctTo, setAcctTo] = useState(new Date().toISOString().slice(0, 10));
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  function downloadAccounting(type: "quickbooks" | "xero" | "all-transactions") {
+    setExporting(type);
+    const params = new URLSearchParams({ type });
+    if (acctFrom) params.set("from", acctFrom);
+    if (acctTo)   params.set("to", acctTo);
+    const a = document.createElement("a");
+    a.href = `/api/export?${params}`;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => setExporting(null), 1500);
+  }
   const [partsLoading, setPartsLoading] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
@@ -213,6 +235,87 @@ export default function ReportsPage() {
                   </table>
                 </div>
               )}
+            </div>
+
+            {/* ── Accounting Export ── */}
+            <div className="no-print pt-2 border-t border-slate-200 dark:border-slate-800">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Accounting Export</h2>
+              <p className="text-sm text-slate-500 mb-5">Export payments, expenses, and commissions for your accounting software. Includes tax breakdown per transaction.</p>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-5">
+                {/* Date range */}
+                <div className="flex gap-3 items-end flex-wrap">
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">From</label>
+                    <input type="date" value={acctFrom} onChange={e => setAcctFrom(e.target.value)} className={ACCT_DATE_INPUT} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">To</label>
+                    <input type="date" value={acctTo} onChange={e => setAcctTo(e.target.value)} className={ACCT_DATE_INPUT} />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { label: "This month", from: `${thisYear}-${String(new Date().getMonth()+1).padStart(2,"0")}-01`, to: new Date().toISOString().slice(0,10) },
+                      { label: "This year",  from: `${thisYear}-01-01`, to: new Date().toISOString().slice(0,10) },
+                      { label: "Last year",  from: `${thisYear-1}-01-01`, to: `${thisYear-1}-12-31` },
+                    ].map(p => (
+                      <button key={p.label} onClick={() => { setAcctFrom(p.from); setAcctTo(p.to); }}
+                        className="px-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Export buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* QuickBooks */}
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🟢</span>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">QuickBooks</p>
+                    </div>
+                    <p className="text-xs text-slate-500">Date, Type, Num, Name, Description, Amount, Tax, Total</p>
+                    <button onClick={() => downloadAccounting("quickbooks")} disabled={exporting === "quickbooks"}
+                      className="w-full py-2 text-xs font-semibold bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                      {exporting === "quickbooks" ? "Preparing…" : "⬇ Export for QuickBooks"}
+                    </button>
+                  </div>
+
+                  {/* Xero */}
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🔵</span>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">Xero</p>
+                    </div>
+                    <p className="text-xs text-slate-500">ContactName, InvoiceNumber, InvoiceDate, DueDate, Description, Quantity, UnitAmount, TaxType, AccountCode</p>
+                    <button onClick={() => downloadAccounting("xero")} disabled={exporting === "xero"}
+                      className="w-full py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                      {exporting === "xero" ? "Preparing…" : "⬇ Export for Xero"}
+                    </button>
+                  </div>
+
+                  {/* All Transactions */}
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">📊</span>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">All Transactions</p>
+                    </div>
+                    <p className="text-xs text-slate-500">Date, Type, Reference, Party, Description, NetAmount, TaxAmount, GrossAmount, Method, Currency</p>
+                    <button onClick={() => downloadAccounting("all-transactions")} disabled={exporting === "all-transactions"}
+                      className="w-full py-2 text-xs font-semibold bg-slate-700 hover:bg-slate-600 disabled:opacity-60 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                      {exporting === "all-transactions" ? "Preparing…" : "⬇ Export All Transactions"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-500">
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">Payments</span> — work order payments collected, with tax split</p>
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">Expenses</span> — all recorded shop expenses</p>
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">Commissions</span> — engineer commission payouts</p>
+                </div>
+              </div>
             </div>
 
             {/* ── Parts section ── */}
