@@ -99,6 +99,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [addingNote, setAddingNote] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [showRating, setShowRating] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -291,9 +292,14 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
   async function deleteOrder() {
     setDeletingOrder(true);
+    setDeleteError("");
     const res = await fetch(`/api/workorders/${params.id}/edit`, { method: "DELETE", credentials: "include" });
     if (res.ok) { router.push("/dashboard"); }
-    else { setDeletingOrder(false); setShowDeleteConfirm(false); }
+    else {
+      const d = await res.json().catch(() => ({}));
+      setDeleteError(d.error || "Failed to delete. Try again.");
+      setDeletingOrder(false);
+    }
   }
 
   async function assignEngineer(assignedTo: string) {
@@ -596,10 +602,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           <button onClick={() => setShowBounceForm(!showBounceForm)} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-600 dark:text-red-400 rounded-lg transition-colors">Report Bounce</button>
           {isAdmin && !showDeleteConfirm && <button onClick={() => setShowDeleteConfirm(true)} className="text-xs px-3 py-1.5 bg-red-700/40 hover:bg-red-700/70 text-red-600 dark:text-red-400 rounded-lg transition-colors">🗑 Delete</button>}
           {isAdmin && showDeleteConfirm && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-red-600 dark:text-red-400">Delete?</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {deleteError
+                ? <span className="text-xs text-red-500">{deleteError}</span>
+                : <span className="text-xs text-red-600 dark:text-red-400">Delete?</span>}
               <button onClick={deleteOrder} disabled={deletingOrder} className="text-xs px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg disabled:opacity-50">{deletingOrder ? "..." : "Yes"}</button>
-              <button onClick={() => setShowDeleteConfirm(false)} className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg">No</button>
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteError(""); }} className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg">No</button>
             </div>
           )}
           {order.status === "RECEIVED" && (

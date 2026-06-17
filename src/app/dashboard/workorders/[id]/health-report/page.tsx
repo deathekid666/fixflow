@@ -21,12 +21,13 @@ export default function HealthReportPage({ params }: { params: { id: string } })
   const router = useRouter();
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     fetch(`/api/workorders/${params.id}`, { credentials: "include" })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => { setOrder(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => { setFetchError(true); setLoading(false); });
   }, []);
 
   if (loading) return (
@@ -37,6 +38,12 @@ export default function HealthReportPage({ params }: { params: { id: string } })
         <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-2/3" />
         <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
       </div>
+    </div>
+  );
+  if (fetchError) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-slate-500">
+      <p className="text-lg">⚠️ Failed to load health report</p>
+      <button onClick={() => router.back()} className="text-sm text-blue-500 hover:underline">Go back</button>
     </div>
   );
   if (!order) return <div className="flex items-center justify-center h-64 text-slate-500">Order not found</div>;
