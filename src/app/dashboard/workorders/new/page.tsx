@@ -34,6 +34,8 @@ export default function NewWorkOrderPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [imeiScanHint, setImeiScanHint] = useState(false);
+  const imeiRef = useRef<HTMLInputElement>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -331,7 +333,34 @@ export default function NewWorkOrderPage() {
           <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} placeholder="e.g. Samsung, Apple" />
           <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} placeholder="e.g. Galaxy S22" />
           <Field label="Serial Number" value={form.serialNumber} onChange={v => set("serialNumber", v)} placeholder="SN" />
-          <Field label="IMEI" value={form.imei} onChange={v => set("imei", v)} placeholder="IMEI" />
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">IMEI</label>
+            <div className="relative">
+              <input
+                ref={imeiRef}
+                type="text"
+                placeholder="IMEI"
+                value={form.imei}
+                onChange={e => set("imei", e.target.value)}
+                onFocus={e => { const t = e.target; setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }}
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-20 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  imeiRef.current?.focus();
+                  setImeiScanHint(true);
+                  setTimeout(() => setImeiScanHint(false), 4000);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors leading-tight"
+              >
+                ▌▌▌ Scan
+              </button>
+            </div>
+            {imeiScanHint && (
+              <p className="text-xs text-blue-500 dark:text-blue-400 mt-1 animate-pulse">Field focused — scan barcode now…</p>
+            )}
+          </div>
           <Field label="Warranty Start" type="date" value={form.warrantyStart} onChange={v => set("warrantyStart", v)} />
           <Field label="Warranty End" type="date" value={form.warrantyEnd} onChange={v => set("warrantyEnd", v)} />
         </div>

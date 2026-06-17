@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
@@ -8,6 +9,11 @@ import { PageHeader } from "@/components/PageHeader";
 type SparePart = {
   id: string; name: string; partNumber: string;
   description: string; unitPrice: number; stock: number;
+};
+
+type WorkOrderSummary = {
+  id: string; orderNumber: string; customerName: string;
+  deviceBrand: string; deviceModel: string; status: string;
 };
 
 type AlertPart = { id: string; name: string; partNumber: string; stock: number; unitPrice: number };
@@ -43,6 +49,19 @@ export default function SparePartsPage() {
   const [reorderCost, setReorderCost] = useState("");
   const [reorderNotes, setReorderNotes] = useState("");
   const [submittingReorder, setSubmittingReorder] = useState(false);
+
+  // Barcode scanner state
+  const [scanMode, setScanMode] = useState(false);
+  const [scannedPartId, setScannedPartId] = useState<string | null>(null);
+  const [scanNotFound, setScanNotFound] = useState<string | null>(null);
+  const [quickAddPartId, setQuickAddPartId] = useState<string | null>(null);
+  const [quickAddOrders, setQuickAddOrders] = useState<WorkOrderSummary[]>([]);
+  const [quickAddSearch, setQuickAddSearch] = useState("");
+  const [quickAddSearching, setQuickAddSearching] = useState(false);
+  const [quickAddQty, setQuickAddQty] = useState("1");
+  const [addingToOrder, setAddingToOrder] = useState(false);
+  const [quickAddSuccess, setQuickAddSuccess] = useState("");
+  const scannedRowRef = useRef<HTMLTableRowElement | null>(null);
 
   // Edit part details
   const [editingPartId, setEditingPartId] = useState<string | null>(null);
@@ -194,6 +213,62 @@ export default function SparePartsPage() {
     setSubmittingReorder(false);
   }
 
+  // Load work orders for quick-add whenever quickAddPartId is set or search changes
+  useEffect(() => {
+    if (!quickAddPartId) { setQuickAddOrders([]); return; }
+    const timer = setTimeout(async () => {
+      setQuickAddSearching(true);
+      try {
+        const url = quickAddSearch
+          ? `/api/workorders?search=${encodeURIComponent(quickAddSearch)}&limit=8`
+          : `/api/workorders?status=RECEIVED,DIAGNOSING,REPAIRING,DONE&limit=8`;
+        const res = await fetch(url, { credentials: "include" });
+        if (res.ok) setQuickAddOrders(await res.json());
+      } catch { /* ignore */ } finally {
+        setQuickAddSearching(false);
+      }
+    }, quickAddSearch ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [quickAddPartId, quickAddSearch]);
+
+  const handleScan = useCallback((code: string) => {
+    const normalized = code.trim().toLowerCase();
+    const match = parts.find(p => p.partNumber?.toLowerCase() === normalized);
+    if (match) {
+      setScannedPartId(match.id);
+      setScanNotFound(null);
+      setTimeout(() => scannedRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    } else {
+      setScannedPartId(null);
+      setScanNotFound(code);
+      setForm(prev => ({ ...prev, partNumber: code }));
+      setShowForm(true);
+    }
+  }, [parts]);
+
+  useBarcodeScanner({ onScan: handleScan, enabled: scanMode, priority: true });
+
+  async function handleQuickAdd(orderId: string) {
+    if (!quickAddPartId) return;
+    setAddingToOrder(true);
+    const res = await fetch(`/api/workorders/${orderId}/parts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ sparePartId: quickAddPartId, quantity: Math.max(1, parseInt(quickAddQty) || 1) }),
+    });
+    if (res.ok) {
+      setQuickAddSuccess("✓ Part added to work order");
+      setTimeout(() => { setQuickAddSuccess(""); setQuickAddPartId(null); setScannedPartId(null); }, 2500);
+      await load();
+    } else {
+      const d = await res.json();
+      setQuickAddSuccess(`✗ ${d.error || "Failed to add part"}`);
+      setTimeout(() => setQuickAddSuccess(""), 3000);
+    }
+    setAddingToOrder(false);
+  }
+
   const outOfStock = parts.filter(p => p.stock === 0);
   const lowStock = parts.filter(p => p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD);
   const filtered = parts.filter(p => {
@@ -208,14 +283,64 @@ export default function SparePartsPage() {
         title="Spare Parts"
         subtitle="Manage your parts catalog and stock"
         actions={
-          user?.role === "ADMIN" ? (
-            <button onClick={() => setShowForm(!showForm)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-              + Add Part
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const next = !scanMode;
+                setScanMode(next);
+                if (!next) { setScannedPartId(null); setScanNotFound(null); }
+              }}
+              title={scanMode ? "Scan mode ON — scan a barcode to find a part" : "Enable barcode scan mode"}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                scanMode
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <span className="font-mono tracking-tighter text-[11px] leading-none">▌▌▌</span>
+              {scanMode ? "Scan ON" : "Scan Part"}
             </button>
-          ) : undefined
+            {user?.role === "ADMIN" && (
+              <button onClick={() => setShowForm(!showForm)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
+                + Add Part
+              </button>
+            )}
+          </div>
         }
       />
+
+      {/* Scan mode banner */}
+      {scanMode && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+          <span className="text-blue-600 dark:text-blue-400 font-mono tracking-tight text-lg leading-none">▌▌▌</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Scan mode active</p>
+            <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Point your USB barcode scanner at any part barcode. Click a part number field to type manually.</p>
+          </div>
+          {scannedPartId && (
+            <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/40 px-2 py-1 rounded-lg whitespace-nowrap">Part found ✓</span>
+          )}
+        </div>
+      )}
+
+      {/* Not found after scan */}
+      {scanNotFound && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+          <div>
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">No part found for barcode: <code className="font-mono">{scanNotFound}</code></p>
+            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">The form above has been pre-filled with this barcode as the part number.</p>
+          </div>
+          <button onClick={() => setScanNotFound(null)} className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 text-lg leading-none flex-shrink-0">✕</button>
+        </div>
+      )}
+
+      {/* Quick-add success toast */}
+      {quickAddSuccess && (
+        <div className={`px-4 py-3 rounded-xl text-sm font-medium ${quickAddSuccess.startsWith("✓") ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"}`}>
+          {quickAddSuccess}
+        </div>
+      )}
 
       {/* Reorder Reminder */}
       {alertData && !alertDismissed && (
@@ -383,7 +508,14 @@ export default function SparePartsPage() {
             )}
             {filtered.map((p, i) => (
               <>
-                <tr key={p.id} className={`fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${p.stock === 0 ? "bg-red-50 dark:bg-red-950/10" : p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-50 dark:bg-yellow-950/10" : ""}`}
+                <tr
+                  key={p.id}
+                  ref={scannedPartId === p.id ? (el) => { scannedRowRef.current = el; } : undefined}
+                  className={`fade-in border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${
+                    scannedPartId === p.id ? "ring-2 ring-inset ring-blue-500 bg-blue-50/60 dark:bg-blue-900/20" :
+                    p.stock === 0 ? "bg-red-50 dark:bg-red-950/10" :
+                    p.stock < LOW_STOCK_THRESHOLD ? "bg-yellow-50 dark:bg-yellow-950/10" : ""
+                  }`}
                   style={{ animationDelay: `${i * 30}ms` }}>
                   <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">
                     {p.name}
@@ -425,6 +557,18 @@ export default function SparePartsPage() {
                         <button onClick={() => reorderingId === p.id ? setReorderingId(null) : openReorder(p)}
                           className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${reorderingId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-orange-500/20 hover:bg-orange-500/40 text-orange-600 dark:text-orange-400"}`}>
                           {reorderingId === p.id ? "✕ Cancel" : "📦 Reorder"}
+                        </button>
+                      )}
+                      {scannedPartId === p.id && (
+                        <button
+                          onClick={() => {
+                            setQuickAddPartId(quickAddPartId === p.id ? null : p.id);
+                            setQuickAddSearch("");
+                            setQuickAddQty("1");
+                          }}
+                          className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors ${quickAddPartId === p.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-blue-600 hover:bg-blue-500 text-white"}`}
+                        >
+                          {quickAddPartId === p.id ? "✕ Close" : "+ Add to Order"}
                         </button>
                       )}
                     </div>
@@ -526,6 +670,61 @@ export default function SparePartsPage() {
                           <button onClick={() => setReorderingId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
                             Cancel
                           </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Quick Add to Work Order row */}
+                {quickAddPartId === p.id && (
+                  <tr key={`quickadd-${p.id}`} className="border-b border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-950/10">
+                    <td colSpan={6} className="px-4 py-4">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Add <span className="font-mono">{p.name}</span> to a Work Order</p>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="Search by customer or order #…"
+                            value={quickAddSearch}
+                            onChange={e => setQuickAddSearch(e.target.value)}
+                            className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                          />
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <label className="text-xs text-slate-500">Qty</label>
+                            <input
+                              type="number" min="1"
+                              value={quickAddQty}
+                              onChange={e => setQuickAddQty(e.target.value)}
+                              className="w-16 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-2 text-sm text-slate-900 dark:text-white text-center focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+                        {quickAddSearching && <p className="text-xs text-slate-500">Searching…</p>}
+                        {!quickAddSearching && quickAddOrders.length === 0 && (
+                          <p className="text-xs text-slate-500">No active orders found. Try a different search.</p>
+                        )}
+                        <div className="space-y-1.5 max-h-52 overflow-y-auto">
+                          {quickAddOrders.map(order => (
+                            <button
+                              key={order.id}
+                              onClick={() => handleQuickAdd(order.id)}
+                              disabled={addingToOrder}
+                              className="w-full text-left flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{order.customerName}</p>
+                                <p className="text-xs text-slate-500 truncate">{order.deviceBrand} {order.deviceModel} · #{order.orderNumber.slice(-6)}</p>
+                              </div>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                                order.status === "REPAIRING" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300" :
+                                order.status === "DONE" ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-300" :
+                                "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                              }`}>
+                                {order.status}
+                              </span>
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </td>

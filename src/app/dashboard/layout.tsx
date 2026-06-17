@@ -2,7 +2,8 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import OnboardingWizard from "@/components/OnboardingWizard";
@@ -35,8 +36,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [pendingApptCount, setPendingApptCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
+  const [globalScanActive, setGlobalScanActive] = useState(false);
+  const [scanToast, setScanToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   useEffect(() => { refresh(); }, []);
+  useEffect(() => { setGlobalScanActive(localStorage.getItem("fixflow-global-scan") === "1"); }, []);
+
+  const handleGlobalScan = useCallback(async (code: string) => {
+    setScanToast({ msg: `Searching "${code}"…`, ok: true });
+    try {
+      const res = await fetch(`/api/workorders?search=${encodeURIComponent(code)}&limit=3`, { credentials: "include" });
+      if (!res.ok) throw new Error();
+      const orders = await res.json();
+      if (orders.length === 0) {
+        setScanToast({ msg: `No work order found for: ${code}`, ok: false });
+        setTimeout(() => setScanToast(null), 4000);
+        return;
+      }
+      const exact = orders.find((o: { orderNumber: string }) =>
+        o.orderNumber === code || o.orderNumber.endsWith(code)
+      ) ?? orders[0];
+      setScanToast({ msg: `Opening ${exact.customerName}'s order…`, ok: true });
+      setTimeout(() => setScanToast(null), 2000);
+      router.push(`/dashboard/workorders/${exact.id}`);
+    } catch {
+      setScanToast({ msg: "Scan failed — check connection", ok: false });
+      setTimeout(() => setScanToast(null), 3000);
+    }
+  }, [router]);
+
+  useBarcodeScanner({ onScan: handleGlobalScan, enabled: !!(globalScanActive && user && !user.isSuperAdmin) });
+
+  function toggleGlobalScan() {
+    const next = !globalScanActive;
+    setGlobalScanActive(next);
+    localStorage.setItem("fixflow-global-scan", next ? "1" : "0");
+  }
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -272,6 +307,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             🔍 Search
             <kbd className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">Ctrl K</kbd>
           </button>
+          {!user?.isSuperAdmin && (
+            <button
+              onClick={toggleGlobalScan}
+              title={globalScanActive ? "Global scan ON — scan any barcode to open its work order" : "Enable global barcode scan mode"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                globalScanActive
+                  ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
+                  : "text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <span className="font-mono tracking-tighter text-[11px] leading-none">▌▌▌</span>
+              {globalScanActive ? "Scan ON" : "Scan"}
+            </button>
+          )}
           <NotificationBell unreadCount={unreadCount} />
         </header>
 
@@ -355,6 +404,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
       </div>
+
+      {/* Global scan toast */}
+      {scanToast && (
+        <div className={`fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl text-sm font-medium shadow-xl z-[9999] whitespace-nowrap pointer-events-none ${
+          scanToast.ok ? "bg-green-600 text-white" : "bg-slate-800 dark:bg-slate-700 text-white"
+        }`}>
+          {scanToast.msg}
+        </div>
+      )}
     </div>
   );
 }
