@@ -319,9 +319,9 @@ export default function AppointmentsPage() {
 
         {/* ── Calendar view ── */}
         {view === "calendar" && (
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Day headers */}
-            <div className="flex-shrink-0 flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="flex-1 overflow-x-auto flex flex-col" style={{ minWidth: 0 }}>
+            {/* Day headers — min-width keeps columns readable; outer div scrolls on mobile */}
+            <div className="flex-shrink-0 flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" style={{ minWidth: 560 }}>
               <div className="w-14 flex-shrink-0" />
               {weekDays.map((day, i) => {
                 const isToday = day.toDateString() === new Date().toDateString();
@@ -342,7 +342,7 @@ export default function AppointmentsPage() {
 
             {/* Scrollable grid — viewport-responsive height so it never collapses */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto" style={{ height: "calc(100vh - 200px)", minHeight: 400 }}>
-              <div className="flex" style={{ height: HOURS.length * HOUR_H }}>
+              <div className="flex" style={{ height: HOURS.length * HOUR_H, minWidth: 560 }}>
                 {/* Time labels */}
                 <div className="w-14 flex-shrink-0 relative">
                   {HOURS.map(h => (

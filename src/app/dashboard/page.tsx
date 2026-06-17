@@ -493,8 +493,8 @@ export default function DashboardPage() {
             ⏰ No contact 3d+
           </button>
         </div>
-        {/* Right-edge fade hint — only relevant while pills scroll on mobile */}
-        <div className="md:hidden" style={{ position: "absolute", right: 0, top: 0, bottom: 4, width: 40, background: "linear-gradient(to right, transparent, #0f172a)", pointerEvents: "none" }} />
+        {/* Right-edge fade hint — adapts to dark/light mode */}
+        <div className="md:hidden pointer-events-none absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-r from-transparent to-slate-50 dark:to-slate-950" />
       </div>
 
       {/* Bulk result message */}

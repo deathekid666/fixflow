@@ -276,14 +276,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Mobile header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1">
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-2 -ml-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
           <span className="text-slate-900 dark:text-white font-semibold text-sm">FixFlow</span>
           <div className="flex items-center gap-1">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white relative p-1">
+            <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white relative p-2 -mr-2">
               <span className="text-lg">🔔</span>
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 rtl:right-auto rtl:-left-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
@@ -305,7 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {t("markAllRead")}
                     </button>
                   )}
-                  <button onClick={() => setShowNotifications(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">✕</button>
+                  <button onClick={() => setShowNotifications(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
