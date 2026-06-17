@@ -45,6 +45,37 @@ function buildDiagnosticsNote(d: Diagnostics): string {
   return lines.join("\n");
 }
 
+export async function GET(req: Request) {
+  const apiKeyData = await requireApiKey(req);
+  if (!apiKeyData) return Response.json({ error: "Invalid or missing API key" }, { status: 401 });
+
+  const { shopId } = apiKeyData;
+  const url = new URL(req.url);
+  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") ?? "20", 10) || 20));
+  const offset = Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10) || 0);
+  const status = url.searchParams.get("status") ?? undefined;
+
+  const where = { shopId, ...(status ? { status } : {}) };
+
+  const [orders, total] = await Promise.all([
+    prisma.workOrder.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
+      select: {
+        id: true, orderNumber: true, status: true, customerName: true, customerPhone: true,
+        deviceBrand: true, deviceModel: true, imei: true, faultDescription: true,
+        faultLevel: true, subtotal: true, total: true, collected: true,
+        createdAt: true, updatedAt: true,
+      },
+    }),
+    prisma.workOrder.count({ where }),
+  ]);
+
+  return Response.json({ data: orders, total, limit, offset });
+}
+
 export async function POST(req: Request) {
   const apiKeyData = await requireApiKey(req);
   if (!apiKeyData) return Response.json({ error: "Invalid or missing API key" }, { status: 401 });
