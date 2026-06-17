@@ -10,6 +10,7 @@ export const NOTIF_TYPES = {
   NEW_RATING:      { icon: "⭐", label: "New Rating",       prefKey: "newRating"      },
   DELIVERED:       { icon: "✅", label: "Order Delivered",  prefKey: null             },
   BOUNCE:          { icon: "🔄", label: "Bounce Repair",    prefKey: null             },
+  CONTRACT_BILLED: { icon: "📄", label: "Contract Billed",  prefKey: null             },
 } as const;
 
 export type NotifType = keyof typeof NOTIF_TYPES;

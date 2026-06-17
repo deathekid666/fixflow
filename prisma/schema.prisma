@@ -81,6 +81,30 @@ model Shop {
   commissions    EngineerCommission[]
   apiKeys        ApiKey[]
   shopCert       Certification?
+  contracts      Contract[]
+}
+
+model Contract {
+  id              String    @id @default(cuid())
+  shopId          String
+  customerPhone   String
+  customerName    String
+  deviceBrand     String
+  deviceModel     String
+  description     String?
+  monthlyPrice    Float     @default(0)
+  startDate       DateTime
+  endDate         DateTime?
+  status          String    @default("ACTIVE")
+  nextBillingDate DateTime
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([nextBillingDate])
 }
 
 model Certification {
