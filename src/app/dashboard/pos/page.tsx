@@ -50,6 +50,7 @@ export default function POSPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [lastDeliveredId, setLastDeliveredId] = useState<string | null>(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -127,9 +128,11 @@ export default function POSPage() {
       }
 
       const name = selected.customerName;
+      const deliveredId = selected.id;
       setSelected(null);
+      setLastDeliveredId(deliveredId);
       setSuccessMsg(`✓ ${name}'s device delivered!`);
-      setTimeout(() => setSuccessMsg(""), 5000);
+      setTimeout(() => { setSuccessMsg(""); setLastDeliveredId(null); }, 8000);
       await Promise.all([loadOrders(), loadSummary()]);
     } catch {
       setError("Network error. Please try again.");
@@ -139,7 +142,7 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex flex-col bg-slate-100 dark:bg-slate-950" style={{ height: "calc(100dvh - 57px)" }}>
+    <div className="flex flex-col bg-slate-100 dark:bg-slate-950 h-[calc(100dvh-57px-64px)] lg:h-[calc(100dvh-57px)]">
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-5 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
@@ -157,8 +160,18 @@ export default function POSPage() {
 
       {/* Success toast */}
       {successMsg && (
-        <div className="mx-4 mt-3 px-4 py-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-300 text-sm font-medium flex-shrink-0">
-          {successMsg}
+        <div className="mx-4 mt-3 px-4 py-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-300 text-sm font-medium flex-shrink-0 flex items-center justify-between gap-3">
+          <span>{successMsg}</span>
+          {lastDeliveredId && (
+            <a
+              href={`/print/${lastDeliveredId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whitespace-nowrap text-xs font-semibold underline underline-offset-2 text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
+            >
+              🖨️ Print
+            </a>
+          )}
         </div>
       )}
 
@@ -234,6 +247,11 @@ export default function POSPage() {
               lg:relative lg:inset-auto lg:rounded-none lg:max-h-full lg:z-auto lg:shadow-none
               lg:w-80 xl:w-96 lg:flex-shrink-0 lg:border-l lg:border-slate-200 lg:dark:border-slate-800
             `}>
+              {/* Drag handle (mobile only) */}
+              <div className="lg:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+                <div className="w-9 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+              </div>
+
               {/* Panel header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
                 <h2 className="font-bold text-slate-900 dark:text-white text-lg">Checkout</h2>
@@ -297,12 +315,12 @@ export default function POSPage() {
                   <div>
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2.5">Customer pays</label>
                     <input
-                      type="number"
+                      type="text"
                       inputMode="decimal"
                       value={customerPays}
                       onChange={e => { setCustomerPays(e.target.value); setError(""); }}
                       placeholder={balanceDue.toFixed(2)}
-                      className="w-full text-3xl font-bold text-center py-4 px-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none transition-colors"
+                      className="pos-amount-input w-full text-3xl font-bold text-center py-4 px-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none transition-colors"
                     />
                     {customerPaysNum > 0 && (
                       <div className={`mt-3 p-4 rounded-2xl text-center transition-colors ${
@@ -377,7 +395,7 @@ export default function POSPage() {
 
       {/* Daily summary bar */}
       {summary && summary.count > 0 && (
-        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center gap-5 overflow-x-auto scrollbar-hide">
+        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center gap-5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">Today</p>
           {Object.entries(summary.byMethod).map(([m, amt]) => (
             <div key={m} className="flex items-center gap-1.5 whitespace-nowrap">
