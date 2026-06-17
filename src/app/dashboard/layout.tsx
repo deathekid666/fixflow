@@ -142,6 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ] : []),
       { href: "/dashboard/expenses", label: t("expenses"), icon: "💸" },
     ] : []),
+    { href: "/dashboard/pos", label: "Point of Sale", icon: "🏧" },
     { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
     { href: "/dashboard/academy", label: "Academy", icon: "🎓" },
     { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
