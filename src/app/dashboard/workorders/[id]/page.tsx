@@ -625,6 +625,14 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 Print</a>
+          <button
+            onClick={() => {
+              const size = (typeof window !== "undefined" ? localStorage.getItem("fixflow_receipt_size") : null) ?? "THERMAL_80";
+              const width = size === "THERMAL_58" ? "58" : "80";
+              window.open(`/thermal/${params.id}?width=${width}`, "_blank", "width=400,height=700");
+            }}
+            className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors"
+          >🧾 Print Receipt</button>
           {order.status === "DELIVERED" && order.attachments.some(a => a.tag === "intake") && order.attachments.some(a => a.tag === "completion") && (
             <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 Share</button>
           )}

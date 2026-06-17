@@ -14,6 +14,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
           name: true,
           phone: true,
           address: true,
+          email: true,
           currency: true,
           certification: true,
         },
@@ -24,6 +25,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         },
       },
       lineItems: { orderBy: { createdAt: "asc" } },
+      payments: {
+        select: { amount: true, method: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
     },
   });
 

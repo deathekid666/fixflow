@@ -137,6 +137,11 @@ export default function SettingsPage() {
   const [savingSla, setSavingSla] = useState(false);
   const [slaMsg, setSlaMsg] = useState("");
 
+  // Receipt size
+  const [receiptSize, setReceiptSize] = useState("A4");
+  const [savingReceipt, setSavingReceipt] = useState(false);
+  const [receiptMsg, setReceiptMsg] = useState("");
+
   // IMEI Pro API key
   const [imeiProApiKey, setImeiProApiKey] = useState("");
   const [savingImeiKey, setSavingImeiKey] = useState(false);
@@ -216,6 +221,9 @@ export default function SettingsPage() {
           setWaTemplatePickup(d.waTemplatePickup ?? "");
           setWaTemplateAppointment(d.waTemplateAppointment ?? "");
           setImeiProApiKey(d.imeiProApiKey ?? "");
+          const rs = d.receiptSize ?? "A4";
+          setReceiptSize(rs);
+          if (typeof window !== "undefined") localStorage.setItem("fixflow_receipt_size", rs);
         })
         .catch(() => {});
     }
@@ -450,6 +458,24 @@ export default function SettingsPage() {
     setWaTemplateMsg(res.ok ? "Templates saved." : "Failed to save.");
     setSavingWaTemplates(false);
     setTimeout(() => setWaTemplateMsg(""), 3000);
+  }
+
+  async function saveReceiptSize(size: string) {
+    if (!shop) return;
+    setSavingReceipt(true); setReceiptMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ receiptSize: size }),
+    });
+    if (res.ok) {
+      setReceiptSize(size);
+      if (typeof window !== "undefined") localStorage.setItem("fixflow_receipt_size", size);
+      setReceiptMsg("Receipt size saved.");
+    } else {
+      setReceiptMsg("Failed to save.");
+    }
+    setSavingReceipt(false);
+    setTimeout(() => setReceiptMsg(""), 3000);
   }
 
   async function saveImeiProApiKey() {
@@ -715,6 +741,47 @@ export default function SettingsPage() {
                     {savingSla ? "Saving..." : "Save"}
                   </button>
                 </div>
+              </div>
+
+              {/* Receipt Printing */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Receipt Printing</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Select default paper size for printing work orders and receipts. Thermal 80mm and 58mm work with any thermal printer set as default — no drivers needed.</p>
+                </div>
+                {receiptMsg && <Alert type={receiptMsg.includes("Failed") ? "error" : "success"} msg={receiptMsg} />}
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { key: "A4",         label: "A4",           sub: "Standard paper",      icon: "📄" },
+                    { key: "THERMAL_80", label: "Thermal 80mm", sub: "Most common roll",     icon: "🧾" },
+                    { key: "THERMAL_58", label: "Thermal 58mm", sub: "Compact receipt roll",  icon: "🧾" },
+                  ] as const).map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => saveReceiptSize(opt.key)}
+                      disabled={savingReceipt}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-center ${
+                        receiptSize === opt.key
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                          : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                      }`}
+                    >
+                      <span className="text-xl">{opt.icon}</span>
+                      <p className={`text-xs font-semibold ${receiptSize === opt.key ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"}`}>{opt.label}</p>
+                      <p className="text-xs text-slate-400">{opt.sub}</p>
+                      {receiptSize === opt.key && <span className="text-xs text-blue-500 font-bold">✓ Active</span>}
+                    </button>
+                  ))}
+                </div>
+                {receiptSize !== "A4" && (
+                  <div className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2 space-y-1">
+                    <p className="font-medium text-slate-700 dark:text-slate-300">How to set up thermal printing:</p>
+                    <p>1. Connect thermal printer via USB or network</p>
+                    <p>2. Set it as default printer in OS settings</p>
+                    <p>3. Click "Print Receipt" on any work order — select your printer when the dialog opens</p>
+                    <p>4. Disable margins and headers/footers in the print dialog for best results</p>
+                  </div>
+                )}
               </div>
 
               {/* IMEI Verification */}

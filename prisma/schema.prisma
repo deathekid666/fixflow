@@ -619,6 +619,9 @@ model ShopSettings {
   // IMEI Pro blacklist check (imeicheck.net)
   imeiProApiKey String?
 
+  // Receipt printing preference: A4 | THERMAL_80 | THERMAL_58
+  receiptSize String @default("A4")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

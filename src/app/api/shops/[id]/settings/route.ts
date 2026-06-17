@@ -20,6 +20,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       waTemplatePickup: true,
       waTemplateAppointment: true,
       imeiProApiKey: true,
+      receiptSize: true,
     },
   });
 
@@ -34,6 +35,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     waTemplatePickup: settings?.waTemplatePickup ?? "",
     waTemplateAppointment: settings?.waTemplateAppointment ?? "",
     imeiProApiKey: settings?.imeiProApiKey ?? "",
+    receiptSize: settings?.receiptSize ?? "A4",
   });
 }
 
@@ -57,6 +59,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (typeof body.waTemplatePickup === "string") data.waTemplatePickup = body.waTemplatePickup || null;
   if (typeof body.waTemplateAppointment === "string") data.waTemplateAppointment = body.waTemplateAppointment || null;
   if (typeof body.imeiProApiKey === "string") data.imeiProApiKey = body.imeiProApiKey.trim() || null;
+  if (["A4", "THERMAL_80", "THERMAL_58"].includes(body.receiptSize)) data.receiptSize = body.receiptSize;
 
   const settings = await prisma.shopSettings.upsert({
     where: { shopId: params.id },
@@ -73,6 +76,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       waTemplatePickup: true,
       waTemplateAppointment: true,
       imeiProApiKey: true,
+      receiptSize: true,
     },
   });
 
