@@ -137,6 +137,11 @@ export default function SettingsPage() {
   const [savingSla, setSavingSla] = useState(false);
   const [slaMsg, setSlaMsg] = useState("");
 
+  // IMEI Pro API key
+  const [imeiProApiKey, setImeiProApiKey] = useState("");
+  const [savingImeiKey, setSavingImeiKey] = useState(false);
+  const [imeiKeyMsg, setImeiKeyMsg] = useState("");
+
   // WhatsApp message templates
   const [waTemplateStatus, setWaTemplateStatus] = useState("");
   const [waTemplatePickup, setWaTemplatePickup] = useState("");
@@ -210,6 +215,7 @@ export default function SettingsPage() {
           setWaTemplateStatus(d.waTemplateStatus ?? "");
           setWaTemplatePickup(d.waTemplatePickup ?? "");
           setWaTemplateAppointment(d.waTemplateAppointment ?? "");
+          setImeiProApiKey(d.imeiProApiKey ?? "");
         })
         .catch(() => {});
     }
@@ -444,6 +450,18 @@ export default function SettingsPage() {
     setWaTemplateMsg(res.ok ? "Templates saved." : "Failed to save.");
     setSavingWaTemplates(false);
     setTimeout(() => setWaTemplateMsg(""), 3000);
+  }
+
+  async function saveImeiProApiKey() {
+    if (!shop) return;
+    setSavingImeiKey(true); setImeiKeyMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ imeiProApiKey }),
+    });
+    setImeiKeyMsg(res.ok ? "API key saved." : "Failed to save.");
+    setSavingImeiKey(false);
+    setTimeout(() => setImeiKeyMsg(""), 3000);
   }
 
   async function sendTestSms() {
@@ -697,6 +715,48 @@ export default function SettingsPage() {
                     {savingSla ? "Saving..." : "Save"}
                   </button>
                 </div>
+              </div>
+
+              {/* IMEI Verification */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">IMEI Verification</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Basic IMEI validation (Luhn algorithm + manufacturer lookup) is always free. For full stolen device blacklist checks, enter a paid API key from <span className="font-medium">imeicheck.net</span>.</p>
+                </div>
+                {imeiKeyMsg && <Alert type={imeiKeyMsg.includes("Failed") ? "error" : "success"} msg={imeiKeyMsg} />}
+                {!imeiProApiKey && (
+                  <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 rounded-lg px-3 py-2">
+                    <span>🔍</span>
+                    <span>Full blacklist check available with IMEI Pro API key — <a href="https://imeicheck.net" target="_blank" rel="noopener noreferrer" className="underline">get one at imeicheck.net</a></span>
+                  </div>
+                )}
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="text-xs text-slate-500 mb-1 block">IMEI Pro API Key</label>
+                    <input
+                      type="password"
+                      placeholder={imeiProApiKey ? "••••••••••••••••" : "Enter API key from imeicheck.net"}
+                      value={imeiProApiKey}
+                      onChange={e => setImeiProApiKey(e.target.value)}
+                      className={INPUT}
+                    />
+                  </div>
+                  <button onClick={saveImeiProApiKey} disabled={savingImeiKey}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                    {savingImeiKey ? "Saving..." : "Save Key"}
+                  </button>
+                  {imeiProApiKey && (
+                    <button onClick={() => { setImeiProApiKey(""); saveImeiProApiKey(); }}
+                      className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs rounded-lg transition-colors">
+                      Remove
+                    </button>
+                  )}
+                </div>
+                {imeiProApiKey && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span>✓</span> IMEI Pro API key configured — full blacklist checks enabled
+                  </p>
+                )}
               </div>
 
               {/* Customer Notifications */}

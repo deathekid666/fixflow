@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { REFERRAL_SOURCES, REFERRAL_LABELS } from "@/lib/referralSources";
+import type { ImeiResult } from "@/lib/imei";
 
 type CustomerHistory = {
   name: string; phone: string; email: string;
@@ -55,6 +56,8 @@ export default function NewWorkOrderPage() {
   const aiTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [imeiCheckResult, setImeiCheckResult] = useState<(ImeiResult & { blacklist?: { status: string; info: string | null } | null; proError?: string | null }) | null>(null);
+  const [checkingImei, setCheckingImei] = useState(false);
   const [form, setForm] = useState({
     deviceBrand: "", deviceModel: "", serialNumber: "", imei: "",
     warrantyStart: "", warrantyEnd: "", isUnderWarranty: false,
@@ -132,6 +135,38 @@ export default function NewWorkOrderPage() {
       } else { setCustomerHistory(null); }
     } catch { setCustomerHistory(null); }
     finally { setLookingUp(false); }
+  }
+
+  async function checkImei() {
+    if (!form.imei.trim()) return;
+    setCheckingImei(true);
+    setImeiCheckResult(null);
+    try {
+      const res = await fetch("/api/imei/check", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include", body: JSON.stringify({ imei: form.imei }),
+      });
+      const data = await res.json();
+      setImeiCheckResult(data);
+      // Auto-append result to remarks
+      const summary = buildImeiSummary(data);
+      setForm(prev => ({
+        ...prev,
+        remarks: prev.remarks ? `${prev.remarks}\n${summary}` : summary,
+      }));
+    } catch {
+      setImeiCheckResult({ status: "invalid", luhn: false, format: false, manufacturer: null, modelHint: null, warning: "Could not reach check service", tac: "" });
+    }
+    setCheckingImei(false);
+  }
+
+  function buildImeiSummary(r: NonNullable<typeof imeiCheckResult>): string {
+    const parts = [`IMEI Check: ${r.status.toUpperCase()}`];
+    if (r.manufacturer) parts.push(`Device: ${r.manufacturer}${r.modelHint && r.modelHint !== "series" ? ` ${r.modelHint}` : ""}`);
+    parts.push(`Luhn: ${r.luhn ? "Pass" : "Fail"}`);
+    if (r.warning) parts.push(`Warning: ${r.warning}`);
+    if (r.blacklist) parts.push(`Blacklist: ${r.blacklist.status}${r.blacklist.info ? ` (${r.blacklist.info})` : ""}`);
+    return parts.join(" | ");
   }
 
   function onPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -338,33 +373,44 @@ export default function NewWorkOrderPage() {
           <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} placeholder="e.g. Samsung, Apple" />
           <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} placeholder="e.g. Galaxy S22" />
           <Field label="Serial Number" value={form.serialNumber} onChange={v => set("serialNumber", v)} placeholder="SN" />
-          <div>
+          <div className="col-span-2">
             <label className="text-xs text-slate-500 mb-1 block">IMEI</label>
-            <div className="relative">
-              <input
-                ref={imeiRef}
-                type="text"
-                placeholder="IMEI"
-                value={form.imei}
-                onChange={e => set("imei", e.target.value)}
-                onFocus={e => { const t = e.target; setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }}
-                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-20 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  ref={imeiRef}
+                  type="text"
+                  placeholder="15-digit IMEI"
+                  value={form.imei}
+                  onChange={e => { set("imei", e.target.value); setImeiCheckResult(null); }}
+                  onFocus={e => { const t = e.target; setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }}
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-20 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    imeiRef.current?.focus();
+                    setImeiScanHint(true);
+                    setTimeout(() => setImeiScanHint(false), 4000);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors leading-tight"
+                >
+                  ▌▌▌ Scan
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  imeiRef.current?.focus();
-                  setImeiScanHint(true);
-                  setTimeout(() => setImeiScanHint(false), 4000);
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors leading-tight"
+                onClick={checkImei}
+                disabled={!form.imei.trim() || checkingImei}
+                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap"
               >
-                ▌▌▌ Scan
+                {checkingImei ? "Checking…" : "Check IMEI"}
               </button>
             </div>
             {imeiScanHint && (
               <p className="text-xs text-blue-500 dark:text-blue-400 mt-1 animate-pulse">Field focused — scan barcode now…</p>
             )}
+            {imeiCheckResult && <ImeiResultBadge result={imeiCheckResult} />}
           </div>
           <Field label="Warranty Start" type="date" value={form.warrantyStart} onChange={v => set("warrantyStart", v)} />
           <Field label="Warranty End" type="date" value={form.warrantyEnd} onChange={v => set("warrantyEnd", v)} />
@@ -623,6 +669,43 @@ function Field({ label, value, onChange, placeholder, type = "text" }: {
       <input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
         onFocus={handleFocus}
         className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+    </div>
+  );
+}
+
+function ImeiResultBadge({ result }: {
+  result: ImeiResult & { blacklist?: { status: string; info: string | null } | null; proError?: string | null };
+}) {
+  const colorMap = {
+    valid: "bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-800/40 text-green-700 dark:text-green-300",
+    suspicious: "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/40 text-amber-700 dark:text-amber-300",
+    invalid: "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800/40 text-red-700 dark:text-red-300",
+  };
+  const iconMap = { valid: "✓", suspicious: "⚠", invalid: "✕" };
+  const blacklistColor = result.blacklist?.status === "CLEAN" ? "text-green-600 dark:text-green-400" : result.blacklist?.status === "BLACKLISTED" ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-500";
+
+  return (
+    <div className={`mt-2 rounded-lg border px-3 py-2 text-xs space-y-1 ${colorMap[result.status]}`}>
+      <div className="flex items-center gap-1.5 font-semibold">
+        <span>{iconMap[result.status]}</span>
+        <span>IMEI {result.status.charAt(0).toUpperCase() + result.status.slice(1)}</span>
+        {result.tac && <span className="font-normal opacity-70">· TAC: {result.tac}</span>}
+      </div>
+      {result.manufacturer && (
+        <p className="opacity-90">
+          {result.manufacturer}{result.modelHint && result.modelHint !== "series" ? ` — ${result.modelHint}` : ""}
+        </p>
+      )}
+      {result.warning && <p className="opacity-80">⚠ {result.warning}</p>}
+      {result.blacklist && (
+        <p className={blacklistColor}>
+          Blacklist: {result.blacklist.status}{result.blacklist.info ? ` — ${result.blacklist.info}` : ""}
+        </p>
+      )}
+      {result.proError && <p className="text-slate-500 opacity-75">Pro check: {result.proError}</p>}
+      {!result.blacklist && !result.proError && result.status === "valid" && (
+        <p className="opacity-60">No Pro API key — blacklist check unavailable</p>
+      )}
     </div>
   );
 }

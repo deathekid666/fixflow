@@ -143,6 +143,46 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [aiAddingParts, setAiAddingParts] = useState(false);
   const [showSocialShare, setShowSocialShare] = useState(false);
 
+  // IMEI check
+  type ImeiCheckResult = {
+    status: "valid" | "invalid" | "suspicious";
+    luhn: boolean; format: boolean; manufacturer: string | null; modelHint: string | null;
+    warning: string | null; tac: string;
+    blacklist?: { status: string; info: string | null } | null;
+    proError?: string | null;
+  };
+  const [imeiCheckResult, setImeiCheckResult] = useState<ImeiCheckResult | null>(null);
+  const [checkingImei, setCheckingImei] = useState(false);
+
+  async function runImeiCheck() {
+    if (!order?.imei) return;
+    setCheckingImei(true);
+    setImeiCheckResult(null);
+    try {
+      const res = await fetch("/api/imei/check", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include", body: JSON.stringify({ imei: order.imei }),
+      });
+      const data: ImeiCheckResult = await res.json();
+      setImeiCheckResult(data);
+      // Auto-add as internal note
+      const parts = [`IMEI Check: ${data.status.toUpperCase()}`];
+      if (data.manufacturer) parts.push(`Device: ${data.manufacturer}${data.modelHint && data.modelHint !== "series" ? ` ${data.modelHint}` : ""}`);
+      parts.push(`Luhn: ${data.luhn ? "Pass" : "Fail"}`);
+      if (data.warning) parts.push(`Warning: ${data.warning}`);
+      if (data.blacklist) parts.push(`Blacklist: ${data.blacklist.status}${data.blacklist.info ? ` (${data.blacklist.info})` : ""}`);
+      const noteText = parts.join(" | ");
+      await fetch(`/api/workorders/${params.id}/notes`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include", body: JSON.stringify({ message: noteText }),
+      });
+      await load();
+    } catch {
+      setImeiCheckResult({ status: "invalid", luhn: false, format: false, manufacturer: null, modelHint: null, warning: "Could not reach check service", tac: "" });
+    }
+    setCheckingImei(false);
+  }
+
   // Price suggestion
   type PriceSuggestion = {
     suggestedMin: number; suggestedMax: number; marketAverage: number;
@@ -712,7 +752,48 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               <Info label="Brand" value={order.deviceBrand} />
               <Info label="Model" value={order.deviceModel} />
               <Info label="Serial Number" value={order.serialNumber || "—"} />
-              <Info label="IMEI" value={order.imei || "—"} />
+              <div>
+                <p className="text-xs text-slate-500 mb-1">IMEI</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-900 dark:text-white text-sm font-mono">{order.imei || "—"}</span>
+                  {order.imei && (
+                    <button
+                      onClick={runImeiCheck}
+                      disabled={checkingImei}
+                      className="text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-md transition-colors font-medium"
+                    >
+                      {checkingImei ? "Checking…" : "Check IMEI"}
+                    </button>
+                  )}
+                </div>
+                {imeiCheckResult && (
+                  <div className={`mt-2 rounded-lg border px-3 py-2 text-xs space-y-1 ${
+                    imeiCheckResult.status === "valid" ? "bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-800/40 text-green-700 dark:text-green-300"
+                    : imeiCheckResult.status === "suspicious" ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/40 text-amber-700 dark:text-amber-300"
+                    : "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800/40 text-red-700 dark:text-red-300"
+                  }`}>
+                    <div className="flex items-center gap-1.5 font-semibold">
+                      <span>{imeiCheckResult.status === "valid" ? "✓" : imeiCheckResult.status === "suspicious" ? "⚠" : "✕"}</span>
+                      <span>IMEI {imeiCheckResult.status.charAt(0).toUpperCase() + imeiCheckResult.status.slice(1)}</span>
+                      {imeiCheckResult.tac && <span className="font-normal opacity-70">· TAC: {imeiCheckResult.tac}</span>}
+                    </div>
+                    {imeiCheckResult.manufacturer && (
+                      <p className="opacity-90">{imeiCheckResult.manufacturer}{imeiCheckResult.modelHint && imeiCheckResult.modelHint !== "series" ? ` — ${imeiCheckResult.modelHint}` : ""}</p>
+                    )}
+                    {imeiCheckResult.warning && <p className="opacity-80">⚠ {imeiCheckResult.warning}</p>}
+                    {imeiCheckResult.blacklist && (
+                      <p className={imeiCheckResult.blacklist.status === "BLACKLISTED" ? "text-red-600 dark:text-red-400 font-bold" : imeiCheckResult.blacklist.status === "CLEAN" ? "text-green-600 dark:text-green-400" : "text-slate-500"}>
+                        Blacklist: {imeiCheckResult.blacklist.status}{imeiCheckResult.blacklist.info ? ` — ${imeiCheckResult.blacklist.info}` : ""}
+                      </p>
+                    )}
+                    {imeiCheckResult.proError && <p className="text-slate-500 opacity-75">Pro check: {imeiCheckResult.proError}</p>}
+                    {!imeiCheckResult.blacklist && !imeiCheckResult.proError && imeiCheckResult.status === "valid" && (
+                      <p className="opacity-60">No Pro API key — blacklist check unavailable. Add one in Settings.</p>
+                    )}
+                    <p className="opacity-50 text-xs">Result saved to work order notes.</p>
+                  </div>
+                )}
+              </div>
               <Info label="Warranty Start" value={order.warrantyStart ? new Date(order.warrantyStart).toLocaleDateString() : "—"} />
               <Info label="Warranty End" value={order.warrantyEnd ? new Date(order.warrantyEnd).toLocaleDateString() : "—"} />
             </div>

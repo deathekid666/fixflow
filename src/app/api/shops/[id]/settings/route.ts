@@ -19,6 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       waTemplateStatus: true,
       waTemplatePickup: true,
       waTemplateAppointment: true,
+      imeiProApiKey: true,
     },
   });
 
@@ -32,6 +33,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     waTemplateStatus: settings?.waTemplateStatus ?? "",
     waTemplatePickup: settings?.waTemplatePickup ?? "",
     waTemplateAppointment: settings?.waTemplateAppointment ?? "",
+    imeiProApiKey: settings?.imeiProApiKey ?? "",
   });
 }
 
@@ -54,6 +56,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (typeof body.waTemplateStatus === "string") data.waTemplateStatus = body.waTemplateStatus || null;
   if (typeof body.waTemplatePickup === "string") data.waTemplatePickup = body.waTemplatePickup || null;
   if (typeof body.waTemplateAppointment === "string") data.waTemplateAppointment = body.waTemplateAppointment || null;
+  if (typeof body.imeiProApiKey === "string") data.imeiProApiKey = body.imeiProApiKey.trim() || null;
 
   const settings = await prisma.shopSettings.upsert({
     where: { shopId: params.id },
@@ -69,6 +72,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       waTemplateStatus: true,
       waTemplatePickup: true,
       waTemplateAppointment: true,
+      imeiProApiKey: true,
     },
   });
 
