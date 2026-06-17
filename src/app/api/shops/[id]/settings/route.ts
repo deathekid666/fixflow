@@ -20,7 +20,19 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       waTemplatePickup: true,
       waTemplateAppointment: true,
       imeiProApiKey: true,
+      checkMendApiKey: true,
       receiptSize: true,
+      emailEnabled: true,
+      emailDomain: true,
+      emailNotifyWelcome: true,
+      emailNotifyStatus: true,
+      emailNotifyPickup: true,
+      emailNotifyAppt: true,
+      emailNotifyReminder: true,
+      twilioSid: true,
+      twilioToken: true,
+      twilioPhone: true,
+      stripePlanSelected: true,
     },
   });
 
@@ -35,7 +47,21 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     waTemplatePickup: settings?.waTemplatePickup ?? "",
     waTemplateAppointment: settings?.waTemplateAppointment ?? "",
     imeiProApiKey: settings?.imeiProApiKey ?? "",
+    checkMendApiKey: settings?.checkMendApiKey ?? "",
     receiptSize: settings?.receiptSize ?? "A4",
+    emailEnabled: settings?.emailEnabled ?? false,
+    emailDomain: settings?.emailDomain ?? "",
+    emailNotifyWelcome: settings?.emailNotifyWelcome ?? true,
+    emailNotifyStatus: settings?.emailNotifyStatus ?? true,
+    emailNotifyPickup: settings?.emailNotifyPickup ?? true,
+    emailNotifyAppt: settings?.emailNotifyAppt ?? true,
+    emailNotifyReminder: settings?.emailNotifyReminder ?? true,
+    twilioSid: settings?.twilioSid ?? "",
+    twilioToken: settings?.twilioToken ?? "",
+    twilioPhone: settings?.twilioPhone ?? "",
+    stripePlanSelected: settings?.stripePlanSelected ?? "",
+    resendConfigured: !!process.env.RESEND_API_KEY,
+    stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
   });
 }
 
@@ -59,7 +85,18 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (typeof body.waTemplatePickup === "string") data.waTemplatePickup = body.waTemplatePickup || null;
   if (typeof body.waTemplateAppointment === "string") data.waTemplateAppointment = body.waTemplateAppointment || null;
   if (typeof body.imeiProApiKey === "string") data.imeiProApiKey = body.imeiProApiKey.trim() || null;
+  if (typeof body.checkMendApiKey === "string") data.checkMendApiKey = body.checkMendApiKey.trim() || null;
   if (["A4", "THERMAL_80", "THERMAL_58"].includes(body.receiptSize)) data.receiptSize = body.receiptSize;
+  if (typeof body.emailEnabled === "boolean") data.emailEnabled = body.emailEnabled;
+  if (typeof body.emailDomain === "string") data.emailDomain = body.emailDomain.trim() || null;
+  if (typeof body.emailNotifyWelcome === "boolean") data.emailNotifyWelcome = body.emailNotifyWelcome;
+  if (typeof body.emailNotifyStatus === "boolean") data.emailNotifyStatus = body.emailNotifyStatus;
+  if (typeof body.emailNotifyPickup === "boolean") data.emailNotifyPickup = body.emailNotifyPickup;
+  if (typeof body.emailNotifyAppt === "boolean") data.emailNotifyAppt = body.emailNotifyAppt;
+  if (typeof body.emailNotifyReminder === "boolean") data.emailNotifyReminder = body.emailNotifyReminder;
+  if (typeof body.twilioSid === "string") data.twilioSid = body.twilioSid.trim() || null;
+  if (typeof body.twilioToken === "string") data.twilioToken = body.twilioToken.trim() || null;
+  if (typeof body.twilioPhone === "string") data.twilioPhone = body.twilioPhone.trim() || null;
 
   const settings = await prisma.shopSettings.upsert({
     where: { shopId: params.id },
@@ -76,7 +113,19 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       waTemplatePickup: true,
       waTemplateAppointment: true,
       imeiProApiKey: true,
+      checkMendApiKey: true,
       receiptSize: true,
+      emailEnabled: true,
+      emailDomain: true,
+      emailNotifyWelcome: true,
+      emailNotifyStatus: true,
+      emailNotifyPickup: true,
+      emailNotifyAppt: true,
+      emailNotifyReminder: true,
+      twilioSid: true,
+      twilioToken: true,
+      twilioPhone: true,
+      stripePlanSelected: true,
     },
   });
 

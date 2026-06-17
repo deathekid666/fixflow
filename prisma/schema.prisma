@@ -619,8 +619,29 @@ model ShopSettings {
   // IMEI Pro blacklist check (imeicheck.net)
   imeiProApiKey String?
 
+  // IMEI CheckMEND stolen-device check
+  checkMendApiKey String?
+
   // Receipt printing preference: A4 | THERMAL_80 | THERMAL_58
   receiptSize String @default("A4")
+
+  // Email notifications (Resend)
+  emailEnabled        Boolean @default(false)
+  emailDomain         String?
+  emailNotifyWelcome  Boolean @default(true)
+  emailNotifyStatus   Boolean @default(true)
+  emailNotifyPickup   Boolean @default(true)
+  emailNotifyAppt     Boolean @default(true)
+  emailNotifyReminder Boolean @default(true)
+
+  // Twilio per-shop credentials (override env vars)
+  twilioSid   String?
+  twilioToken String?
+  twilioPhone String?
+
+  // Billing / Stripe
+  stripePlanSelected String?
+  stripeCustomerId   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

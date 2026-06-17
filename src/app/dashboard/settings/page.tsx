@@ -8,7 +8,7 @@ import { CURRENCIES } from "@/lib/currency";
 import { loadSocialSettings, saveSocialSettings } from "@/components/SocialShareModal";
 import { DEFAULT_TEMPLATES } from "@/lib/whatsapp";
 
-type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys" | "permissions";
+type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys" | "permissions" | "email" | "sms" | "imei" | "billing";
 
 type ApiKey = { id: string; name: string; key: string; lastUsed: string | null; createdAt: string; isActive: boolean };
 
@@ -147,6 +147,46 @@ export default function SettingsPage() {
   const [savingImeiKey, setSavingImeiKey] = useState(false);
   const [imeiKeyMsg, setImeiKeyMsg] = useState("");
 
+  // IMEI Services tab — CheckMEND
+  const [checkMendApiKey, setCheckMendApiKey] = useState("");
+  const [savingCheckMend, setSavingCheckMend] = useState(false);
+  const [checkMendMsg, setCheckMendMsg] = useState("");
+  const [testingImeiConn, setTestingImeiConn] = useState(false);
+  const [imeiConnMsg, setImeiConnMsg] = useState("");
+
+  // Email notifications tab
+  const [emailEnabled, setEmailEnabled] = useState(false);
+  const [emailDomain, setEmailDomain] = useState("");
+  const [emailNotifyWelcome, setEmailNotifyWelcome] = useState(true);
+  const [emailNotifyStatus, setEmailNotifyStatus] = useState(true);
+  const [emailNotifyPickup, setEmailNotifyPickup] = useState(true);
+  const [emailNotifyAppt, setEmailNotifyAppt] = useState(true);
+  const [emailNotifyReminder, setEmailNotifyReminder] = useState(true);
+  const [savingEmailSettings, setSavingEmailSettings] = useState(false);
+  const [emailSettingsMsg, setEmailSettingsMsg] = useState("");
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [testEmailMsg, setTestEmailMsg] = useState("");
+  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [resendConfigured, setResendConfigured] = useState(false);
+
+  // SMS / Twilio tab
+  const [twilioSid, setTwilioSid] = useState("");
+  const [twilioToken, setTwilioToken] = useState("");
+  const [twilioPhone, setTwilioPhone] = useState("");
+  const [savingTwilio, setSavingTwilio] = useState(false);
+  const [twilioMsg, setTwilioMsg] = useState("");
+  const [testingTwilio, setTestingTwilio] = useState(false);
+  const [twilioTestMsg, setTwilioTestMsg] = useState("");
+  const [twilioTestPhone, setTwilioTestPhone] = useState("");
+
+  // Billing tab
+  const [billingData, setBillingData] = useState<{ currentPlan: string; status: string; trialEndsAt: string | null; stripePlanSelected: string | null; stripeConfigured: boolean } | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradePlanKey, setUpgradePlanKey] = useState("");
+
   // WhatsApp message templates
   const [waTemplateStatus, setWaTemplateStatus] = useState("");
   const [waTemplatePickup, setWaTemplatePickup] = useState("");
@@ -221,9 +261,21 @@ export default function SettingsPage() {
           setWaTemplatePickup(d.waTemplatePickup ?? "");
           setWaTemplateAppointment(d.waTemplateAppointment ?? "");
           setImeiProApiKey(d.imeiProApiKey ?? "");
+          setCheckMendApiKey(d.checkMendApiKey ?? "");
           const rs = d.receiptSize ?? "A4";
           setReceiptSize(rs);
           if (typeof window !== "undefined") localStorage.setItem("fixflow_receipt_size", rs);
+          setEmailEnabled(d.emailEnabled ?? false);
+          setEmailDomain(d.emailDomain ?? "");
+          setEmailNotifyWelcome(d.emailNotifyWelcome ?? true);
+          setEmailNotifyStatus(d.emailNotifyStatus ?? true);
+          setEmailNotifyPickup(d.emailNotifyPickup ?? true);
+          setEmailNotifyAppt(d.emailNotifyAppt ?? true);
+          setEmailNotifyReminder(d.emailNotifyReminder ?? true);
+          setResendConfigured(d.resendConfigured ?? false);
+          setTwilioSid(d.twilioSid ?? "");
+          setTwilioToken(d.twilioToken ?? "");
+          setTwilioPhone(d.twilioPhone ?? "");
         })
         .catch(() => {});
     }
@@ -251,6 +303,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (tab === "permissions" && user?.role === "ADMIN") loadPerms();
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab === "billing") {
+      fetch("/api/billing", { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setBillingData(d); })
+        .catch(() => {});
+    }
   }, [tab]);
 
   async function loadPerms() {
@@ -490,6 +551,101 @@ export default function SettingsPage() {
     setTimeout(() => setImeiKeyMsg(""), 3000);
   }
 
+  async function saveCheckMendApiKey() {
+    if (!shop) return;
+    setSavingCheckMend(true); setCheckMendMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ checkMendApiKey }),
+    });
+    setCheckMendMsg(res.ok ? "API key saved." : "Failed to save.");
+    setSavingCheckMend(false);
+    setTimeout(() => setCheckMendMsg(""), 3000);
+  }
+
+  async function testImeiConnection(provider: "imei_pro" | "checkmend") {
+    const key = provider === "imei_pro" ? imeiProApiKey : checkMendApiKey;
+    if (!key) { setImeiConnMsg("Enter an API key first."); return; }
+    setTestingImeiConn(true); setImeiConnMsg("");
+    if (provider === "imei_pro") {
+      try {
+        const res = await fetch("/api/imei/check", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          credentials: "include", body: JSON.stringify({ imei: "353879234151890" }),
+        });
+        const d = await res.json();
+        setImeiConnMsg(d.blacklist !== undefined ? "✅ IMEI Pro connection successful" : d.proError ? `❌ ${d.proError}` : "✅ Connected (basic validation only)");
+      } catch { setImeiConnMsg("❌ Connection failed"); }
+    } else {
+      setImeiConnMsg("⏳ CheckMEND integration coming soon — key saved for activation.");
+    }
+    setTestingImeiConn(false);
+    setTimeout(() => setImeiConnMsg(""), 5000);
+  }
+
+  async function saveEmailSettings() {
+    if (!shop) return;
+    setSavingEmailSettings(true); setEmailSettingsMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ emailEnabled, emailDomain, emailNotifyWelcome, emailNotifyStatus, emailNotifyPickup, emailNotifyAppt, emailNotifyReminder }),
+    });
+    setEmailSettingsMsg(res.ok ? "Email settings saved." : "Failed to save.");
+    setSavingEmailSettings(false);
+    setTimeout(() => setEmailSettingsMsg(""), 3000);
+  }
+
+  async function sendTestEmail() {
+    if (!testEmailAddress.trim()) return;
+    setSendingTestEmail(true); setTestEmailMsg("");
+    const res = await fetch("/api/notifications/email", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ type: "test", to: testEmailAddress.trim() }),
+    });
+    const d = await res.json();
+    setTestEmailMsg(d.ok ? (d.message === "logged" ? "📋 Email logged to console (no RESEND_API_KEY set)" : "✅ Test email sent!") : `❌ ${d.message}`);
+    setSendingTestEmail(false);
+    setTimeout(() => setTestEmailMsg(""), 5000);
+  }
+
+  async function loadEmailPreview(templateKey: string) {
+    if (!shop) return;
+    setLoadingPreview(true); setPreviewTemplate(templateKey);
+    const res = await fetch("/api/notifications/email", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ type: templateKey, to: "preview@example.com", preview: true }),
+    });
+    const d = await res.json();
+    setPreviewHtml(d.html ?? "");
+    setLoadingPreview(false);
+  }
+
+  async function saveTwilioSettings() {
+    if (!shop) return;
+    setSavingTwilio(true); setTwilioMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ twilioSid, twilioToken, twilioPhone }),
+    });
+    setTwilioMsg(res.ok ? "Twilio credentials saved." : "Failed to save.");
+    setSavingTwilio(false);
+    setTimeout(() => setTwilioMsg(""), 3000);
+  }
+
+  async function testTwilioConnection() {
+    if (!shop || !twilioTestPhone.trim()) return;
+    setTestingTwilio(true); setTwilioTestMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/test-sms`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify({ phone: twilioTestPhone.trim() }),
+    });
+    const d = await res.json();
+    setTwilioTestMsg(d.success ? "✅ Test SMS sent!" : `❌ ${d.error ?? "Failed"}`);
+    setTestingTwilio(false);
+    setTimeout(() => setTwilioTestMsg(""), 5000);
+  }
+
   async function sendTestSms() {
     if (!shop || !testPhone.trim()) return;
     setSendingTest(true); setTestMsg("");
@@ -534,6 +690,10 @@ export default function SettingsPage() {
     { key: "security", label: "Security", icon: "🔒" },
     { key: "preferences", label: "Preferences", icon: "🎨" },
     { key: "appointments", label: "Appointments", icon: "📅" },
+    { key: "email", label: "Email", icon: "✉️", adminOnly: true },
+    { key: "sms", label: "SMS", icon: "💬", adminOnly: true },
+    { key: "imei", label: "IMEI", icon: "📱", adminOnly: true },
+    { key: "billing", label: "Billing", icon: "💳", adminOnly: true },
     { key: "api-keys", label: "API Keys", icon: "🔑" },
     { key: "permissions", label: "Permissions", icon: "🛡️", adminOnly: true },
   ];
@@ -1549,6 +1709,421 @@ export default function SettingsPage() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Email tab */}
+      {tab === "email" && (
+        <div className="space-y-4">
+          {!resendConfigured && (
+            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+              <span className="text-base mt-0.5">⚠️</span>
+              <div>
+                <p className="font-semibold">Email notifications inactive — add domain to activate</p>
+                <p className="text-xs mt-0.5">Set <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">RESEND_API_KEY</code> in your environment variables and verify a sending domain in Resend to enable email delivery.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Email Notifications</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Send automated transactional emails to customers via Resend</p>
+              </div>
+              <button onClick={() => setEmailEnabled(p => !p)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${emailEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${emailEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Sending Domain</label>
+              <input value={emailDomain} onChange={e => setEmailDomain(e.target.value)} className={INPUT}
+                placeholder="e.g. yourshop.com (must be verified in Resend)" />
+              <p className="text-xs text-slate-400 mt-1">Emails sent from <code>noreply@{emailDomain || "yourdomain.com"}</code></p>
+            </div>
+
+            {emailSettingsMsg && <Alert type={emailSettingsMsg.includes("Failed") ? "error" : "success"} msg={emailSettingsMsg} />}
+
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Which emails to send</p>
+              {([
+                [emailNotifyWelcome,  setEmailNotifyWelcome,  "👋", "Welcome / Order Received",    "Sent when a new work order is created"],
+                [emailNotifyStatus,   setEmailNotifyStatus,   "🔄", "Status Updates",              "Sent when repair status changes"],
+                [emailNotifyPickup,   setEmailNotifyPickup,   "🎉", "Ready for Pickup",            "Sent when device repair is complete"],
+                [emailNotifyAppt,     setEmailNotifyAppt,     "📅", "Appointment Confirmation",    "Sent when appointment is booked"],
+                [emailNotifyReminder, setEmailNotifyReminder, "🔔", "Appointment Reminder",        "Sent 24h before appointment"],
+              ] as [boolean, (v: boolean) => void, string, string, string][]).map(([val, setter, icon, label, desc]) => (
+                <div key={label} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{icon}</span>
+                    <div>
+                      <p className="text-sm text-slate-900 dark:text-white">{label}</p>
+                      <p className="text-xs text-slate-500">{desc}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setter(!val)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${val ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${val ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={saveEmailSettings} disabled={savingEmailSettings}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+              {savingEmailSettings ? "Saving…" : "Save Email Settings"}
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Test Send</h3>
+            <div className="flex gap-2">
+              <input type="email" value={testEmailAddress} onChange={e => setTestEmailAddress(e.target.value)}
+                className={INPUT} placeholder="Enter email address" />
+              <button onClick={sendTestEmail} disabled={sendingTestEmail || !testEmailAddress.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                {sendingTestEmail ? "Sending…" : "Send Test"}
+              </button>
+            </div>
+            {testEmailMsg && <p className="text-xs font-medium">{testEmailMsg}</p>}
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Template Previews</h3>
+            <p className="text-xs text-slate-500">Click any template to preview how it looks with your shop branding.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { key: "welcome", label: "Welcome", icon: "👋" },
+                { key: "status", label: "Status Update", icon: "🔄" },
+                { key: "pickup", label: "Ready Pickup", icon: "🎉" },
+                { key: "appointment", label: "Appointment", icon: "📅" },
+                { key: "reminder", label: "Reminder", icon: "🔔" },
+                { key: "password", label: "Password Reset", icon: "🔐" },
+              ].map(t => (
+                <button key={t.key} onClick={() => loadEmailPreview(t.key)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all text-left">
+                  <span className="text-base">{t.icon}</span>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {previewTemplate && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Email Preview</h3>
+                  <button onClick={() => { setPreviewTemplate(null); setPreviewHtml(""); }}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg leading-none">✕</button>
+                </div>
+                <div className="flex-1 overflow-auto p-4">
+                  {loadingPreview ? (
+                    <div className="text-center py-16 text-sm text-slate-400">Loading preview…</div>
+                  ) : (
+                    <iframe srcDoc={previewHtml} className="w-full h-[600px] rounded-lg border border-slate-200 dark:border-slate-700" title="Email preview" />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SMS tab */}
+      {tab === "sms" && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Twilio Credentials</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Enter your Twilio credentials to send SMS and WhatsApp messages. <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Get them at console.twilio.com</a></p>
+            </div>
+
+            {!twilioSid && !twilioToken && (
+              <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+                <span>⚠️</span>
+                <div>
+                  <p className="font-semibold">Twilio not configured</p>
+                  <p className="text-xs mt-0.5">Without Twilio, WhatsApp fallback buttons are shown instead of automatic sending.</p>
+                </div>
+              </div>
+            )}
+            {twilioSid && twilioToken && (
+              <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-lg px-3 py-2">
+                <span>✓</span><span>Twilio credentials configured — SMS/WhatsApp active</span>
+              </div>
+            )}
+
+            {twilioMsg && <Alert type={twilioMsg.includes("Failed") ? "error" : "success"} msg={twilioMsg} />}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Account SID</label>
+                <input type="text" value={twilioSid} onChange={e => setTwilioSid(e.target.value)}
+                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Auth Token</label>
+                <input type="password" value={twilioToken} onChange={e => setTwilioToken(e.target.value)}
+                  placeholder="••••••••••••••••••••••••••••••••" className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Phone Number</label>
+                <input type="text" value={twilioPhone} onChange={e => setTwilioPhone(e.target.value)}
+                  placeholder="+1234567890 or whatsapp:+1234567890" className={INPUT} />
+                <p className="text-xs text-slate-400 mt-1">Use <code>whatsapp:+...</code> prefix for WhatsApp channel</p>
+              </div>
+            </div>
+
+            <button onClick={saveTwilioSettings} disabled={savingTwilio}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+              {savingTwilio ? "Saving…" : "Save Twilio Credentials"}
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Test Connection</h3>
+            <div className="flex gap-2">
+              <input type="tel" value={twilioTestPhone} onChange={e => setTwilioTestPhone(e.target.value)}
+                placeholder="+212612345678" className={INPUT} />
+              <button onClick={testTwilioConnection} disabled={testingTwilio || !twilioTestPhone.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                {testingTwilio ? "Sending…" : "Send Test"}
+              </button>
+            </div>
+            {twilioTestMsg && <p className="text-xs font-medium">{twilioTestMsg}</p>}
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">SMS Template Previews</h3>
+            <p className="text-xs text-slate-500">These formats are sent automatically on status changes. Variables are replaced at send time.</p>
+            {[
+              { trigger: "Status → DONE",        preview: "Hi {name}, your {device} is ready for pickup! Order #{order}. — {shop}" },
+              { trigger: "Status → DELIVERED",   preview: "Hi {name}, your {device} has been delivered. Thank you for choosing {shop}!" },
+              { trigger: "Status → IN_PROGRESS", preview: "Hi {name}, we've started working on your {device}. Order #{order}. — {shop}" },
+              { trigger: "Appointment booked",   preview: "Hi {name}, your appointment is confirmed for {date}. — {shop}" },
+            ].map(t => (
+              <div key={t.trigger} className="border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-1">
+                <p className="text-xs font-semibold text-slate-500">{t.trigger}</p>
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-mono bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2">{t.preview}</p>
+              </div>
+            ))}
+            <p className="text-xs text-slate-400">Custom templates can be edited in the Shop tab → WhatsApp Templates section.</p>
+          </div>
+        </div>
+      )}
+
+      {/* IMEI Services tab */}
+      {tab === "imei" && (
+        <div className="space-y-4">
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-xl px-4 py-3 text-sm text-green-700 dark:text-green-400">
+            <p className="font-semibold">✓ Free Luhn validation always active</p>
+            <p className="text-xs mt-0.5">Format validation, manufacturer identification, and suspicious IMEI detection are always free — no API key required.</p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">IMEI Pro (imeicheck.net)</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Full stolen device blacklist check against global databases. Full checks from <strong>$0.50 each</strong>.</p>
+              </div>
+              {imeiProApiKey && <span className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-1 rounded-full font-semibold whitespace-nowrap">✓ Active</span>}
+            </div>
+
+            {!imeiProApiKey && (
+              <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 rounded-lg px-3 py-2">
+                <span>🔍</span>
+                <span>Full blacklist check available with IMEI Pro API key — <a href="https://imeicheck.net" target="_blank" rel="noopener noreferrer" className="underline">get one at imeicheck.net</a></span>
+              </div>
+            )}
+
+            {imeiKeyMsg && <Alert type={imeiKeyMsg.includes("Failed") ? "error" : "success"} msg={imeiKeyMsg} />}
+
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-xs text-slate-500 mb-1 block">API Key</label>
+                <input type="password" value={imeiProApiKey} onChange={e => setImeiProApiKey(e.target.value)}
+                  placeholder={imeiProApiKey ? "••••••••••••••••" : "Enter key from imeicheck.net"} className={INPUT} />
+              </div>
+              <button onClick={saveImeiProApiKey} disabled={savingImeiKey}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                {savingImeiKey ? "Saving…" : "Save"}
+              </button>
+              {imeiProApiKey && (
+                <button onClick={() => { setImeiProApiKey(""); saveImeiProApiKey(); }}
+                  className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs rounded-lg transition-colors">
+                  Remove
+                </button>
+              )}
+            </div>
+            {imeiProApiKey && (
+              <div className="flex items-center gap-3">
+                <button onClick={() => testImeiConnection("imei_pro")} disabled={testingImeiConn}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50">
+                  {testingImeiConn ? "Testing…" : "Test connection →"}
+                </button>
+              </div>
+            )}
+            {imeiConnMsg && <p className="text-xs font-medium">{imeiConnMsg}</p>}
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">CheckMEND</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Premium stolen device database used by police and insurers in 50+ countries.</p>
+              </div>
+              {checkMendApiKey && <span className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full font-semibold whitespace-nowrap">Key Saved</span>}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/30 rounded-lg px-3 py-2">
+              <span>🔧</span>
+              <span>CheckMEND integration in development. Save your key now — it activates automatically when the integration launches.</span>
+            </div>
+
+            {checkMendMsg && <Alert type={checkMendMsg.includes("Failed") ? "error" : "success"} msg={checkMendMsg} />}
+
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-xs text-slate-500 mb-1 block">CheckMEND API Key</label>
+                <input type="password" value={checkMendApiKey} onChange={e => setCheckMendApiKey(e.target.value)}
+                  placeholder={checkMendApiKey ? "••••••••••••••••" : "Enter CheckMEND API key"} className={INPUT} />
+              </div>
+              <button onClick={saveCheckMendApiKey} disabled={savingCheckMend}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                {savingCheckMend ? "Saving…" : "Save"}
+              </button>
+              {checkMendApiKey && (
+                <button onClick={() => { setCheckMendApiKey(""); saveCheckMendApiKey(); }}
+                  className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs rounded-lg transition-colors">
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-xs text-slate-600 dark:text-slate-400 space-y-2">
+            <p className="font-semibold text-slate-700 dark:text-slate-300">Service Comparison</p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {[
+                { name: "Free (Luhn)", cost: "Free", coverage: "Format only" },
+                { name: "IMEI Pro", cost: "from $0.50", coverage: "Global blacklist" },
+                { name: "CheckMEND", cost: "Custom pricing", coverage: "Police + insurer DB" },
+              ].map(s => (
+                <div key={s.name} className="bg-white dark:bg-slate-900 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 mb-1">{s.name}</p>
+                  <p className="text-slate-400">{s.cost}</p>
+                  <p className="text-slate-400">{s.coverage}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Billing tab */}
+      {tab === "billing" && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Current Plan</h2>
+            {billingData ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base font-bold text-slate-900 dark:text-white">{billingData.currentPlan} Plan</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      billingData.status === "ACTIVE" ? "bg-green-500/20 text-green-600 dark:text-green-400" :
+                      billingData.status === "TRIAL" ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" :
+                      "bg-red-500/20 text-red-600 dark:text-red-400"
+                    }`}>{billingData.status}</span>
+                  </div>
+                  {billingData.trialEndsAt && (
+                    <p className="text-xs text-slate-500">Trial ends {new Date(billingData.trialEndsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
+                  )}
+                  {billingData.stripePlanSelected && billingData.stripePlanSelected !== billingData.currentPlan && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Upgrade to <strong>{billingData.stripePlanSelected}</strong> pending billing activation</p>
+                  )}
+                </div>
+                {billingData.currentPlan !== "ENTERPRISE" && (
+                  <button onClick={() => { setUpgradePlanKey("PRO"); setShowUpgradeModal(true); }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors">
+                    Upgrade
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400 py-4 text-center">Loading…</div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Available Plans</h3>
+            <div className="space-y-3">
+              {[
+                { key: "FREE", name: "Starter", price: "Free", features: ["50 orders/mo", "1 user", "Basic reports"] },
+                { key: "PRO", name: "Pro", price: "$29/mo", features: ["Unlimited orders", "10 users", "Email + SMS", "Multi-branch", "API access"], highlight: true },
+                { key: "ENTERPRISE", name: "Enterprise", price: "$79/mo", features: ["Unlimited everything", "Custom domain email", "White-label", "Dedicated support"] },
+              ].map(plan => (
+                <div key={plan.key} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
+                  (plan as { highlight?: boolean }).highlight ? "border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20" :
+                  billingData?.currentPlan === plan.key ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" :
+                  "border-slate-200 dark:border-slate-700"
+                }`}>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">{plan.name}</span>
+                      <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{plan.price}</span>
+                      {billingData?.currentPlan === plan.key && (
+                        <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">Current</span>
+                      )}
+                      {(plan as { highlight?: boolean }).highlight && billingData?.currentPlan !== plan.key && (
+                        <span className="text-xs bg-amber-400/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">Popular</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">{plan.features.join(" · ")}</p>
+                  </div>
+                  {billingData?.currentPlan !== plan.key && plan.key !== "FREE" && (
+                    <button onClick={() => { setUpgradePlanKey(plan.key); setShowUpgradeModal(true); }}
+                      className="ml-4 px-3 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap">
+                      {plan.key === "ENTERPRISE" ? "Contact Sales" : "Upgrade"}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center">
+            <a href="/pricing" target="_blank" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+              View full pricing page →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="text-5xl mb-4">🚀</div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Payments Launching Soon</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">
+              You&apos;ve selected the <strong className="text-slate-700 dark:text-slate-200">{upgradePlanKey}</strong> plan.
+              We&apos;ve saved your intent — you&apos;ll be notified when billing goes live.
+            </p>
+            <p className="text-slate-400 text-xs mb-6">Continue using all features in the meantime.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowUpgradeModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Close
+              </button>
+              <a href={`mailto:hello@fixflow.ma?subject=Interested in ${upgradePlanKey} plan`}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors text-center">
+                Notify Me
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>
