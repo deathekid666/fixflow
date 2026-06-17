@@ -99,6 +99,19 @@ export async function GET(req: Request) {
     })
   );
 
+  // Referral source breakdown
+  const referralGroups = await prisma.workOrder.groupBy({
+    by: ["referralSource"],
+    where: { ...shopFilter, referralSource: { not: null } },
+    _count: { id: true },
+    _sum: { collected: true },
+  });
+  const referralStats = referralGroups.map(r => ({
+    source: r.referralSource as string,
+    count: r._count.id,
+    revenue: r._sum.collected ?? 0,
+  }));
+
   // Low stock parts
   const lowStock = await prisma.sparePart.findMany({
     where: { shopId: user.shopId ?? undefined, stock: { lte: 5 } },
@@ -150,6 +163,7 @@ export async function GET(req: Request) {
     topParts: topPartsWithNames,
     engineerStats,
     branchStats,
+    referralStats,
     lowStock,
     sla: { total: slaTotal, met: slaMet, breached: slaBreached, compliance: slaCompliance },
     milestones: { anniversaryThisMonth, tenPlusCustomers: tenPlusCount, goldCustomers: goldCount },

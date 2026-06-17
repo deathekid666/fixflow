@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { REFERRAL_SOURCES, REFERRAL_LABELS } from "@/lib/referralSources";
 
 type CustomerHistory = {
   name: string; phone: string; email: string;
@@ -60,7 +61,7 @@ export default function NewWorkOrderPage() {
     customerName: "", customerPhone: "", customerEmail: "",
     faultDescription: "", appearance: "", remarks: "",
     serviceType: "IN_STORE", repairType: "", faultLevel: "LOW",
-    branchId: "",
+    branchId: "", referralSource: "", referredBy: "",
   });
 
   useEffect(() => {
@@ -575,6 +576,21 @@ export default function NewWorkOrderPage() {
                 <option value="">— No Branch —</option>
                 {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
+            </div>
+          )}
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">How did they find us?</label>
+            <select className={INPUT} value={form.referralSource} onChange={e => set("referralSource", e.target.value)}>
+              <option value="">— Select source —</option>
+              {REFERRAL_SOURCES.map(s => <option key={s} value={s}>{REFERRAL_LABELS[s]}</option>)}
+            </select>
+          </div>
+          {form.referralSource === "REFERRAL" && (
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Referred by (customer name)</label>
+              <input type="text" placeholder="Who referred them?"
+                className={INPUT}
+                value={form.referredBy} onChange={e => set("referredBy", e.target.value)} />
             </div>
           )}
         </div>

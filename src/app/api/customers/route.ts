@@ -36,6 +36,7 @@ export async function GET(req: Request) {
       total: true,
       collected: true,
       status: true,
+      referralSource: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -51,6 +52,7 @@ export async function GET(req: Request) {
     firstVisit: string;
     lastVisit: string;
     statuses: string[];
+    referralSource: string | null;
   }>();
 
   for (const o of orders) {
@@ -62,6 +64,8 @@ export async function GET(req: Request) {
       existing.statuses.push(o.status);
       // orders are desc, so later iterations are older — overwrite firstVisit each time
       existing.firstVisit = o.createdAt.toISOString();
+      // keep the earliest-order's referralSource (how they first found us)
+      if (!existing.referralSource && o.referralSource) existing.referralSource = o.referralSource;
     } else {
       customerMap.set(o.customerPhone, {
         name: o.customerName,
@@ -73,6 +77,7 @@ export async function GET(req: Request) {
         firstVisit: o.createdAt.toISOString(),
         lastVisit: o.createdAt.toISOString(),
         statuses: [o.status],
+        referralSource: o.referralSource,
       });
     }
   }

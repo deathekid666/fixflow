@@ -105,6 +105,7 @@ export async function POST(req: Request) {
     customerName, customerPhone, customerEmail,
     faultDescription, appearance, remarks,
     serviceType, repairType, faultLevel, branchId: newBranchId,
+    referralSource, referredBy,
   } = body;
 
   if (!deviceBrand || !deviceModel || !customerName || !customerPhone || !faultDescription) {
@@ -138,6 +139,8 @@ export async function POST(req: Request) {
       serviceType: serviceType ?? "IN_STORE",
       repairType,
       faultLevel: faultLevel ?? "LOW",
+      referralSource: referralSource || null,
+      referredBy: referredBy || null,
       status: "RECEIVED",
       shopId: user.shopId,
       userId: user.id,

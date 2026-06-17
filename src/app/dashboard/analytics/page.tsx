@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
+import { REFERRAL_LABELS, REFERRAL_CHART_COLORS } from "@/lib/referralSources";
 
 type RevenueData = {
   data: { label: string; total: number; collected: number; count: number; expenses: number; profit: number }[];
@@ -29,6 +30,7 @@ type Analytics = {
   lowStock: { id: string; name: string; partNumber: string; stock: number; unitPrice: number }[];
   sla: { total: number; met: number; breached: number; compliance: number | null };
   milestones: { anniversaryThisMonth: number; tenPlusCustomers: number; goldCustomers: number };
+  referralStats?: { source: string; count: number; revenue: number }[];
 };
 
 type BenchmarkMetrics = {
@@ -625,6 +627,54 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
+
+      {/* Referral Sources */}
+      {analytics.referralStats && analytics.referralStats.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Referral Sources</h2>
+              <p className="text-xs text-slate-500 mt-0.5">How customers find you</p>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div id="referral-pie-chart">
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={analytics.referralStats.map(r => ({ name: REFERRAL_LABELS[r.source] ?? r.source, value: r.count, source: r.source }))}
+                    cx="50%" cy="50%"
+                    innerRadius={55} outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`}
+                    labelLine={false}
+                  >
+                    {analytics.referralStats.map(r => (
+                      <Cell key={r.source} fill={REFERRAL_CHART_COLORS[r.source] ?? "#94a3b8"} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => [v, "Orders"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-2">
+              {analytics.referralStats.map(r => (
+                <div key={r.source} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: REFERRAL_CHART_COLORS[r.source] ?? "#94a3b8" }} />
+                    <span className="text-slate-700 dark:text-slate-300 truncate">{REFERRAL_LABELS[r.source] ?? r.source}</span>
+                  </div>
+                  <div className="flex items-center gap-3 ml-2 flex-shrink-0">
+                    <span className="text-slate-900 dark:text-white font-semibold">{r.count}</span>
+                    <span className="text-xs text-slate-500">{fmt(r.revenue)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loyalty Milestones */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">

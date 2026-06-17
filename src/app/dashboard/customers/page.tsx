@@ -6,11 +6,13 @@ import { loyaltyTier } from "@/lib/loyaltyTier";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
+import { REFERRAL_LABELS, REFERRAL_BADGE_CLASS } from "@/lib/referralSources";
 
 type Customer = {
   name: string; phone: string; email: string;
   totalOrders: number; totalSpent: number; totalCollected: number;
   firstVisit: string; lastVisit: string; statuses: string[];
+  referralSource?: string | null;
 };
 
 function customerSince(firstVisit: string): string {
@@ -315,6 +317,11 @@ export default function CustomersPage() {
                     {badge && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
                     )}
+                    {c.referralSource && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${REFERRAL_BADGE_CLASS[c.referralSource] ?? ""}`}>
+                        {REFERRAL_LABELS[c.referralSource] ?? c.referralSource}
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5">{c.email || c.phone}</div>
                 </div>
@@ -473,11 +480,18 @@ export default function CustomersPage() {
                     <td className="px-4 py-3 text-slate-400 text-xs">{new Date(c.lastVisit).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-xs text-purple-600 dark:text-purple-400 font-medium">{customerSince(c.firstVisit)}</td>
                     <td className="px-4 py-3">
-                      {badge ? (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
-                      ) : (
-                        <span className="text-xs text-slate-600">—</span>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {badge ? (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>{badge.label}</span>
+                        ) : (
+                          <span className="text-xs text-slate-600">—</span>
+                        )}
+                        {c.referralSource && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${REFERRAL_BADGE_CLASS[c.referralSource] ?? ""}`}>
+                            {REFERRAL_LABELS[c.referralSource] ?? c.referralSource}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
