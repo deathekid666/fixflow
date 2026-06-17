@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { buildWaUrl } from "@/lib/whatsapp";
 
 type TrackData = {
   id: string;
@@ -15,7 +16,7 @@ type TrackData = {
   faultDescription: string;
   repairType: string | null;
   assignee: { name: string } | null;
-  shop: { name: string; phone: string | null; address: string | null; logoUrl: string | null; certification: string | null } | null;
+  shop: { name: string; phone: string | null; whatsappPhone: string | null; address: string | null; logoUrl: string | null; certification: string | null } | null;
   logs: { action: string; description: string; createdAt: string }[];
   rating: { rating: number; comment: string | null } | null;
   attachments: { id: string; path: string; filename: string; createdAt: string }[];
@@ -459,14 +460,20 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
             </div>
 
             {/* Contact shop */}
-            {data.shop?.phone && (
-              <div style={{ textAlign: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              {data.shop?.phone && (
                 <a href={`tel:${data.shop.phone}`}
                   style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(37,99,235,0.2)", border: "1px solid rgba(37,99,235,0.4)", borderRadius: 99, padding: "10px 24px", color: "#60a5fa", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
                   📞 Call {data.shop.name ?? "us"}: {data.shop.phone}
                 </a>
-              </div>
-            )}
+              )}
+              {data.shop?.whatsappPhone && (
+                <a href={buildWaUrl(data.shop.whatsappPhone, `Hi, I'm checking on my repair order ${data.orderNumber.toUpperCase()}. Can you give me an update?`)} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(22,163,74,0.2)", border: "1px solid rgba(22,163,74,0.4)", borderRadius: 99, padding: "10px 24px", color: "#4ade80", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
+                  💬 WhatsApp {data.shop.name ?? "us"}
+                </a>
+              )}
+            </div>
 
             <p style={{ textAlign: "center", fontSize: 11, color: "#334155", margin: 0 }}>
               Powered by <strong style={{ color: "#475569" }}>FixFlow</strong>

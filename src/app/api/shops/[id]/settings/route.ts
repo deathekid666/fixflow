@@ -16,6 +16,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       notifyStatuses: true,
       smsLanguage: true,
       includeTrackingLink: true,
+      waTemplateStatus: true,
+      waTemplatePickup: true,
+      waTemplateAppointment: true,
     },
   });
 
@@ -26,6 +29,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     notifyStatuses: settings?.notifyStatuses ?? "DONE,DELIVERED",
     smsLanguage: settings?.smsLanguage ?? "en",
     includeTrackingLink: settings?.includeTrackingLink ?? true,
+    waTemplateStatus: settings?.waTemplateStatus ?? "",
+    waTemplatePickup: settings?.waTemplatePickup ?? "",
+    waTemplateAppointment: settings?.waTemplateAppointment ?? "",
   });
 }
 
@@ -45,6 +51,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (typeof body.notifyStatuses === "string") data.notifyStatuses = body.notifyStatuses;
   if (["en", "fr", "ar"].includes(body.smsLanguage)) data.smsLanguage = body.smsLanguage;
   if (typeof body.includeTrackingLink === "boolean") data.includeTrackingLink = body.includeTrackingLink;
+  if (typeof body.waTemplateStatus === "string") data.waTemplateStatus = body.waTemplateStatus || null;
+  if (typeof body.waTemplatePickup === "string") data.waTemplatePickup = body.waTemplatePickup || null;
+  if (typeof body.waTemplateAppointment === "string") data.waTemplateAppointment = body.waTemplateAppointment || null;
 
   const settings = await prisma.shopSettings.upsert({
     where: { shopId: params.id },
@@ -57,6 +66,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       notifyStatuses: true,
       smsLanguage: true,
       includeTrackingLink: true,
+      waTemplateStatus: true,
+      waTemplatePickup: true,
+      waTemplateAppointment: true,
     },
   });
 

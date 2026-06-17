@@ -47,6 +47,7 @@ model Shop {
   name               String
   address            String?
   phone              String?
+  whatsappPhone      String?
   email              String?
   logoUrl            String?
   googleMapsUrl      String?
@@ -537,6 +538,11 @@ model ShopSettings {
   notifyStatuses  String   @default("DONE,DELIVERED")
   smsLanguage     String   @default("en")
   includeTrackingLink Boolean @default(true)
+
+  // WhatsApp quick-share message templates (empty = use app defaults)
+  waTemplateStatus      String?
+  waTemplatePickup      String?
+  waTemplateAppointment String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

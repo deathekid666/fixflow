@@ -6,6 +6,7 @@ import SocialShareModal from "@/components/SocialShareModal";
 import { useAuth } from "@/context/AuthContext";
 import { loyaltyTier } from "@/lib/loyaltyTier";
 import { formatCurrency } from "@/lib/currency";
+import { buildWaUrl, fillTemplate, DEFAULT_TEMPLATES, statusLabel, APP_URL } from "@/lib/whatsapp";
 
 type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
@@ -34,7 +35,7 @@ type WorkOrder = {
   rating?: { rating: number; comment: string | null } | null;
   payments: Payment[];
   checklist: CheckItem[];
-  shop: { name: string; logoUrl: string | null };
+  shop: { name: string; logoUrl: string | null; whatsappPhone?: string | null };
 };
 
 type Engineer = { id: string; name: string };
@@ -587,6 +588,22 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {order.status === "DELIVERED" && order.attachments.some(a => a.tag === "intake") && order.attachments.some(a => a.tag === "completion") && (
             <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 Share</button>
           )}
+          {order.customerPhone && (() => {
+            const trackingLink = `${APP_URL}/track/${order.orderNumber.slice(0, 6)}`;
+            const msg = fillTemplate(DEFAULT_TEMPLATES.statusUpdate, {
+              customerName: order.customerName,
+              deviceBrand: order.deviceBrand,
+              deviceModel: order.deviceModel,
+              status: statusLabel(order.status),
+              trackingLink,
+            });
+            return (
+              <a href={buildWaUrl(order.customerPhone, msg)} target="_blank" rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 bg-green-600/20 hover:bg-green-600/35 text-green-700 dark:text-green-400 rounded-lg transition-colors font-medium">
+                💬 WhatsApp
+              </a>
+            );
+          })()}
           <div className="flex items-center gap-1.5">
             <button onClick={sendReminder} disabled={sendingReminder} className="text-xs px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/35 text-amber-700 dark:text-amber-400 rounded-lg transition-colors disabled:opacity-50">
               {sendingReminder ? "..." : "🔔 Send Reminder"}

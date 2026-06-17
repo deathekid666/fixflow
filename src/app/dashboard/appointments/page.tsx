@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { buildWaUrl, fillTemplate, DEFAULT_TEMPLATES } from "@/lib/whatsapp";
 
 type Appointment = {
   id: string; shopId: string;
@@ -79,6 +81,7 @@ const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dar
 
 export default function AppointmentsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [view, setView] = useState<"calendar" | "list">("calendar");
@@ -688,6 +691,25 @@ export default function AppointmentsPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* WhatsApp confirmation */}
+                    {selected.customerPhone && (() => {
+                      const d = new Date(selected.scheduledAt);
+                      const msg = fillTemplate(DEFAULT_TEMPLATES.appointment, {
+                        customerName: selected.customerName,
+                        date: d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }),
+                        time: d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+                        deviceBrand: selected.deviceBrand,
+                        deviceModel: selected.deviceModel,
+                        shopName: user?.name ?? "FixFlow",
+                      });
+                      return (
+                        <a href={buildWaUrl(selected.customerPhone, msg)} target="_blank" rel="noopener noreferrer"
+                          className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-green-600/15 hover:bg-green-600/25 text-green-700 dark:text-green-400 border border-green-500/30 rounded-lg transition-colors">
+                          💬 Send WhatsApp Confirmation
+                        </a>
+                      );
+                    })()}
 
                     {/* Convert to work order */}
                     {convertError && (

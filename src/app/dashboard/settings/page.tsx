@@ -6,13 +6,14 @@ import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/context/LanguageContext";
 import { CURRENCIES } from "@/lib/currency";
 import { loadSocialSettings, saveSocialSettings } from "@/components/SocialShareModal";
+import { DEFAULT_TEMPLATES } from "@/lib/whatsapp";
 
 type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys";
 
 type ApiKey = { id: string; name: string; key: string; lastUsed: string | null; createdAt: string; isActive: boolean };
 
 type Shop = {
-  id: string; name: string; phone: string | null;
+  id: string; name: string; phone: string | null; whatsappPhone: string | null;
   address: string | null; email: string | null;
   logoUrl: string | null; googleMapsUrl: string | null;
   currency: string;
@@ -126,7 +127,7 @@ export default function SettingsPage() {
 
   // Shop
   const [shop, setShop] = useState<Shop | null>(null);
-  const [shopForm, setShopForm] = useState({ name: "", phone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD", taxEnabled: false, taxRate: 20, taxLabel: "TVA", city: "", country: "", lat: "", lng: "", certification: "" });
+  const [shopForm, setShopForm] = useState({ name: "", phone: "", whatsappPhone: "", address: "", email: "", googleMapsUrl: "", currency: "MAD", taxEnabled: false, taxRate: 20, taxLabel: "TVA", city: "", country: "", lat: "", lng: "", certification: "" });
   const [savingShop, setSavingShop] = useState(false);
   const [shopMsg, setShopMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -135,6 +136,13 @@ export default function SettingsPage() {
   const [defaultSlaHours, setDefaultSlaHours] = useState(24);
   const [savingSla, setSavingSla] = useState(false);
   const [slaMsg, setSlaMsg] = useState("");
+
+  // WhatsApp message templates
+  const [waTemplateStatus, setWaTemplateStatus] = useState("");
+  const [waTemplatePickup, setWaTemplatePickup] = useState("");
+  const [waTemplateAppointment, setWaTemplateAppointment] = useState("");
+  const [savingWaTemplates, setSavingWaTemplates] = useState(false);
+  const [waTemplateMsg, setWaTemplateMsg] = useState("");
 
   // SMS / WhatsApp notifications
   const [smsEnabled, setSmsEnabled] = useState(false);
@@ -181,7 +189,7 @@ export default function SettingsPage() {
         .then(r => r.json())
         .then(s => {
           setShop(s);
-          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD", taxEnabled: s.taxEnabled ?? false, taxRate: s.taxRate ?? 20, taxLabel: s.taxLabel ?? "TVA", city: s.city ?? "", country: s.country ?? "", lat: s.lat?.toString() ?? "", lng: s.lng?.toString() ?? "", certification: s.certification ?? "" });
+          setShopForm({ name: s.name ?? "", phone: s.phone ?? "", whatsappPhone: s.whatsappPhone ?? "", address: s.address ?? "", email: s.email ?? "", googleMapsUrl: s.googleMapsUrl ?? "", currency: s.currency ?? "MAD", taxEnabled: s.taxEnabled ?? false, taxRate: s.taxRate ?? 20, taxLabel: s.taxLabel ?? "TVA", city: s.city ?? "", country: s.country ?? "", lat: s.lat?.toString() ?? "", lng: s.lng?.toString() ?? "", certification: s.certification ?? "" });
         }).catch(() => {});
       fetch(`/api/shops/${user.shopId}/settings`, { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
@@ -193,6 +201,9 @@ export default function SettingsPage() {
           setNotifyStatuses((d.notifyStatuses ?? "DONE,DELIVERED").split(",").map((s: string) => s.trim()).filter(Boolean));
           setSmsLanguage(d.smsLanguage ?? "en");
           setIncludeTrackingLink(d.includeTrackingLink ?? true);
+          setWaTemplateStatus(d.waTemplateStatus ?? "");
+          setWaTemplatePickup(d.waTemplatePickup ?? "");
+          setWaTemplateAppointment(d.waTemplateAppointment ?? "");
         })
         .catch(() => {});
     }
@@ -376,6 +387,19 @@ export default function SettingsPage() {
     setTimeout(() => setNotifMsg(""), 3000);
   }
 
+  async function saveWaTemplates() {
+    if (!shop) return;
+    setSavingWaTemplates(true); setWaTemplateMsg("");
+    const res = await fetch(`/api/shops/${shop.id}/settings`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ waTemplateStatus, waTemplatePickup, waTemplateAppointment }),
+    });
+    setWaTemplateMsg(res.ok ? "Templates saved." : "Failed to save.");
+    setSavingWaTemplates(false);
+    setTimeout(() => setWaTemplateMsg(""), 3000);
+  }
+
   async function sendTestSms() {
     if (!shop || !testPhone.trim()) return;
     setSendingTest(true); setTestMsg("");
@@ -540,6 +564,12 @@ export default function SettingsPage() {
                   <label className="text-xs text-slate-400 mb-1 block">Phone</label>
                   <input value={shopForm.phone} onChange={e => setShopForm(p => ({ ...p, phone: e.target.value }))}
                     placeholder="+212..." className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">WhatsApp Number</label>
+                  <input value={shopForm.whatsappPhone} onChange={e => setShopForm(p => ({ ...p, whatsappPhone: e.target.value }))}
+                    placeholder="+212..." className={INPUT} />
+                  <p className="text-xs text-slate-500 mt-1">Shown as a contact button on the customer tracking portal.</p>
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Email</label>
@@ -782,6 +812,37 @@ export default function SettingsPage() {
                 <button onClick={saveShop} disabled={savingShop}
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
                   {savingShop ? "Saving..." : "Save Tax Settings"}
+                </button>
+              </div>
+
+              {/* WhatsApp Quick-Share Templates */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">WhatsApp Message Templates</h3>
+                <p className="text-xs text-slate-500">Customize the pre-filled messages for WhatsApp quick-share buttons. Leave blank to use defaults. Variables: <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{customerName}"}</code> <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{deviceBrand}"}</code> <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{deviceModel}"}</code> <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{status}"}</code> <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{trackingLink}"}</code></p>
+                {waTemplateMsg && <Alert type={waTemplateMsg.includes("Failed") ? "error" : "success"} msg={waTemplateMsg} />}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Status update message</label>
+                    <textarea rows={2} value={waTemplateStatus} onChange={e => setWaTemplateStatus(e.target.value)}
+                      placeholder={DEFAULT_TEMPLATES.statusUpdate}
+                      className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 resize-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Ready for pickup message</label>
+                    <textarea rows={2} value={waTemplatePickup} onChange={e => setWaTemplatePickup(e.target.value)}
+                      placeholder={DEFAULT_TEMPLATES.readyPickup}
+                      className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 resize-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Appointment confirmation message</label>
+                    <textarea rows={2} value={waTemplateAppointment} onChange={e => setWaTemplateAppointment(e.target.value)}
+                      placeholder={DEFAULT_TEMPLATES.appointment}
+                      className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 resize-none" />
+                  </div>
+                </div>
+                <button onClick={saveWaTemplates} disabled={savingWaTemplates}
+                  className="px-4 py-1.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
+                  {savingWaTemplates ? "Saving…" : "Save Templates"}
                 </button>
               </div>
 
