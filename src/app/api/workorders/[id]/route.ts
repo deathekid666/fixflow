@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { checkPerm } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   });
   const customerFirstVisit = customerFirstOrder?.createdAt ?? order.createdAt;
 
-  return Response.json({ ...order, tatDays, isOverdue, customerOrderCount, customerFirstVisit });
+  const canViewFinancials = await checkPerm(user.shopId, user.role, "VIEW_FINANCIALS");
+  const responseOrder = canViewFinancials ? order : {
+    ...order,
+    subtotal: null, quotationItems: null, discount: null,
+    total: null, collected: null, quotationRemarks: null,
+    payments: [],
+  };
+
+  return Response.json({ ...responseOrder, tatDays, isOverdue, customerOrderCount, customerFirstVisit });
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {

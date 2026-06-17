@@ -8,7 +8,7 @@ import { CURRENCIES } from "@/lib/currency";
 import { loadSocialSettings, saveSocialSettings } from "@/components/SocialShareModal";
 import { DEFAULT_TEMPLATES } from "@/lib/whatsapp";
 
-type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys";
+type Tab = "profile" | "shop" | "security" | "preferences" | "appointments" | "api-keys" | "permissions";
 
 type ApiKey = { id: string; name: string; key: string; lastUsed: string | null; createdAt: string; isActive: boolean };
 
@@ -156,6 +156,12 @@ export default function SettingsPage() {
   const [sendingTest, setSendingTest] = useState(false);
   const [testMsg, setTestMsg] = useState("");
 
+  // Permissions
+  const [engineerPerms, setEngineerPerms] = useState<Record<string, boolean>>({});
+  const [loadingPerms, setLoadingPerms] = useState(false);
+  const [savingPerm, setSavingPerm] = useState<string | null>(null);
+  const [permsMsg, setPermsMsg] = useState("");
+
   // API Keys
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [newKeyName, setNewKeyName] = useState("");
@@ -228,6 +234,46 @@ export default function SettingsPage() {
   useEffect(() => {
     if (tab === "api-keys") loadApiKeys();
   }, [tab]);
+
+  useEffect(() => {
+    if (tab === "permissions" && user?.role === "ADMIN") loadPerms();
+  }, [tab]);
+
+  async function loadPerms() {
+    setLoadingPerms(true);
+    try {
+      const res = await fetch("/api/permissions", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setEngineerPerms(data.ENGINEER ?? {});
+      }
+    } finally {
+      setLoadingPerms(false);
+    }
+  }
+
+  async function togglePerm(permission: string, enabled: boolean) {
+    setSavingPerm(permission);
+    setPermsMsg("");
+    setEngineerPerms(prev => ({ ...prev, [permission]: enabled }));
+    try {
+      const res = await fetch("/api/permissions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ role: "ENGINEER", permission, enabled }),
+      });
+      if (!res.ok) {
+        setEngineerPerms(prev => ({ ...prev, [permission]: !enabled }));
+        setPermsMsg("Failed to save.");
+      } else {
+        setPermsMsg("Saved.");
+        setTimeout(() => setPermsMsg(""), 2000);
+      }
+    } finally {
+      setSavingPerm(null);
+    }
+  }
 
   async function loadApiKeys() {
     const res = await fetch("/api/keys", { credentials: "include" });
@@ -438,13 +484,14 @@ export default function SettingsPage() {
     ? Math.max(0, Math.ceil((new Date(shop.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
 
-  const tabs: { key: Tab; label: string; icon: string }[] = [
+  const tabs: { key: Tab; label: string; icon: string; adminOnly?: boolean }[] = [
     { key: "profile", label: "Profile", icon: "👤" },
     { key: "shop", label: "Shop", icon: "🏪" },
     { key: "security", label: "Security", icon: "🔒" },
     { key: "preferences", label: "Preferences", icon: "🎨" },
     { key: "appointments", label: "Appointments", icon: "📅" },
     { key: "api-keys", label: "API Keys", icon: "🔑" },
+    { key: "permissions", label: "Permissions", icon: "🛡️", adminOnly: true },
   ];
 
   return (
@@ -485,7 +532,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 overflow-x-auto">
-        {tabs.map(t => (
+        {tabs.filter(t => !t.adminOnly || user?.role === "ADMIN").map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex-shrink-0 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
               tab === t.key
@@ -1302,6 +1349,76 @@ export default function SettingsPage() {
                 <code className="block font-mono bg-slate-200 dark:bg-slate-700 rounded px-2 py-1.5 mt-1 select-all">
                   Authorization: Bearer fk_your_key_here
                 </code>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Permissions tab */}
+      {tab === "permissions" && (
+        <div className="space-y-4">
+          {user?.role !== "ADMIN" ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+              <p className="text-sm text-slate-500 text-center py-6">Only admins can manage permissions.</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-2">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Engineer Permissions</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">Control what engineers in your shop can access and do.</p>
+                  </div>
+                  {permsMsg && (
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">{permsMsg}</span>
+                  )}
+                </div>
+
+                {loadingPerms ? (
+                  <div className="text-center py-8 text-sm text-slate-400">Loading…</div>
+                ) : (
+                  <div className="space-y-5">
+                    {[
+                      { label: "Work Orders", perms: ["VIEW_ALL_ORDERS", "VIEW_ASSIGNED_ORDERS_ONLY", "CREATE_ORDERS", "EDIT_ORDERS", "DELETE_ORDERS"] },
+                      { label: "Financials", perms: ["VIEW_FINANCIALS", "EDIT_QUOTATION", "RECORD_PAYMENTS"] },
+                      { label: "Customers", perms: ["VIEW_CUSTOMERS", "EDIT_CUSTOMERS"] },
+                      { label: "Inventory", perms: ["VIEW_INVENTORY", "EDIT_INVENTORY"] },
+                      { label: "Reports & Analytics", perms: ["VIEW_REPORTS", "VIEW_ANALYTICS"] },
+                      { label: "Administration", perms: ["MANAGE_ENGINEERS", "MANAGE_SETTINGS"] },
+                    ].map(group => (
+                      <div key={group.label}>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">{group.label}</p>
+                        <div className="space-y-2">
+                          {group.perms.map(perm => {
+                            const enabled = engineerPerms[perm] ?? false;
+                            const isSaving = savingPerm === perm;
+                            const label = perm.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                            return (
+                              <div key={perm} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <div>
+                                  <p className="text-sm text-slate-900 dark:text-white font-medium">{label}</p>
+                                  <p className="text-xs text-slate-400 font-mono">{perm}</p>
+                                </div>
+                                <button
+                                  disabled={isSaving}
+                                  onClick={() => togglePerm(perm, !enabled)}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-60 ${enabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}>
+                                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-6" : "translate-x-1"}`} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                <p className="font-medium text-slate-800 dark:text-slate-200">How permissions work</p>
+                <p>Permission changes take effect within 30 seconds. Admins always have full access. These settings only apply to the <strong>Engineer</strong> role.</p>
               </div>
             </>
           )}

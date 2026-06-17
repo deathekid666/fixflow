@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { checkPerm } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!await checkPerm(user.shopId, user.role, "VIEW_INVENTORY")) {
+    return Response.json({ error: "Permission denied: VIEW_INVENTORY" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search");
@@ -44,8 +49,8 @@ export async function POST(req: Request) {
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!user.shopId) return Response.json({ error: "No shop assigned" }, { status: 400 });
 
-  if (user.role !== "ADMIN") {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!await checkPerm(user.shopId, user.role, "EDIT_INVENTORY")) {
+    return Response.json({ error: "Permission denied: EDIT_INVENTORY" }, { status: 403 });
   }
 
   const { name, partNumber, description, unitPrice, stock } = await req.json();

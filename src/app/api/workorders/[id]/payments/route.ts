@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { checkPerm } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!await checkPerm(user.shopId, user.role, "VIEW_FINANCIALS")) {
+    return Response.json({ error: "Permission denied: VIEW_FINANCIALS" }, { status: 403 });
+  }
 
   const payments = await prisma.payment.findMany({
     where: { workOrderId: params.id },
@@ -19,6 +24,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!await checkPerm(user.shopId, user.role, "RECORD_PAYMENTS")) {
+    return Response.json({ error: "Permission denied: RECORD_PAYMENTS" }, { status: 403 });
+  }
 
   const { amount, method, note } = await req.json();
 

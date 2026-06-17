@@ -1,15 +1,20 @@
 // src/app/api/workorders/[id]/edit/route.ts
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { checkPerm } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
-// Fields any authorized user (admin or owning engineer) may edit
+// Fields requiring only EDIT_ORDERS permission
 const EDITABLE_FIELDS = [
   "faultDescription", "appearance", "remarks", "repairType",
   "faultLevel", "assignedTo", "serviceType",
-  "subtotal", "quotationItems", "discount", "total", "collected", "quotationRemarks",
   "warrantyStart", "warrantyEnd", "isUnderWarranty",
+] as const;
+
+// Fields requiring EDIT_QUOTATION permission
+const QUOTATION_FIELDS = [
+  "subtotal", "quotationItems", "discount", "total", "collected", "quotationRemarks",
 ] as const;
 
 // Additional fields only an admin may edit
@@ -33,11 +38,23 @@ export async function PATCH(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (!await checkPerm(user.shopId, user.role, "EDIT_ORDERS")) {
+    return Response.json({ error: "Permission denied: EDIT_ORDERS" }, { status: 403 });
+  }
+
+  const canEditQuotation = await checkPerm(user.shopId, user.role, "EDIT_QUOTATION");
+
   const body = await req.json();
 
   const sharedFields: Record<string, unknown> = {};
   for (const key of EDITABLE_FIELDS) {
     if (body[key] !== undefined) sharedFields[key] = body[key];
+  }
+
+  if (canEditQuotation) {
+    for (const key of QUOTATION_FIELDS) {
+      if (body[key] !== undefined) sharedFields[key] = body[key];
+    }
   }
 
   if (user.role === "ADMIN") {
@@ -68,16 +85,15 @@ export async function PATCH(
   return Response.json(updated);
 }
 
-// DELETE — admin only, soft delete (sets deletedAt). Related records are kept
-// so the order can be restored or audited; list queries filter deletedAt: null.
+// DELETE — requires DELETE_ORDERS permission (admin always has it, engineers need it granted)
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== "ADMIN") {
-    return Response.json({ error: "Only admins can delete work orders" }, { status: 403 });
+  if (!await checkPerm(user.shopId, user.role, "DELETE_ORDERS")) {
+    return Response.json({ error: "Permission denied: DELETE_ORDERS" }, { status: 403 });
   }
 
   const order = await prisma.workOrder.findUnique({ where: { id: params.id } });

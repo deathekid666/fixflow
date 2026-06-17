@@ -85,8 +85,9 @@ model Shop {
   commissions    EngineerCommission[]
   apiKeys        ApiKey[]
   shopCert       Certification?
-  contracts      Contract[]
-  branches       Branch[]
+  contracts        Contract[]
+  branches         Branch[]
+  rolePermissions  RolePermission[]
 }
 
 model Contract {
@@ -110,6 +111,21 @@ model Contract {
 
   @@index([shopId])
   @@index([nextBillingDate])
+}
+
+model RolePermission {
+  id         String   @id @default(cuid())
+  shopId     String
+  role       String
+  permission String
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, role, permission])
+  @@index([shopId, role])
 }
 
 model Branch {

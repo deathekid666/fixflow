@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { checkPerm } from "@/lib/permissions";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +25,12 @@ export async function GET(req: Request) {
 
   const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
+  const canViewAll = user.role !== "ENGINEER" || await checkPerm(user.shopId, "ENGINEER", "VIEW_ALL_ORDERS");
+
   const where: Prisma.WorkOrderWhereInput = {
     deletedAt: null,
     shopId: user.shopId ?? undefined,
-    ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
+    ...(!canViewAll ? { assignedTo: user.id } : {}),
     ...(branchId ? { branchId } : {}),
     ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
     ...(noContact ? {
@@ -69,6 +72,10 @@ export async function POST(req: Request) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!user.shopId) return Response.json({ error: "No shop assigned" }, { status: 400 });
+
+  if (!await checkPerm(user.shopId, user.role, "CREATE_ORDERS")) {
+    return Response.json({ error: "Permission denied: CREATE_ORDERS" }, { status: 403 });
+  }
 
   // Check plan limits
   const shop = await prisma.shop.findUnique({
