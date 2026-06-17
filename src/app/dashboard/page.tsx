@@ -84,6 +84,8 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [noContactFilter, setNoContactFilter] = useState(false);
+  const [branchFilter, setBranchFilter] = useState("");
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [engineers, setEngineers] = useState<Engineer[]>([]);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -122,7 +124,7 @@ export default function DashboardPage() {
     setPullDistance(0);
   };
 
-  useEffect(() => { setPage(1); }, [search, statusFilter, noContactFilter]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, noContactFilter, branchFilter]);
   useEffect(() => {
     if (!bulkMsg) return;
     const t = setTimeout(() => setBulkMsg(null), 4000);
@@ -131,11 +133,13 @@ export default function DashboardPage() {
   useEffect(() => {
     const timer = setTimeout(() => { load(); }, 300);
     return () => clearTimeout(timer);
-  }, [search, statusFilter, noContactFilter, page]);
+  }, [search, statusFilter, noContactFilter, branchFilter, page]);
 
   useEffect(() => {
     fetch("/api/users", { credentials: "include" })
       .then(r => r.json()).then(d => setEngineers(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/branches", { credentials: "include" })
+      .then(r => r.json()).then(d => setBranches(Array.isArray(d) ? d.filter((b: { isActive: boolean }) => b.isActive) : [])).catch(() => {});
     loadUnread();
     loadStats();
     const pollUnread = setInterval(loadUnread, 15000);
@@ -212,6 +216,7 @@ export default function DashboardPage() {
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
     if (noContactFilter) params.set("noContact", "true");
+    if (branchFilter) params.set("branchId", branchFilter);
     params.set("page", page.toString());
     params.set("limit", PAGE_SIZE.toString());
     const res = await fetch(`/api/workorders?${params}`, { credentials: "include" });
@@ -492,6 +497,13 @@ export default function DashboardPage() {
             className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
             ⏰ No contact 3d+
           </button>
+          {branches.length > 0 && (
+            <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
+              className="px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 focus:outline-none focus:border-blue-500">
+              <option value="">🏢 All Branches</option>
+              {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          )}
         </div>
         {/* Right-edge fade hint — adapts to dark/light mode */}
         <div className="md:hidden pointer-events-none absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-r from-transparent to-slate-50 dark:to-slate-950" />

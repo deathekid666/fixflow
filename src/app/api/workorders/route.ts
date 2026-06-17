@@ -18,6 +18,7 @@ export async function GET(req: Request) {
   const status = searchParams.get("status");
   const search = searchParams.get("search");
   const noContact = searchParams.get("noContact") === "true";
+  const branchId = searchParams.get("branchId");
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
 
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
     deletedAt: null,
     shopId: user.shopId ?? undefined,
     ...(user.role === "ENGINEER" ? { assignedTo: user.id } : {}),
+    ...(branchId ? { branchId } : {}),
     ...(status ? (status.includes(",") ? { status: { in: status.split(",") } } : { status }) : {}),
     ...(noContact ? {
       status: { notIn: ["DELIVERED", "CANCELLED"] },
@@ -95,7 +97,7 @@ export async function POST(req: Request) {
     warrantyStart, warrantyEnd, isUnderWarranty,
     customerName, customerPhone, customerEmail,
     faultDescription, appearance, remarks,
-    serviceType, repairType, faultLevel,
+    serviceType, repairType, faultLevel, branchId: newBranchId,
   } = body;
 
   if (!deviceBrand || !deviceModel || !customerName || !customerPhone || !faultDescription) {
@@ -132,6 +134,7 @@ export async function POST(req: Request) {
       status: "RECEIVED",
       shopId: user.shopId,
       userId: user.id,
+      branchId: newBranchId || null,
       slaDeadline,
       taxRate: shop?.taxEnabled ? (shop.taxRate ?? 0) : 0,
     },

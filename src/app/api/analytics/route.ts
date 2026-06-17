@@ -76,6 +76,24 @@ export async function GET(req: Request) {
     })
   );
 
+  // Per-branch breakdown
+  const branches = await prisma.branch.findMany({
+    where: { shopId: user.shopId ?? undefined },
+    select: { id: true, name: true, isActive: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const branchStats = await Promise.all(
+    branches.map(async (b) => {
+      const branchFilter = { ...shopFilter, branchId: b.id };
+      const [bTotal, bDone, bRevenue] = await Promise.all([
+        prisma.workOrder.count({ where: branchFilter }),
+        prisma.workOrder.count({ where: { ...branchFilter, status: { in: ["DONE", "DELIVERED"] } } }),
+        prisma.workOrder.aggregate({ where: branchFilter, _sum: { collected: true } }),
+      ]);
+      return { ...b, total: bTotal, done: bDone, revenue: bRevenue._sum.collected ?? 0 };
+    })
+  );
+
   // Low stock parts
   const lowStock = await prisma.sparePart.findMany({
     where: { shopId: user.shopId ?? undefined, stock: { lte: 5 } },
@@ -126,6 +144,7 @@ export async function GET(req: Request) {
     },
     topParts: topPartsWithNames,
     engineerStats,
+    branchStats,
     lowStock,
     sla: { total: slaTotal, met: slaMet, breached: slaBreached, compliance: slaCompliance },
     milestones: { anniversaryThisMonth, tenPlusCustomers: tenPlusCount, goldCustomers: goldCount },

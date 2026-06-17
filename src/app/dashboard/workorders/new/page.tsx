@@ -53,17 +53,21 @@ export default function NewWorkOrderPage() {
   const [aiError, setAiError] = useState("");
   const aiTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
     deviceBrand: "", deviceModel: "", serialNumber: "", imei: "",
     warrantyStart: "", warrantyEnd: "", isUnderWarranty: false,
     customerName: "", customerPhone: "", customerEmail: "",
     faultDescription: "", appearance: "", remarks: "",
     serviceType: "IN_STORE", repairType: "", faultLevel: "LOW",
+    branchId: "",
   });
 
   useEffect(() => {
     fetch("/api/templates", { credentials: "include" })
       .then(r => r.json()).then(d => setTemplates(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/branches", { credentials: "include" })
+      .then(r => r.json()).then(d => setBranches(Array.isArray(d) ? d.filter((b: { isActive: boolean }) => b.isActive) : [])).catch(() => {});
   }, []);
 
   function set(field: string, value: string | boolean) {
@@ -564,6 +568,15 @@ export default function NewWorkOrderPage() {
               <option value="HIGH">High</option>
             </select>
           </div>
+          {branches.length > 0 && (
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Branch</label>
+              <select className={INPUT} value={form.branchId} onChange={e => set("branchId", e.target.value)}>
+                <option value="">— No Branch —</option>
+                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+          )}
         </div>
         <div>
           <label className="text-xs text-slate-500 mb-1 block">Remarks</label>
