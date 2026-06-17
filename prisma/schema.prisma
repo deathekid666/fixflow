@@ -643,6 +643,9 @@ model ShopSettings {
   stripePlanSelected String?
   stripeCustomerId   String?
 
+  // TV display mode token
+  tvToken String? @unique
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

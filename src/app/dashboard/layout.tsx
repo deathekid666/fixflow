@@ -323,6 +323,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {globalScanActive ? "Scan ON" : "Scan"}
             </button>
           )}
+          {user?.role === "ADMIN" && !user?.isSuperAdmin && (
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/tv/token", { method: "POST", credentials: "include" });
+                if (res.ok) {
+                  const d = await res.json();
+                  window.open(`/tv?token=${d.tvToken}`, "_blank");
+                }
+              }}
+              title="Open TV Display Mode"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" />
+              </svg>
+              TV Mode
+            </button>
+          )}
           <NotificationBell unreadCount={unreadCount} />
         </header>
 

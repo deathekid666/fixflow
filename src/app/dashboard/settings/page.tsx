@@ -227,6 +227,10 @@ export default function SettingsPage() {
   const [creatingKey, setCreatingKey] = useState(false);
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
+  const [tvToken, setTvToken] = useState<string | null>(null);
+  const [loadingTvToken, setLoadingTvToken] = useState(false);
+  const [generatingTvToken, setGeneratingTvToken] = useState(false);
+  const [tvTokenCopied, setTvTokenCopied] = useState(false);
   const [imeiProApiKey, setImeiProApiKey] = useState("");
   const [savingImeiKey, setSavingImeiKey] = useState(false);
   const [imeiKeyMsg, setImeiKeyMsg] = useState("");
@@ -318,7 +322,15 @@ export default function SettingsPage() {
   }, [tab, user?.shopId, loadAvailability, loadClosures]);
 
   useEffect(() => {
-    if (tab === "integrations") loadApiKeys();
+    if (tab === "integrations") {
+      loadApiKeys();
+      setLoadingTvToken(true);
+      fetch("/api/tv/token", { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setTvToken(d.tvToken ?? null); })
+        .catch(() => {})
+        .finally(() => setLoadingTvToken(false));
+    }
   }, [tab, loadApiKeys]);
 
   useEffect(() => {
@@ -507,6 +519,21 @@ export default function SettingsPage() {
   function copyKey(key: ApiKey) {
     navigator.clipboard.writeText(key.key);
     setCopiedKeyId(key.id); setTimeout(() => setCopiedKeyId(null), 2000);
+  }
+
+  async function generateTvToken() {
+    setGeneratingTvToken(true);
+    const res = await fetch("/api/tv/token", { method: "POST", credentials: "include" });
+    if (res.ok) { const d = await res.json(); setTvToken(d.tvToken); }
+    setGeneratingTvToken(false);
+  }
+
+  function copyTvUrl() {
+    if (!tvToken) return;
+    const url = `${window.location.origin}/tv?token=${tvToken}`;
+    navigator.clipboard.writeText(url);
+    setTvTokenCopied(true);
+    setTimeout(() => setTvTokenCopied(false), 2000);
   }
 
   async function saveImeiKey() {
@@ -1325,6 +1352,45 @@ export default function SettingsPage() {
               {checkMendMsg && <InlineMsg msg={checkMendMsg} />}
               {checkMendApiKey && <p className="text-xs text-blue-500 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Key saved — activates automatically when CheckMEND integration launches</p>}
             </div>
+          </div>
+
+          {/* TV Display */}
+          <div className={`${CARD} p-5 space-y-4`}>
+            <SectionHeader title="TV Display Mode" description="Show a live repair status dashboard on a large screen or TV. No login required — access is protected by a unique token URL." />
+            {loadingTvToken ? (
+              <p className="text-sm text-slate-400">Loading…</p>
+            ) : tvToken ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-lg px-3 py-2">
+                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" /><span>TV token active — anyone with this URL can view the display</span>
+                </div>
+                <div>
+                  <label className={LABEL}>TV Display URL</label>
+                  <div className="flex gap-2">
+                    <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/tv?token=${tvToken}`} className={INPUT + " font-mono text-xs"} />
+                    <button onClick={copyTvUrl} className={BTN_SECONDARY + " whitespace-nowrap"}>
+                      {tvTokenCopied ? <><Check className="w-4 h-4 text-green-500" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy URL</>}
+                    </button>
+                    <button onClick={() => window.open(`/tv?token=${tvToken}`, "_blank")} className={BTN_PRIMARY + " whitespace-nowrap"}>
+                      <ExternalLink className="w-4 h-4" /> Open
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1.5">Open this URL in a browser on any TV, tablet, or monitor. No login required.</p>
+                </div>
+                <button onClick={generateTvToken} disabled={generatingTvToken}
+                  className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1 transition-colors">
+                  <RefreshCw className={`w-3.5 h-3.5 ${generatingTvToken ? "animate-spin" : ""}`} />
+                  {generatingTvToken ? "Regenerating…" : "Regenerate token (invalidates old URL)"}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-slate-500">No TV token yet. Generate one to enable the TV display mode.</p>
+                <button onClick={generateTvToken} disabled={generatingTvToken} className={BTN_PRIMARY}>
+                  {generatingTvToken ? "Generating…" : <><Key className="w-4 h-4" /> Generate TV Token</>}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
