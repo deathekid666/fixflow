@@ -1,11 +1,13 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL ?? "mailto:support@fixflow.ma",
-  process.env.VAPID_PUBLIC_KEY ?? "",
-  process.env.VAPID_PRIVATE_KEY ?? ""
-);
+function initVapid() {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL ?? "mailto:support@fixflow.ma",
+    process.env.VAPID_PUBLIC_KEY ?? "",
+    process.env.VAPID_PRIVATE_KEY ?? ""
+  );
+}
 
 export interface PushPayload {
   title: string;
@@ -15,6 +17,7 @@ export interface PushPayload {
 }
 
 export async function pushToUser(userId: string, payload: PushPayload) {
+  initVapid();
   const subs = await prisma.pushSubscription.findMany({ where: { userId } });
   if (!subs.length) return;
 
