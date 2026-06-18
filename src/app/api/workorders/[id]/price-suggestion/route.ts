@@ -10,14 +10,30 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const order = await prisma.workOrder.findFirst({
-    where: { id: params.id, shopId: user.shopId ?? undefined },
-    include: {
-      shop: { select: { name: true, country: true, city: true, currency: true } },
-      parts: { include: { sparePart: { select: { name: true } } } },
-    },
-  });
+  const [order, history] = await Promise.all([
+    prisma.workOrder.findFirst({
+      where: { id: params.id, shopId: user.shopId ?? undefined },
+      include: {
+        shop: { select: { name: true, country: true, city: true, currency: true } },
+        parts: { include: { sparePart: { select: { name: true } } } },
+      },
+    }),
+    user.shopId ? prisma.repairPrice.findMany({
+      where: { shopId: user.shopId },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+    }) : Promise.resolve([]),
+  ]);
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
+  const repairType = order.repairType || order.serviceType || "General repair";
+  const relevantHistory = history.filter(h =>
+    h.repairType.toLowerCase().includes(repairType.toLowerCase()) ||
+    repairType.toLowerCase().includes(h.repairType.toLowerCase())
+  );
+  const historyBlock = relevantHistory.length > 0
+    ? relevantHistory.slice(0, 10).map(h => `  • ${h.deviceBrand} ${h.deviceModel} — ${h.price.toFixed(0)}`).join("\n")
+    : "  No matching history in your shop.";
 
   const partsCost = order.parts.reduce((s, p) => s + p.total, 0);
   const servicesCost = order.quotationItems ?? 0;
@@ -29,7 +45,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const prompt = `You are a repair shop pricing expert. Given the following repair job, suggest an optimal price range.
 
 Device: ${order.deviceBrand} ${order.deviceModel}
-Repair Type: ${order.repairType || order.serviceType || "General repair"}
+Repair Type: ${repairType}
 Fault: ${order.faultDescription || "Not specified"}
 Parts used: ${partsList || "None logged"}
 Parts cost (shop cost): ${partsCost.toFixed(2)} ${currency}
@@ -38,11 +54,14 @@ Current total set: ${currentTotal.toFixed(2)} ${currency}
 Shop location: ${location}
 Currency: ${currency}
 
+Your shop's historical pricing for similar repairs:
+${historyBlock}
+
 Consider:
+- Your shop's own historical prices first (consistency matters for trust)
 - Local market rates for this type of repair in ${location}
-- Parts markup (typically 20-40% for ${currency} markets)
+- Parts markup (typically 30–50% for ${currency} markets)
 - Labor time and complexity
-- Competition pricing in the region
 - The fault level: ${order.faultLevel || "standard"}
 
 Respond ONLY with valid JSON, no markdown, no explanation outside the JSON:

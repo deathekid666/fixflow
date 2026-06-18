@@ -143,6 +143,57 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
   const [aiAddingParts, setAiAddingParts] = useState(false);
   const [showSocialShare, setShowSocialShare] = useState(false);
 
+  // Copilot: Order Insights
+  type InsightsData = {
+    estimatedCompletion: string;
+    riskFactors: string[];
+    suggestedMessage: string;
+    priceSuggestion: number | null;
+  };
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+
+  async function loadInsights() {
+    setInsightsLoading(true); setInsightsError(null);
+    try {
+      const res = await fetch("/api/ai/order-insights", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: params.id }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setInsightsError(d.error ?? "Failed to get insights"); return; }
+      setInsightsData(d);
+    } catch { setInsightsError("Could not reach AI — check your connection"); }
+    finally { setInsightsLoading(false); }
+  }
+
+  // Copilot: Draft Message
+  const [draftModalOpen, setDraftModalOpen] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftMessage, setDraftMessage] = useState("");
+  const [editedMessage, setEditedMessage] = useState("");
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftPhone, setDraftPhone] = useState("");
+  const [draftCopied, setDraftCopied] = useState(false);
+
+  async function openDraftModal() {
+    setDraftModalOpen(true); setDraftLoading(true); setDraftError(null); setDraftMessage(""); setEditedMessage("");
+    try {
+      const res = await fetch("/api/ai/draft-message", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: params.id }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setDraftError(d.error ?? "Failed to draft message"); return; }
+      setDraftMessage(d.message); setEditedMessage(d.message); setDraftPhone(d.customerPhone ?? "");
+    } catch { setDraftError("Could not reach AI — check your connection"); }
+    finally { setDraftLoading(false); }
+  }
+
   // IMEI check
   type ImeiCheckResult = {
     status: "valid" | "invalid" | "suspicious";
@@ -809,7 +860,18 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           {/* Customer info */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Customer Information</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Customer Information</h2>
+              <button
+                onClick={openDraftModal}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-800/40 text-violet-700 dark:text-violet-300 rounded-lg font-medium transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                Draft Message
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-slate-500">Name</p>
@@ -1088,6 +1150,106 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     {addingCheck ? "..." : "+ Add"}
                   </button>
                 </div>
+              </div>
+            )}
+          </section>
+
+          {/* AI Copilot Insights */}
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+            <button
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              onClick={() => { setInsightsOpen(o => !o); if (!insightsOpen && !insightsData && !insightsLoading) loadInsights(); }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-700/50">
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  Copilot
+                </div>
+                <span className="text-sm font-semibold text-violet-700 dark:text-violet-300">AI Order Insights</span>
+                <span className="text-xs text-slate-400 hidden sm:inline">completion estimate, risks, price suggestion</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {insightsData && !insightsLoading && (
+                  <button onClick={(e) => { e.stopPropagation(); setInsightsData(null); loadInsights(); }}
+                    className="p-1.5 rounded-lg text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors" title="Refresh">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                  </button>
+                )}
+                <svg className={`w-4 h-4 text-slate-400 transition-transform ${insightsOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </div>
+            </button>
+
+            {insightsOpen && (
+              <div className="px-5 pb-5 border-t border-slate-100 dark:border-slate-800">
+                {insightsLoading && (
+                  <div className="flex items-center gap-3 py-5">
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="w-2 h-2 rounded-full bg-violet-400 animate-bounce"
+                          style={{ animationDelay: `${i * 150}ms`, animationDuration: "0.8s" }} />
+                      ))}
+                    </div>
+                    <span className="text-sm text-slate-500">Analyzing order data…</span>
+                  </div>
+                )}
+
+                {!insightsLoading && insightsError && (
+                  <div className="flex items-center gap-3 py-4 text-sm text-red-600 dark:text-red-400">
+                    <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    <span>{insightsError}</span>
+                    <button onClick={loadInsights} className="ml-auto text-xs underline underline-offset-2">Retry</button>
+                  </div>
+                )}
+
+                {!insightsLoading && insightsData && (
+                  <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-violet-50 dark:bg-violet-950/30 rounded-xl p-4">
+                      <p className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-1">Estimated Completion</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{insightsData.estimatedCompletion}</p>
+                    </div>
+
+                    {insightsData.priceSuggestion !== null && (
+                      <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4">
+                        <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mb-1">Price Suggestion</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{fmt(insightsData.priceSuggestion)}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Based on similar past repairs</p>
+                      </div>
+                    )}
+
+                    {insightsData.riskFactors.length > 0 && (
+                      <div className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-4 sm:col-span-2">
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">Risk Factors</p>
+                        <ul className="space-y-1">
+                          {insightsData.riskFactors.map((r, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                              <span className="text-amber-500 mt-0.5 flex-shrink-0">⚠</span>
+                              {r}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 sm:col-span-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Suggested Customer Update</p>
+                        <button
+                          onClick={() => { setEditedMessage(insightsData.suggestedMessage); setDraftModalOpen(true); setDraftLoading(false); setDraftPhone(order?.customerPhone ?? ""); }}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        >Use as draft →</button>
+                      </div>
+                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{insightsData.suggestedMessage}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -1871,6 +2033,90 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Draft Message Modal */}
+      {draftModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50" onClick={() => setDraftModalOpen(false)}>
+          <div className="w-full sm:max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-violet-600 to-purple-600">
+              <div className="flex items-center gap-2.5">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                <div>
+                  <p className="text-white font-semibold text-sm">AI Message Draft</p>
+                  <p className="text-violet-200 text-xs">Edit and send via WhatsApp</p>
+                </div>
+              </div>
+              <button onClick={() => setDraftModalOpen(false)} className="text-white/70 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-lg font-bold">×</button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {draftLoading && (
+                <div className="flex items-center gap-3 py-6 justify-center">
+                  <div className="flex gap-1">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="w-2 h-2 rounded-full bg-violet-400 animate-bounce"
+                        style={{ animationDelay: `${i * 150}ms`, animationDuration: "0.8s" }} />
+                    ))}
+                  </div>
+                  <span className="text-sm text-slate-500">Drafting message…</span>
+                </div>
+              )}
+
+              {!draftLoading && draftError && (
+                <div className="flex items-center gap-3 text-sm text-red-600 dark:text-red-400 py-2">
+                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                  <span>{draftError}</span>
+                  <button onClick={openDraftModal} className="ml-auto text-xs underline underline-offset-2">Retry</button>
+                </div>
+              )}
+
+              {!draftLoading && !draftError && editedMessage !== undefined && (
+                <>
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1.5 block font-medium">Message (editable)</label>
+                    <textarea
+                      className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 resize-none leading-relaxed"
+                      rows={6}
+                      value={editedMessage}
+                      onChange={e => setEditedMessage(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(editedMessage);
+                        setDraftCopied(true);
+                        setTimeout(() => setDraftCopied(false), 2000);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-xl transition-colors font-medium"
+                    >
+                      {draftCopied ? "✓ Copied!" : "Copy"}
+                    </button>
+                    <a
+                      href={buildWaUrl(draftPhone, editedMessage)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-xl transition-colors font-medium"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.865L0 24l6.335-1.652A11.956 11.956 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.846 0-3.574-.498-5.065-1.367l-.361-.214-3.761.981.997-3.671-.235-.377A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                      </svg>
+                      Send via WhatsApp
+                    </a>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

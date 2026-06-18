@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
 import { REFERRAL_LABELS, REFERRAL_CHART_COLORS } from "@/lib/referralSources";
+import { CopilotPanel } from "@/components/CopilotPanel";
 
 type RevenueData = {
   data: { label: string; total: number; collected: number; count: number; expenses: number; profit: number }[];
@@ -82,10 +83,13 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"overview" | "benchmarks">("overview");
+  const [tab, setTab] = useState<"overview" | "benchmarks" | "copilot">("overview");
   const [benchmarks, setBenchmarks] = useState<BenchmarkData | null>(null);
   const [benchmarksLoading, setBenchmarksLoading] = useState(false);
   const [benchmarksError, setBenchmarksError] = useState("");
+  const [copilotAnalysis, setCopilotAnalysis] = useState<string | null>(null);
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const [copilotError, setCopilotError] = useState<string | null>(null);
 
   useEffect(() => { loadAll(); }, [period, dateRange]);
 
@@ -106,6 +110,17 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadCopilot() {
+    setCopilotLoading(true); setCopilotError(null);
+    try {
+      const res = await fetch("/api/ai/revenue-copilot", { method: "POST", credentials: "include" });
+      const d = await res.json();
+      if (!res.ok) { setCopilotError(d.error ?? "Failed to generate analysis"); return; }
+      setCopilotAnalysis(d.analysis);
+    } catch { setCopilotError("Could not reach AI — check your connection"); }
+    finally { setCopilotLoading(false); }
   }
 
   async function loadBenchmarks() {
@@ -241,11 +256,15 @@ export default function AnalyticsPage() {
 
       {/* Tab nav */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
-        {([["overview", "📊 Overview"], ["benchmarks", "🏆 Benchmarks"]] as const).map(([id, label]) => (
+        {([["overview", "📊 Overview"], ["benchmarks", "🏆 Benchmarks"], ["copilot", "✨ Copilot"]] as const).map(([id, label]) => (
           <button
             key={id}
-            onClick={() => { setTab(id); if (id === "benchmarks") loadBenchmarks(); }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === id ? "border-blue-600 text-blue-600 dark:text-blue-400" : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
+            onClick={() => {
+              setTab(id);
+              if (id === "benchmarks") loadBenchmarks();
+              if (id === "copilot" && !copilotAnalysis && !copilotLoading) loadCopilot();
+            }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === id ? "border-violet-600 text-violet-600 dark:text-violet-400" : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
           >{label}</button>
         ))}
       </div>
@@ -995,6 +1014,43 @@ export default function AnalyticsPage() {
               </>
             );
           })()}
+        </div>
+      )}
+
+      {tab === "copilot" && (
+        <div className="space-y-4">
+          <CopilotPanel
+            title="Revenue Copilot"
+            description="90-day business intelligence report"
+            loading={copilotLoading}
+            error={copilotError}
+            content={copilotAnalysis}
+            onRefresh={() => { setCopilotAnalysis(null); loadCopilot(); }}
+            accent="violet"
+            loadingMessage="Analyzing 90 days of revenue data…"
+          />
+          {!copilotLoading && !copilotAnalysis && !copilotError && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-slate-800 dark:text-white mb-1">FixFlow Copilot</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-5">
+                Get an AI-powered analysis of your last 90 days — insights, opportunities, and one clear action to grow revenue.
+              </p>
+              <button
+                onClick={loadCopilot}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-xl transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                Generate Analysis
+              </button>
+            </div>
+          )}
         </div>
       )}
 

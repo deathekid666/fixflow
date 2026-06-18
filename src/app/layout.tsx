@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import "./globals.css";
 import type { Viewport } from "next";
 import { AuthProvider } from "@/context/AuthContext";

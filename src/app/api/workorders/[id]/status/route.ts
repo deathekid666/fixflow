@@ -92,6 +92,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     recalculateCertification(order.shopId).catch(() => {});
   }
 
+  // Auto-save pricing data when order is delivered
+  if (isNowDelivered && !wasDelivered && order.shopId && order.total > 0 && order.repairType) {
+    prisma.repairPrice.create({
+      data: {
+        shopId: order.shopId,
+        deviceBrand: order.deviceBrand,
+        deviceModel: order.deviceModel,
+        repairType: order.repairType,
+        price: order.total,
+        acceptedByCustomer: true,
+      },
+    }).catch(() => {});
+  }
+
   // ── Customer SMS / WhatsApp notification ──────────────────────────────────
   const isNotifiable = (NOTIFIABLE as string[]).includes(status);
   if (isNotifiable && order.customerPhone && order.shopId) {

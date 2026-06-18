@@ -88,6 +88,7 @@ model Shop {
   contracts        Contract[]
   branches         Branch[]
   rolePermissions  RolePermission[]
+  repairPrices     RepairPrice[]
 }
 
 model Contract {
@@ -760,4 +761,21 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RepairPrice {
+  id                 String   @id @default(cuid())
+  shopId             String
+  deviceBrand        String
+  deviceModel        String
+  repairType         String
+  price              Float
+  partsCost          Float    @default(0)
+  acceptedByCustomer Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([shopId, repairType])
 }

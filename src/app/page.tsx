@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { Wrench } from "lucide-react";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -98,12 +99,18 @@ function DashboardMockup() {
       {/* Glow */}
       <div className="absolute -inset-8 bg-blue-600/8 rounded-3xl blur-3xl pointer-events-none" />
       {/* Floating card 1 */}
-      <div className="absolute -top-4 -right-4 sm:-right-10 z-20 animate-float bg-slate-800/90 backdrop-blur border border-slate-700/80 rounded-xl px-3 py-2 shadow-xl text-xs whitespace-nowrap">
-        <span className="text-emerald-400 font-semibold">✅ WO-0091 ready for pickup</span>
+      <div className="absolute -top-4 -right-4 sm:-right-10 z-20 animate-float bg-slate-900/95 backdrop-blur-sm border border-emerald-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-black/40 text-xs whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse flex-shrink-0" />
+          <span className="text-emerald-400 font-semibold">WO-0091 ready for pickup</span>
+        </div>
       </div>
       {/* Floating card 2 */}
-      <div className="absolute -bottom-4 -left-4 sm:-left-10 z-20 animate-float-slow bg-slate-800/90 backdrop-blur border border-slate-700/80 rounded-xl px-3 py-2 shadow-xl text-xs whitespace-nowrap">
-        <span className="text-blue-400 font-semibold">💰 +1,450 MAD collected today</span>
+      <div className="absolute -bottom-4 -left-4 sm:-left-10 z-20 animate-float-slow bg-slate-900/95 backdrop-blur-sm border border-blue-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-black/40 text-xs whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <span className="text-blue-400 font-bold text-sm">$1,450</span>
+          <span className="text-slate-400">collected today</span>
+        </div>
       </div>
       {/* Browser frame */}
       <div className="relative bg-[#0d1117] rounded-2xl border border-slate-700/60 overflow-hidden shadow-2xl shadow-black/60 animate-glow">
@@ -137,7 +144,7 @@ function DashboardMockup() {
           <div className="flex-1 p-3 space-y-2.5 overflow-hidden">
             {/* KPI row */}
             <div className="grid grid-cols-4 gap-1.5">
-              {[["Active","23","text-blue-400","bg-blue-500/10"],["Today","12","text-emerald-400","bg-emerald-500/10"],["Revenue","48k","text-violet-400","bg-violet-500/10"],["Overdue","1","text-rose-400","bg-rose-500/10"]].map(([l,v,c,bg]) => (
+              {[["Active","23","text-blue-400","bg-blue-500/10"],["Today","12","text-emerald-400","bg-emerald-500/10"],["Revenue","$48k","text-violet-400","bg-violet-500/10"],["Overdue","1","text-rose-400","bg-rose-500/10"]].map(([l,v,c,bg]) => (
                 <div key={l as string} className={`${bg} rounded-lg p-2 border border-white/5`}>
                   <p className="text-slate-500 text-[9px] mb-0.5">{l as string}</p>
                   <p className={`font-bold text-sm ${c as string}`}>{v as string}</p>
@@ -159,7 +166,7 @@ function DashboardMockup() {
             </div>
             {/* Mini chart */}
             <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-2">
-              <p className="text-[9px] text-slate-500 mb-1.5">Revenue this week (MAD)</p>
+              <p className="text-[9px] text-slate-500 mb-1.5">Revenue this week ($)</p>
               <div className="flex items-end gap-1 h-8">
                 {[45,62,38,71,55,88,64].map((h, i) => (
                   <div key={i} className="flex-1 bg-blue-500/30 rounded-sm" style={{ height: `${h}%` }} />
@@ -180,7 +187,7 @@ function AIDemo({ visible }: { visible: boolean }) {
     <div className="bg-slate-900 border border-slate-700/60 rounded-2xl overflow-hidden shadow-2xl">
       {/* Header */}
       <div className="bg-slate-800/60 border-b border-slate-700/40 px-4 py-3 flex items-center gap-2">
-        <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-black">F</div>
+        <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-white"><Wrench className="w-3.5 h-3.5" /></div>
         <span className="text-sm font-semibold text-white">AI Price Suggestion</span>
         <span className="ml-auto text-[10px] bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">Claude Opus</span>
       </div>
@@ -290,8 +297,10 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#020817]/90 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-sm">F</div>
-            <span className="text-lg font-bold tracking-tight">FixFlow</span>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+              <Wrench className="w-4 h-4" />
+            </div>
+            <span className="text-xl font-extrabold tracking-tight">FixFlow</span>
             <span className="hidden sm:block text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full tracking-wide">BETA</span>
           </div>
           <div className="hidden md:flex items-center gap-7 text-sm text-slate-400">
@@ -334,13 +343,13 @@ export default function LandingPage() {
         {/* Grid pattern */}
         <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
 
-        <div className="relative max-w-6xl mx-auto px-5 pt-20 pb-28 lg:pt-28">
+        <div className="relative max-w-6xl mx-auto px-5 pt-10 pb-20 lg:pt-14">
           <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-16">
             {/* Left */}
             <div className="flex-1 text-center lg:text-left space-y-6 max-w-xl mx-auto lg:mx-0">
               <div className="h1a inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs px-3.5 py-1.5 rounded-full font-medium">
-                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
-                Built for repair shops — Made for growth
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                ✦ Trusted by repair shops in 30+ countries
               </div>
               <h1 className="text-[2.7rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.08] tracking-tight">
                 <span className="h1b block">Run your repair</span>
@@ -350,10 +359,10 @@ export default function LandingPage() {
                 Work orders, customer tracking, inventory, payments, AI pricing, and analytics — one platform that finally replaces the WhatsApp groups and spreadsheets.
               </p>
               <div className="hcta flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
-                <Link href="/register" className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-base transition-all shadow-xl shadow-blue-600/25 hover:shadow-blue-600/40 hover:scale-[1.02] btn-shimmer">
+                <Link href="/register" className="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-full text-base transition-all shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 hover:scale-[1.02] btn-shimmer">
                   Start Free Trial — 14 Days →
                 </Link>
-                <button onClick={() => setDemoOpen(true)} className="w-full sm:w-auto px-8 py-3.5 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-medium rounded-xl text-base transition-colors flex items-center justify-center gap-2">
+                <button onClick={() => setDemoOpen(true)} className="w-full sm:w-auto px-8 py-3 border border-white/20 bg-white/5 backdrop-blur text-slate-300 hover:text-white hover:bg-white/10 font-medium rounded-full text-base transition-colors flex items-center justify-center gap-2">
                   <span className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center text-xs">▶</span>
                   Watch Demo
                 </button>

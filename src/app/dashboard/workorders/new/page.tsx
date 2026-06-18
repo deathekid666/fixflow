@@ -55,6 +55,16 @@ export default function NewWorkOrderPage() {
   const [aiError, setAiError] = useState("");
   const aiTimer = useRef<NodeJS.Timeout | null>(null);
 
+  type PriceSugg = {
+    suggestedPrice: number; priceRange: { min: number; max: number };
+    reasoning: string; profitMargin: string; marketPosition: string;
+    confidence: "HIGH" | "MEDIUM" | "LOW"; currency: string; historyCount: number;
+  };
+  const [priceSugg, setPriceSugg] = useState<PriceSugg | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState("");
+  const [showPricePanel, setShowPricePanel] = useState(false);
+
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [imeiCheckResult, setImeiCheckResult] = useState<(ImeiResult & { blacklist?: { status: string; info: string | null } | null; proError?: string | null }) | null>(null);
   const [checkingImei, setCheckingImei] = useState(false);
@@ -158,6 +168,25 @@ export default function NewWorkOrderPage() {
       setImeiCheckResult({ status: "invalid", luhn: false, format: false, manufacturer: null, modelHint: null, warning: "Could not reach check service", tac: "" });
     }
     setCheckingImei(false);
+  }
+
+  async function getPriceSuggestion() {
+    if (!form.repairType.trim()) return;
+    setPriceLoading(true); setPriceError(""); setPriceSugg(null); setShowPricePanel(true);
+    try {
+      const res = await fetch("/api/ai/price-suggestion", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deviceBrand: form.deviceBrand, deviceModel: form.deviceModel,
+          repairType: form.repairType,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setPriceError(d.error ?? "Failed"); return; }
+      setPriceSugg(d);
+    } catch { setPriceError("Could not reach AI"); }
+    finally { setPriceLoading(false); }
   }
 
   function buildImeiSummary(r: NonNullable<typeof imeiCheckResult>): string {
@@ -596,7 +625,20 @@ export default function NewWorkOrderPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Appearance" value={form.appearance} onChange={v => set("appearance", v)} placeholder="e.g. Good, Scratched" />
-          <Field label="Repair Type" value={form.repairType} onChange={v => set("repairType", v)} placeholder="e.g. Screen Replacement" />
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Repair Type</label>
+            <div className="flex gap-2">
+              <input type="text" placeholder="e.g. Screen Replacement" value={form.repairType} onChange={e => set("repairType", e.target.value)}
+                className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+              {form.repairType.trim() && (
+                <button type="button" onClick={getPriceSuggestion} disabled={priceLoading}
+                  className="px-3 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5">
+                  {priceLoading ? <span className="w-3 h-3 border-2 border-amber-400/40 border-t-amber-500 rounded-full animate-spin" /> : "💡"}
+                  {priceLoading ? "…" : "Price"}
+                </button>
+              )}
+            </div>
+          </div>
           <div>
             <label className="text-xs text-slate-500 mb-1 block">Service Type</label>
             <select className={INPUT}
@@ -640,6 +682,68 @@ export default function NewWorkOrderPage() {
             </div>
           )}
         </div>
+        {/* Price suggestion popover */}
+        {showPricePanel && (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-amber-200 dark:border-amber-800/40 bg-amber-100/60 dark:bg-amber-900/20">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">💡</span>
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Smart Price Suggestion</span>
+                {priceSugg && <span className="text-xs text-amber-500">({priceSugg.historyCount} historical records)</span>}
+              </div>
+              <button onClick={() => { setShowPricePanel(false); setPriceSugg(null); }}
+                className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 text-sm font-bold w-5 h-5 flex items-center justify-center rounded transition-colors">×</button>
+            </div>
+            {priceLoading && (
+              <div className="flex items-center gap-3 px-3 py-4">
+                <div className="w-5 h-5 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin flex-shrink-0" />
+                <p className="text-xs text-amber-600 dark:text-amber-400">Analyzing your pricing history and market rates…</p>
+              </div>
+            )}
+            {priceError && !priceLoading && (
+              <div className="px-3 py-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-red-600 dark:text-red-400">{priceError}</p>
+                <button onClick={getPriceSuggestion} className="text-xs px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg flex-shrink-0">Retry</button>
+              </div>
+            )}
+            {priceSugg && !priceLoading && (() => {
+              const positionColors: Record<string, string> = {
+                BUDGET: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+                MARKET: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700",
+                PREMIUM: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700",
+              };
+              const confidenceStyle: Record<string, string> = {
+                HIGH: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700",
+                MEDIUM: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700",
+                LOW: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+              };
+              return (
+                <div className="p-3 space-y-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-amber-600 dark:text-amber-400">Range</span>
+                      <span className="text-lg font-bold text-amber-700 dark:text-amber-300">{priceSugg.priceRange.min}</span>
+                      <span className="text-xs text-amber-500">–</span>
+                      <span className="text-lg font-bold text-amber-700 dark:text-amber-300">{priceSugg.priceRange.max}</span>
+                      <span className="text-xs text-amber-500">{priceSugg.currency}</span>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${positionColors[priceSugg.marketPosition] ?? ""}`}>
+                      {priceSugg.marketPosition}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${confidenceStyle[priceSugg.confidence] ?? ""}`}>
+                      {priceSugg.confidence === "HIGH" ? "●" : priceSugg.confidence === "MEDIUM" ? "◐" : "○"} {priceSugg.confidence}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-500">{priceSugg.profitMargin} · {priceSugg.reasoning}</p>
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                    Suggested: {priceSugg.suggestedPrice} {priceSugg.currency}
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         <div>
           <label className="text-xs text-slate-500 mb-1 block">Remarks</label>
           <textarea rows={2} placeholder="Any additional remarks..."

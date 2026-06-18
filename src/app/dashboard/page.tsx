@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UpgradeModal from "@/components/UpgradeModal";
+import { RefreshCw, ClipboardList, Inbox, Wrench, CheckCircle2, DollarSign, PackageCheck, XCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
+import { CopilotPanel } from "@/components/CopilotPanel";
 
 type WorkOrder = {
   id: string; orderNumber: string; customerName: string; customerPhone: string;
@@ -102,6 +104,12 @@ export default function DashboardPage() {
     done: number; delivered: number; cancelled: number; revenue: number; collected: number;
   } | null>(null);
 
+  // Morning briefing
+  const [briefing, setBriefing] = useState<string | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
+  const [briefingDismissed, setBriefingDismissed] = useState(false);
+
   // Pull-to-refresh (mobile)
   const touchStartY = useRef(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -152,6 +160,31 @@ export default function DashboardPage() {
       if (res.ok) setStatsData(await res.json());
     } catch { /* ignore */ }
   }
+
+  async function fetchBriefing() {
+    setBriefingLoading(true); setBriefingError(null);
+    try {
+      const res = await fetch("/api/ai/morning-briefing", { method: "POST", credentials: "include" });
+      const d = await res.json();
+      if (!res.ok) { setBriefingError(d.error ?? "Failed"); return; }
+      setBriefing(d.briefing);
+      const today = new Date().toISOString().slice(0, 10);
+      try { localStorage.setItem(`fixflow_briefing_${today}`, d.briefing); } catch { /* ignore */ }
+    } catch { setBriefingError("Could not reach AI — check your connection"); }
+    finally { setBriefingLoading(false); }
+  }
+
+  // Auto-load morning briefing once per day for admins
+  useEffect(() => {
+    if (!user || user.role !== "ADMIN" || user.isSuperAdmin) return;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const cached = localStorage.getItem(`fixflow_briefing_${today}`);
+      if (cached) { setBriefing(cached); return; }
+    } catch { /* ignore */ }
+    fetchBriefing();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   async function loadUnread() {
     const res = await fetch("/api/messages/unread", { credentials: "include" });
@@ -320,21 +353,22 @@ export default function DashboardPage() {
   const overdue = orders.filter(o => o.isOverdue).length;
   const pendingPayment = sd ? (sd.revenue - sd.collected) : 0;
 
+  const IC18 = "w-[18px] h-[18px]";
   const stats = [
-    { label: "Total Orders", value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", icon: "📋", filter: "" },
-    { label: "Received", value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: "📥", filter: "RECEIVED" },
-    { label: "In Progress", value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: "🔧", filter: "DIAGNOSING" },
-    { label: "Ready", value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: "✅", filter: "DONE" },
-    { label: "Revenue", value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", icon: "💰", filter: null, href: "/dashboard/analytics" },
-    { label: "Delivered", value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", icon: "📦", filter: "DELIVERED" },
-    { label: "Cancelled", value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", icon: "🚫", filter: "CANCELLED" },
+    { label: "Total Orders", value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", icon: <ClipboardList className={IC18} />, filter: "" },
+    { label: "Received", value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: <Inbox className={IC18} />, filter: "RECEIVED" },
+    { label: "In Progress", value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: <Wrench className={IC18} />, filter: "DIAGNOSING" },
+    { label: "Ready", value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: <CheckCircle2 className={IC18} />, filter: "DONE" },
+    { label: "Revenue", value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", icon: <DollarSign className={IC18} />, filter: null, href: "/dashboard/analytics" },
+    { label: "Delivered", value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", icon: <PackageCheck className={IC18} />, filter: "DELIVERED" },
+    { label: "Cancelled", value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", icon: <XCircle className={IC18} />, filter: "CANCELLED" },
   ];
 
   const emptyState = (colSpan: number) => (
     <tr>
       <td colSpan={colSpan} className="px-4 py-12 text-center">
         <div className="space-y-3">
-          <p className="text-4xl">📋</p>
+          <ClipboardList className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
           <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? "No orders match your search" : "No work orders yet"}</p>
           <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
           {!search && !statusFilter && !noContactFilter && (
@@ -391,9 +425,8 @@ export default function DashboardPage() {
         subtitle="Manage all repair jobs"
         actions={
           <>
-            <button onClick={() => load()} className="p-2 md:px-3 md:py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors" title="Refresh">
-              <span className="hidden md:inline">🔄 Refresh</span>
-              <span className="md:hidden">🔄</span>
+            <button onClick={() => load()} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Refresh">
+              <RefreshCw className="w-[18px] h-[18px]" />
             </button>
             <Link href="/dashboard/workorders/new" className="px-3 py-2 md:px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium whitespace-nowrap">
               <span className="hidden sm:inline">+ New Work Order</span>
@@ -415,7 +448,7 @@ export default function DashboardPage() {
             <>
               <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-500 leading-tight">{s.label}</p>
-                <span className="text-sm md:text-base">{s.icon}</span>
+                <span className="text-slate-400 dark:text-slate-500">{s.icon}</span>
               </div>
               <p className={`text-lg md:text-2xl font-bold ${s.color}`}>{s.value}</p>
               <p className="text-xs text-slate-400 hidden sm:block">{s.sub}</p>
@@ -429,11 +462,26 @@ export default function DashboardPage() {
         })}
       </div>
 
+      {/* ── Copilot Morning Briefing ─────────────────────────────────── */}
+      {user?.role === "ADMIN" && !user?.isSuperAdmin && !briefingDismissed && (briefing || briefingLoading || briefingError) && (
+        <CopilotPanel
+          title="Morning Briefing"
+          description={`Generated for ${new Date().toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}`}
+          loading={briefingLoading}
+          error={briefingError}
+          content={briefing}
+          onRefresh={fetchBriefing}
+          onDismiss={() => setBriefingDismissed(true)}
+          accent="violet"
+          loadingMessage="Analysing your shop's morning status…"
+        />
+      )}
+
       {/* Today's appointments + Recent activity widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">📅 Today&apos;s Appointments</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Today&apos;s Appointments</h2>
             <Link href="/dashboard/appointments" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500">View all →</Link>
           </div>
           {todayAppts.length === 0 ? (
@@ -454,22 +502,22 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">🕑 Recent Activity</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Recent Activity</h2>
           {recentActivity.length === 0 ? (
             <p className="text-sm text-slate-400 py-3 text-center">No recent activity</p>
           ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-1 max-h-48 overflow-y-auto -mx-1 px-1">
               {recentActivity.map(a => (
-                <div key={a.id} className="flex items-start gap-2 text-xs">
-                  <span className="flex-shrink-0">📝</span>
+                <div key={a.id} className="flex items-start gap-2.5 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mt-1.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-slate-700 dark:text-slate-300 truncate">
+                    <p className="text-xs text-slate-700 dark:text-slate-300 truncate leading-snug">
                       {a.description || a.action}
-                      <span className="text-slate-400 font-mono ml-1">
+                      <span className="text-[10px] text-slate-400 font-mono ml-1.5 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">
                         {String(a.orderNumber).startsWith("wo-") ? String(a.orderNumber).toUpperCase() : String(a.orderNumber).slice(0, 8).toUpperCase()}
                       </span>
                     </p>
-                    <p className="text-slate-400">{timeAgo(a.createdAt)}{a.userName ? ` · ${a.userName}` : ""}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{timeAgo(a.createdAt)}{a.userName ? ` · ${a.userName}` : ""}</p>
                   </div>
                 </div>
               ))}
@@ -489,13 +537,13 @@ export default function DashboardPage() {
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-none">
           {["", ...STATUS_OPTIONS].map((s) => (
             <button key={s} onClick={() => { setStatusFilter(s); setNoContactFilter(false); }}
-              className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${!noContactFilter && statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+              className={`px-3.5 py-1.5 text-xs rounded-full border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${!noContactFilter && statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
               {s || "All"}
             </button>
           ))}
           <button onClick={() => { setNoContactFilter(v => !v); setStatusFilter(""); }}
-            className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
-            ⏰ No contact 3d+
+            className={`px-3.5 py-1.5 text-xs rounded-full border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+            No contact 3d+
           </button>
           {branches.length > 0 && (
             <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
@@ -572,7 +620,7 @@ export default function DashboardPage() {
         ))}
         {!loading && orders.length === 0 && (
           <div className="py-12 text-center space-y-3">
-            <p className="text-4xl">📋</p>
+            <ClipboardList className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
             <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? "No orders match your search" : "No work orders yet"}</p>
             <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
             {!search && !statusFilter && !noContactFilter && (
