@@ -13,6 +13,12 @@ import { NotificationBell } from "@/components/NotificationBell";
 import CertBadge from "@/components/CertBadge";
 import OnboardingTour from "@/components/OnboardingTour";
 import DashboardPWA from "@/components/DashboardPWA";
+import {
+  ClipboardList, CalendarDays, Wrench, Truck, Users, Shield, Star, Award,
+  MessageSquare, FileUp, BarChart3, UsersRound, TrendingUp, Tag, Layers,
+  Store, Receipt, FileText, Building2, ShoppingCart, Clock, GraduationCap,
+  Settings2, Bell, LogOut, ChevronLeft, ChevronRight, Search, Tv, X,
+} from "lucide-react";
 
 type Notification = {
   id: string;
@@ -156,41 +162,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     "/dashboard/settings": "tour-step-settings",
   };
 
+  const IC = "w-[18px] h-[18px] flex-shrink-0";
   const nav = [
-    { href: "/dashboard", label: t("workOrders"), icon: "📋" },
-    { href: "/dashboard/appointments", label: "Appointments", icon: "📅" },
-    { href: "/dashboard/spareparts", label: t("spareParts"), icon: "🔧" },
-    { href: "/dashboard/suppliers", label: "Suppliers", icon: "🏭" },
-    { href: "/dashboard/customers", label: t("customers"), icon: "👤" },
-    { href: "/dashboard/warranties", label: t("warranties"), icon: "🛡️" },
-    { href: "/dashboard/ratings", label: t("satisfaction"), icon: "⭐" },
-    { href: "/dashboard/certification", label: "Certification", icon: "🏆" },
-    { href: "/dashboard/messages", label: "Messages", icon: "💬" },
-    { href: "/dashboard/csv", label: t("csvImport"), icon: "📂" },
+    { href: "/dashboard", label: t("workOrders"), icon: <ClipboardList className={IC} /> },
+    { href: "/dashboard/appointments", label: "Appointments", icon: <CalendarDays className={IC} /> },
+    { href: "/dashboard/spareparts", label: t("spareParts"), icon: <Wrench className={IC} /> },
+    { href: "/dashboard/suppliers", label: "Suppliers", icon: <Truck className={IC} /> },
+    { href: "/dashboard/customers", label: t("customers"), icon: <Users className={IC} /> },
+    { href: "/dashboard/warranties", label: t("warranties"), icon: <Shield className={IC} /> },
+    { href: "/dashboard/ratings", label: t("satisfaction"), icon: <Star className={IC} /> },
+    { href: "/dashboard/certification", label: "Certification", icon: <Award className={IC} /> },
+    { href: "/dashboard/messages", label: "Messages", icon: <MessageSquare className={IC} /> },
+    { href: "/dashboard/csv", label: t("csvImport"), icon: <FileUp className={IC} /> },
     ...(user.role === "ADMIN" ? [
-      { href: "/dashboard/analytics", label: t("analytics"), icon: "📊" },
-      { href: "/dashboard/engineers", label: t("engineers"), icon: "👥" },
-      { href: "/dashboard/reports", label: t("reports"), icon: "📈" },
-      { href: "/dashboard/templates", label: t("templates"), icon: "🗂️" },
+      { href: "/dashboard/analytics", label: t("analytics"), icon: <BarChart3 className={IC} /> },
+      { href: "/dashboard/engineers", label: t("engineers"), icon: <UsersRound className={IC} /> },
+      { href: "/dashboard/reports", label: t("reports"), icon: <TrendingUp className={IC} /> },
+      { href: "/dashboard/pricing", label: "Pricing", icon: <Tag className={IC} /> },
+      { href: "/dashboard/templates", label: t("templates"), icon: <Layers className={IC} /> },
       ...(user.isSuperAdmin ? [
-        { href: "/dashboard/shops", label: t("shops"), icon: "🏪" },
+        { href: "/dashboard/shops", label: t("shops"), icon: <Store className={IC} /> },
       ] : []),
-      { href: "/dashboard/expenses", label: t("expenses"), icon: "💸" },
+      { href: "/dashboard/expenses", label: t("expenses"), icon: <Receipt className={IC} /> },
     ] : []),
-    { href: "/dashboard/contracts", label: "Contracts", icon: "📄" },
-    { href: "/dashboard/branches", label: "Branches", icon: "🏢" },
-    { href: "/dashboard/pos", label: "Point of Sale", icon: "🏧" },
-    { href: "/dashboard/shifts", label: "Shifts", icon: "🕐" },
-    { href: "/dashboard/academy", label: "Academy", icon: "🎓" },
-    { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
+    { href: "/dashboard/contracts", label: "Contracts", icon: <FileText className={IC} /> },
+    { href: "/dashboard/branches", label: "Branches", icon: <Building2 className={IC} /> },
+    { href: "/dashboard/pos", label: "Point of Sale", icon: <ShoppingCart className={IC} /> },
+    { href: "/dashboard/shifts", label: "Shifts", icon: <Clock className={IC} /> },
+    { href: "/dashboard/academy", label: "Academy", icon: <GraduationCap className={IC} /> },
+    { href: "/dashboard/settings", label: t("settings"), icon: <Settings2 className={IC} /> },
   ];
 
   const bottomNav = [
-    { href: "/dashboard", label: t("orders"), icon: "📋" },
-    { href: "/dashboard/spareparts", label: t("parts"), icon: "🔧" },
-    { href: "/dashboard/customers", label: t("customers"), icon: "👤" },
-    { href: "/dashboard/analytics", label: t("analytics"), icon: "📊" },
-    { href: "/dashboard/settings", label: t("settings"), icon: "⚙️" },
+    { href: "/dashboard", label: t("orders"), icon: <ClipboardList className={IC} /> },
+    { href: "/dashboard/spareparts", label: t("parts"), icon: <Wrench className={IC} /> },
+    { href: "/dashboard/customers", label: t("customers"), icon: <Users className={IC} /> },
+    { href: "/dashboard/analytics", label: t("analytics"), icon: <BarChart3 className={IC} /> },
+    { href: "/dashboard/settings", label: t("settings"), icon: <Settings2 className={IC} /> },
   ];
 
   const panelUnread = notifications.filter(n => !n.read).length;
@@ -234,16 +242,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ width: collapsed ? 56 : 224 }}
       >
         <div id="tour-step-dashboard" className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between overflow-hidden">
-          <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity min-w-0">
-            <div className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{collapsed ? "F" : "FixFlow"}</div>
-            {!collapsed && <div className="text-xs text-slate-500 mt-0.5 truncate">{user.name}</div>}
+          <button onClick={() => window.location.reload()} className="text-left hover:opacity-70 transition-opacity min-w-0 flex items-center gap-2.5">
+            {collapsed ? (
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <Wrench className="w-4 h-4" />
+              </div>
+            ) : (
+              <>
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                  <Wrench className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-tight">FixFlow</div>
+                  {user.shop?.name && <div className="text-[11px] text-slate-500 truncate leading-tight">{user.shop.name}</div>}
+                </div>
+              </>
+            )}
+          </button>
             {!collapsed && user.shop?.certification && (
               <div className="mt-1.5">
                 <CertBadge level={user.shop.certification} size="xs" />
               </div>
             )}
-          </button>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none">✕</button>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><X className="w-5 h-5" /></button>
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
@@ -255,10 +276,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${collapsed ? "justify-center" : ""} ${
                   active
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-                style={active ? { background: "rgba(37,99,235,0.15)", borderLeft: "3px solid #2563eb", paddingLeft: collapsed ? 9 : 9 } : undefined}>
+                    ? "bg-blue-600/10 text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}>
                 <span className="flex-shrink-0">{item.icon}</span>
                 {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                 {!collapsed && item.href === "/dashboard/appointments" && pendingApptCount > 0 && (
@@ -282,33 +302,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1 overflow-hidden">
           <button onClick={() => setShowNotifications(!showNotifications)}
             title={collapsed ? t("notifications") : undefined}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
-            <div className="flex items-center gap-3"><span>🔔</span>{!collapsed && t("notifications")}</div>
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
+            <div className="flex items-center gap-3"><Bell className="w-[18px] h-[18px] flex-shrink-0" />{!collapsed && t("notifications")}</div>
             {!collapsed && unreadCount > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount > 9 ? "9+" : unreadCount}</span>}
           </button>
           <button onClick={handleLogout}
             title={collapsed ? t("logout") : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
-            <span>🚪</span>{!collapsed && t("logout")}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
+            <LogOut className="w-[18px] h-[18px] flex-shrink-0" />{!collapsed && t("logout")}
           </button>
           <button onClick={() => setCollapsed(c => !c)}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={`hidden lg:flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? "justify-center" : ""}`}>
-            <span>{collapsed ? "→" : "←"}</span>{!collapsed && <span className="flex-1 text-left">Collapse</span>}
+            {collapsed ? <ChevronRight className="w-[18px] h-[18px] flex-shrink-0" /> : <ChevronLeft className="w-[18px] h-[18px] flex-shrink-0" />}
+            {!collapsed && <span className="flex-1 text-left">Collapse</span>}
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Desktop header */}
-        <header className="hidden lg:flex items-center justify-end gap-2 px-6 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+        <header className="hidden lg:flex items-center gap-3 px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <button
             onClick={() => { const e = new KeyboardEvent("keydown", { key: "k", ctrlKey: true }); window.dispatchEvent(e); }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex-1 max-w-xs flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             title="Command palette">
-            🔍 Search
-            <kbd className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">Ctrl K</kbd>
+            <Search className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left">Search…</span>
+            <kbd className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[10px] text-slate-500 dark:text-slate-400">⌘K</kbd>
           </button>
+          <div className="flex-1" />
           {!user?.isSuperAdmin && (
             <button
               onClick={toggleGlobalScan}
@@ -335,9 +358,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               title="Open TV Display Mode"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" />
-              </svg>
+              <Tv className="w-[18px] h-[18px]" />
               TV Mode
             </button>
           )}
@@ -354,7 +375,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span className="text-slate-900 dark:text-white font-semibold text-sm">FixFlow</span>
           <div className="flex items-center gap-1">
             <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white relative p-2 -mr-2">
-              <span className="text-lg">🔔</span>
+              <Bell className="w-[18px] h-[18px]" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 rtl:right-auto rtl:-left-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
               )}
@@ -375,7 +396,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {t("markAllRead")}
                     </button>
                   )}
-                  <button onClick={() => setShowNotifications(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
+                  <button onClick={() => setShowNotifications(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><X className="w-4 h-4" /></button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -413,7 +434,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <Link key={item.href} href={item.href}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors">
-                <span className={`flex items-center justify-center w-10 h-7 rounded-xl text-lg transition-all ${active ? "bg-blue-600/20" : ""}`}>
+                <span className={`flex items-center justify-center w-10 h-7 rounded-xl transition-all ${active ? "bg-blue-600/20 text-blue-600 dark:text-blue-400" : "text-slate-500"}`}>
                   {item.icon}
                 </span>
                 <span className={`text-[10px] font-medium leading-none transition-colors ${active ? "text-blue-600 dark:text-blue-400" : "text-slate-500"}`}>
