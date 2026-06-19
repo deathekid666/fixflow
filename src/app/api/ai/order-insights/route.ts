@@ -88,19 +88,24 @@ priceSuggestion should be a number based on past similar orders, or null if insu
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 400,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!resp.ok) return Response.json({ error: "Claude API error" }, { status: 500 });
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[order-insights] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "Claude API error" }, { status: 500 });
+    }
 
     const data = await resp.json();
     const raw = data.content?.[0]?.text ?? "{}";
     const parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim());
     return Response.json(parsed);
-  } catch {
+  } catch (err) {
+    console.error("[order-insights] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to parse AI response — please retry" }, { status: 500 });
   }
 }

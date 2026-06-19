@@ -1,14 +1,14 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return Response.json({ error: "AI not configured" }, { status: 503 });
 
   const [order, history] = await Promise.all([
     prisma.workOrder.findFirst({
@@ -74,20 +74,28 @@ Respond ONLY with valid JSON, no markdown, no explanation outside the JSON:
 }`;
 
   try {
-    const message = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 512,
-      thinking: { type: "adaptive" },
-      messages: [{ role: "user", content: prompt }],
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 512,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
-    const textBlock = message.content.find(b => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      return Response.json({ error: "No response from AI" }, { status: 500 });
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[price-suggestion] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "AI service error" }, { status: 500 });
     }
 
-    // Extract JSON from the response, stripping any surrounding text
-    const raw = textBlock.text.trim();
+    const data = await resp.json();
+    const raw = data.content?.find((b: { type: string }) => b.type === "text")?.text?.trim() ?? "";
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return Response.json({ error: "Could not parse AI response" }, { status: 500 });
 
@@ -99,7 +107,6 @@ Respond ONLY with valid JSON, no markdown, no explanation outside the JSON:
       confidence: "HIGH" | "MEDIUM" | "LOW";
     };
 
-    // Sanity-check the shape
     if (
       typeof parsed.suggestedMin !== "number" ||
       typeof parsed.suggestedMax !== "number" ||
@@ -110,8 +117,8 @@ Respond ONLY with valid JSON, no markdown, no explanation outside the JSON:
     }
 
     return Response.json({ ...parsed, currency });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "AI service error";
-    return Response.json({ error: msg }, { status: 500 });
+  } catch (err) {
+    console.error("[price-suggestion] Failed to reach Claude API:", err);
+    return Response.json({ error: "AI service error" }, { status: 500 });
   }
 }

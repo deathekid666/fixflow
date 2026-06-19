@@ -17,22 +17,24 @@ export async function POST(req: Request) {
     return Response.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 300,
-      system:
-        "You are a mobile device repair expert. Respond ONLY with a valid JSON object — no markdown, no code blocks, no explanation.",
-      messages: [
-        {
-          role: "user",
-          content: `Device: ${brand} ${model}
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 300,
+        system:
+          "You are a mobile device repair expert. Respond ONLY with a valid JSON object — no markdown, no code blocks, no explanation.",
+        messages: [
+          {
+            role: "user",
+            content: `Device: ${brand} ${model}
 Reported fault: ${faultDescription}
 
 Return a JSON object estimating this repair:
@@ -44,13 +46,19 @@ Return a JSON object estimating this repair:
 }
 
 successRate is an integer 0-100. Be realistic and concise.`,
-        },
-      ],
-    }),
-  }).catch(() => null);
-
-  if (!res || !res.ok) {
+          },
+        ],
+      }),
+    });
+  } catch (err) {
+    console.error("[repair-estimate] Failed to reach Claude API:", err);
     return Response.json({ error: "AI service unavailable" }, { status: 502 });
+  }
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    console.error("[repair-estimate] Claude API error:", res.status, errBody);
+    return Response.json({ error: errBody?.error?.message ?? "AI service unavailable" }, { status: 502 });
   }
 
   const data = await res.json().catch(() => null);

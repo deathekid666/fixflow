@@ -138,18 +138,23 @@ Keep it concise — 2-3 sentences per section. Be direct and data-driven. Curren
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 700,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!resp.ok) return Response.json({ error: "Claude API error" }, { status: 500 });
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[revenue-copilot] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "Claude API error" }, { status: 500 });
+    }
 
     const data = await resp.json();
     const analysis = data.content?.[0]?.text ?? "";
     return Response.json({ analysis });
-  } catch {
+  } catch (err) {
+    console.error("[revenue-copilot] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI" }, { status: 500 });
   }
 }

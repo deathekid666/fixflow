@@ -74,18 +74,23 @@ Write only the message text, nothing else.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 200,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!resp.ok) return Response.json({ error: "Claude API error" }, { status: 500 });
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[draft-message] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "Claude API error" }, { status: 500 });
+    }
 
     const data = await resp.json();
     const message = data.content?.[0]?.text?.trim() ?? "";
     return Response.json({ message, customerPhone: order.customerPhone, customerName: order.customerName });
-  } catch {
+  } catch (err) {
+    console.error("[draft-message] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI" }, { status: 500 });
   }
 }

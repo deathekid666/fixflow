@@ -78,13 +78,17 @@ Respond ONLY with valid JSON, no markdown, no explanation:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 300,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!resp.ok) return Response.json({ error: "Claude API error" }, { status: 500 });
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[price-suggestion] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "Claude API error" }, { status: 500 });
+    }
 
     const data = await resp.json();
     const raw = data.content?.[0]?.text?.trim() ?? "{}";
@@ -93,7 +97,8 @@ Respond ONLY with valid JSON, no markdown, no explanation:
 
     const parsed = JSON.parse(jsonMatch[0]);
     return Response.json({ ...parsed, currency, historyCount: history.length });
-  } catch {
+  } catch (err) {
+    console.error("[price-suggestion] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI" }, { status: 500 });
   }
 }

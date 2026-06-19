@@ -1,14 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
-import Anthropic from "@anthropic-ai/sdk";
 
 export const dynamic = "force-dynamic";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return Response.json({ error: "AI not configured" }, { status: 503 });
 
   const workOrder = await prisma.workOrder.findUnique({
     where: { id: params.id },
@@ -58,30 +58,41 @@ Respond with ONLY a valid JSON object (no markdown, no code fences) matching thi
 Only include parts from the available inventory when relevant. If no inventory parts apply, partsNeeded can be empty or list generic parts.`;
 
   try {
-    const message = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 1024,
-      thinking: { type: "adaptive" },
-      messages: [{ role: "user", content: prompt }],
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
-    const textBlock = message.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      return Response.json({ error: "No response from AI" }, { status: 500 });
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[ai-assist] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "AI service error" }, { status: 500 });
     }
+
+    const data = await resp.json();
+    const text = data.content?.find((b: { type: string }) => b.type === "text")?.text ?? "";
 
     let json;
     try {
-      json = JSON.parse(textBlock.text.trim());
+      json = JSON.parse(text.trim());
     } catch {
-      const match = textBlock.text.match(/\{[\s\S]*\}/);
+      const match = text.match(/\{[\s\S]*\}/);
       if (!match) return Response.json({ error: "Could not parse AI response" }, { status: 500 });
       json = JSON.parse(match[0]);
     }
 
     return Response.json(json);
   } catch (err) {
-    console.error("AI assist error:", err);
+    console.error("[ai-assist] Failed to reach Claude API:", err);
     return Response.json({ error: "AI service error" }, { status: 500 });
   }
 }

@@ -121,21 +121,23 @@ Keep each section to 2–3 sentences. Tone: direct, data-driven, helpful. No flu
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 500,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
     if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      return Response.json({ error: err.error?.message ?? "Claude API error" }, { status: 500 });
+      const errBody = await resp.json().catch(() => ({}));
+      console.error("[morning-briefing] Claude API error:", resp.status, errBody);
+      return Response.json({ error: errBody?.error?.message ?? "Claude API error" }, { status: 500 });
     }
 
     const data = await resp.json();
     const briefing = data.content?.[0]?.text ?? "";
     return Response.json({ briefing });
-  } catch {
+  } catch (err) {
+    console.error("[morning-briefing] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI — check network" }, { status: 500 });
   }
 }
