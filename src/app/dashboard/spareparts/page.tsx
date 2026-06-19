@@ -5,6 +5,7 @@ import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
+import { useLanguage } from "@/context/LanguageContext";
 
 type SparePart = {
   id: string; name: string; partNumber: string;
@@ -24,6 +25,7 @@ const LOW_STOCK_THRESHOLD = 5;
 
 export default function SparePartsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const [parts, setParts] = useState<SparePart[]>([]);
@@ -280,7 +282,7 @@ export default function SparePartsPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <PageHeader
-        title="Spare Parts"
+        title={t("spareParts")}
         subtitle="Manage your parts catalog and stock"
         actions={
           <div className="flex items-center gap-2">
@@ -303,7 +305,7 @@ export default function SparePartsPage() {
             {user?.role === "ADMIN" && (
               <button onClick={() => setShowForm(!showForm)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-                + Add Part
+                + {t("addPart")}
               </button>
             )}
           </div>
@@ -422,9 +424,9 @@ export default function SparePartsPage() {
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg">
-              {saving ? "Saving..." : "Save Part"}
+              {saving ? t("saving") : t("save")}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm rounded-lg">Cancel</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm rounded-lg">{t("cancel")}</button>
           </div>
         </div>
       )}
@@ -432,7 +434,7 @@ export default function SparePartsPage() {
       {/* Search + filter */}
       <div className="flex gap-3 flex-wrap">
         <input className="flex-1 min-w-[200px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-          placeholder="Search parts..." value={search} onChange={e => setSearch(e.target.value)} />
+          placeholder={t("searchParts")} value={search} onChange={e => setSearch(e.target.value)} />
         <div className="flex gap-2">
           {[
             { key: "all", label: `All (${parts.length})`, color: "" },
@@ -472,7 +474,7 @@ export default function SparePartsPage() {
         <table className="w-full text-sm min-w-[640px] md:min-w-0">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
-              {["Name", "Part #", "Unit Price", "Stock", "Status", "Actions"].map(h => (
+              {[t("name"), `${t("partNumber")} #`, t("unitPrice"), t("stock"), t("status"), "Actions"].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
@@ -520,7 +522,7 @@ export default function SparePartsPage() {
                   <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">
                     {p.name}
                     {p.stock === 0 && <span className="ml-2 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">Out</span>}
-                    {p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded">Low</span>}
+                    {p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded">{t("lowStock")}</span>}
                     {p.description && <p className="text-xs text-slate-500 font-normal mt-0.5">{p.description}</p>}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-400">{p.partNumber || "—"}</td>
@@ -609,9 +611,9 @@ export default function SparePartsPage() {
                         <div className="flex gap-2">
                           <button onClick={saveEditPart} disabled={savingPart || !editPartForm.name.trim() || !editPartForm.unitPrice}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
-                            {savingPart ? "Saving..." : "Save Changes"}
+                            {savingPart ? t("saving") : t("save")}
                           </button>
-                          <button onClick={() => setEditingPartId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                          <button onClick={() => setEditingPartId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
                         </div>
                       </div>
                      </div>
@@ -668,7 +670,7 @@ export default function SparePartsPage() {
                             {submittingReorder ? "Creating..." : "Create Draft Purchase Order"}
                           </button>
                           <button onClick={() => setReorderingId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
-                            Cancel
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>
@@ -768,10 +770,10 @@ export default function SparePartsPage() {
                         <div className="flex gap-2">
                           <button onClick={() => handleAdjust(p)} disabled={savingAdj || (!adjQuantity && !adjPrice)}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
-                            {savingAdj ? "Saving..." : "Save Changes"}
+                            {savingAdj ? t("saving") : t("save")}
                           </button>
                           <button onClick={() => setAdjustingId(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
-                            Cancel
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>

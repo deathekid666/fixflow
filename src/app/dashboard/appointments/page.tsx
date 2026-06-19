@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { buildWaUrl, fillTemplate, DEFAULT_TEMPLATES } from "@/lib/whatsapp";
+import QRCode from "react-qr-code";
 
 type Appointment = {
   id: string; shopId: string;
@@ -12,6 +13,13 @@ type Appointment = {
   scheduledAt: string; duration: number;
   status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
   notes: string | null; createdAt: string;
+  checkedInAt: string | null;
+};
+
+type WalkIn = {
+  id: string; shopId: string;
+  customerName: string; customerPhone: string;
+  checkedInAt: string; workOrderId: string | null;
 };
 
 type FormState = {
@@ -84,7 +92,7 @@ export default function AppointmentsPage() {
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [view, setView] = useState<"calendar" | "list" | "checkins">("calendar");
 
   // Calendar
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
@@ -113,6 +121,16 @@ export default function AppointmentsPage() {
   const [converting, setConverting] = useState(false);
   const [convertError, setConvertError] = useState("");
 
+  // Check-ins tab state
+  const [checkinAppts, setCheckinAppts] = useState<Appointment[]>([]);
+  const [checkinWalkIns, setCheckinWalkIns] = useState<WalkIn[]>([]);
+  const [checkinLoading, setCheckinLoading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [convertingWalkIn, setConvertingWalkIn] = useState<WalkIn | null>(null);
+  const [walkInForm, setWalkInForm] = useState({ deviceBrand: "", deviceModel: "", faultDescription: "" });
+  const [convertingWalkInId, setConvertingWalkInId] = useState<string | null>(null);
+  const checkinPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
@@ -127,6 +145,15 @@ export default function AppointmentsPage() {
   }, []);
   useEffect(() => {
     if (view === "list" && !listLoaded) loadList();
+  }, [view]);
+  useEffect(() => {
+    if (view === "checkins") {
+      loadCheckins();
+      checkinPollRef.current = setInterval(loadCheckins, 30000);
+    } else {
+      if (checkinPollRef.current) clearInterval(checkinPollRef.current);
+    }
+    return () => { if (checkinPollRef.current) clearInterval(checkinPollRef.current); };
   }, [view]);
 
   async function load() {
@@ -236,6 +263,33 @@ export default function AppointmentsPage() {
     }
   }
 
+  async function loadCheckins() {
+    setCheckinLoading(true);
+    const res = await fetch("/api/checkins", { credentials: "include" });
+    if (res.ok) {
+      const d = await res.json();
+      setCheckinAppts(d.appointments ?? []);
+      setCheckinWalkIns(d.walkIns ?? []);
+    }
+    setCheckinLoading(false);
+  }
+
+  async function convertWalkIn() {
+    if (!convertingWalkIn) return;
+    setConvertingWalkInId(convertingWalkIn.id);
+    const res = await fetch("/api/checkins/convert", {
+      method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+      body: JSON.stringify({ walkInId: convertingWalkIn.id, ...walkInForm }),
+    });
+    if (res.ok) {
+      const { workOrderId } = await res.json();
+      setConvertingWalkIn(null);
+      setWalkInForm({ deviceBrand: "", deviceModel: "", faultDescription: "" });
+      router.push(`/dashboard/workorders/${workOrderId}`);
+    }
+    setConvertingWalkInId(null);
+  }
+
   async function convertToWorkOrder(appt: Appointment) {
     setConverting(true);
     setConvertError("");
@@ -298,6 +352,7 @@ export default function AppointmentsPage() {
             <span className="text-sm font-semibold text-slate-900 dark:text-white hidden sm:inline">
               {view === "calendar"
                 ? `${fmt(weekStart, { month: "short", day: "numeric" })} – ${fmt(new Date(weekEnd.getTime() - 1), { month: "short", day: "numeric", year: "numeric" })}`
+                : view === "checkins" ? "Today's Check-ins"
                 : "All Appointments"}
             </span>
           </div>
@@ -311,6 +366,10 @@ export default function AppointmentsPage() {
               <button onClick={() => setView("list")}
                 className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${view === "list" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
                 ☰ List
+              </button>
+              <button onClick={() => setView("checkins")}
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${view === "checkins" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
+                ✅ Check-ins
               </button>
             </div>
             <button onClick={() => { setShowForm(true); setSelected(null); setForm(EMPTY_FORM); }}
@@ -795,6 +854,172 @@ export default function AppointmentsPage() {
       {/* Mobile overlay */}
       {panelOpen && (
         <div className="lg:hidden fixed inset-0 bg-black/50 z-30" onClick={() => { setShowForm(false); setSelected(null); setEditMode(false); setRescheduling(false); }} />
+      )}
+
+      {/* ── Check-ins view ── */}
+      {view === "checkins" && (
+        <div className="absolute inset-0 top-[57px] lg:top-auto lg:relative overflow-y-auto p-4 space-y-4 bg-white dark:bg-slate-950">
+          {/* Header bar */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-sm text-slate-500 dark:text-slate-400">Live · refreshes every 30s</span>
+              {checkinLoading && <span className="text-xs text-slate-400">updating…</span>}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={loadCheckins}
+                className="px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
+                ↻ Refresh
+              </button>
+              <button onClick={() => setShowQR(true)}
+                className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+                📲 QR Code
+              </button>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Appointments", count: checkinAppts.length, color: "text-blue-600 dark:text-blue-400" },
+              { label: "Walk-ins", count: checkinWalkIns.length, color: "text-purple-600 dark:text-purple-400" },
+              { label: "Total", count: checkinAppts.length + checkinWalkIns.length, color: "text-slate-900 dark:text-white" },
+            ].map(({ label, count, color }) => (
+              <div key={label} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
+                <p className={`text-2xl font-bold ${color}`}>{count}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Appointment check-ins */}
+          {checkinAppts.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Appointments Checked In</p>
+              <div className="space-y-2">
+                {checkinAppts.map(appt => (
+                  <div key={appt.id} className="bg-white dark:bg-slate-900 border border-green-200 dark:border-green-800/40 rounded-xl p-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0 text-sm">✅</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{appt.customerName}</p>
+                      <p className="text-xs text-slate-500">{appt.deviceBrand} {appt.deviceModel} · {appt.customerPhone}</p>
+                      {appt.checkedInAt && (
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                          Checked in {new Date(appt.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {" · "}Appt {new Date(appt.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      )}
+                    </div>
+                    <button onClick={() => convertToWorkOrder(appt)} disabled={converting}
+                      className="flex-shrink-0 text-xs px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg transition-colors whitespace-nowrap">
+                      → WO
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Walk-in check-ins */}
+          {checkinWalkIns.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Walk-ins</p>
+              <div className="space-y-2">
+                {checkinWalkIns.map(w => (
+                  <div key={w.id} className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/40 rounded-xl p-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 text-sm">👋</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{w.customerName}</p>
+                      <p className="text-xs text-slate-500">{w.customerPhone}</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                        {w.workOrderId ? "✓ Work order created" : `Arrived ${new Date(w.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                      </p>
+                    </div>
+                    {!w.workOrderId
+                      ? <button onClick={() => { setConvertingWalkIn(w); setWalkInForm({ deviceBrand: "", deviceModel: "", faultDescription: "" }); }}
+                          className="flex-shrink-0 text-xs px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors whitespace-nowrap">
+                          → WO
+                        </button>
+                      : <button onClick={() => router.push(`/dashboard/workorders/${w.workOrderId}`)}
+                          className="flex-shrink-0 text-xs px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors whitespace-nowrap">
+                          View WO
+                        </button>
+                    }
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!checkinLoading && checkinAppts.length === 0 && checkinWalkIns.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-4xl mb-3">🚪</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">No check-ins today yet</p>
+              <p className="text-slate-400 text-xs mt-1">Share the QR code with customers to start receiving check-ins</p>
+              <button onClick={() => setShowQR(true)}
+                className="mt-4 px-4 py-2 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+                📲 Show QR Code
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── QR Code modal ── */}
+      {showQR && user?.shopId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowQR(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Customer Check-in QR</h3>
+              <button onClick={() => setShowQR(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none">✕</button>
+            </div>
+            <div className="bg-white p-4 rounded-xl flex items-center justify-center mb-4">
+              <QRCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/checkin/${user.shopId}`} size={200} />
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-center break-all mb-3">
+              {typeof window !== "undefined" ? window.location.origin : ""}/checkin/{user.shopId}
+            </p>
+            <button
+              onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/checkin/${user.shopId}`)}
+              className="w-full py-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors">
+              📋 Copy Link
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Walk-in → Work Order modal ── */}
+      {convertingWalkIn && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setConvertingWalkIn(null)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Create Work Order</h3>
+              <button onClick={() => setConvertingWalkIn(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none">✕</button>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 mb-4">
+              <p className="text-sm font-medium text-slate-900 dark:text-white">{convertingWalkIn.customerName}</p>
+              <p className="text-xs text-slate-500">{convertingWalkIn.customerPhone}</p>
+            </div>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Device Brand</label>
+                <input className={INPUT} value={walkInForm.deviceBrand} onChange={e => setWalkInForm(p => ({ ...p, deviceBrand: e.target.value }))} placeholder="Apple, Samsung…" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Device Model</label>
+                <input className={INPUT} value={walkInForm.deviceModel} onChange={e => setWalkInForm(p => ({ ...p, deviceModel: e.target.value }))} placeholder="iPhone 15…" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Issue</label>
+                <input className={INPUT} value={walkInForm.faultDescription} onChange={e => setWalkInForm(p => ({ ...p, faultDescription: e.target.value }))} placeholder="Describe the issue…" />
+              </div>
+            </div>
+            <button onClick={convertWalkIn} disabled={!!convertingWalkInId}
+              className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+              {convertingWalkInId ? "Creating…" : "📋 Create Work Order"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -79,6 +79,7 @@ model Shop {
   suppliers      Supplier[]
   purchaseOrders PurchaseOrder[]
   appointments   Appointment[]
+  walkIns        WalkIn[]
   availability   ShopAvailability[]
   closures       ShopClosure[]
   shopSettings   ShopSettings?
@@ -512,7 +513,7 @@ model Expense {
 }
 
 model Appointment {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   shopId           String
   customerName     String
   customerPhone    String
@@ -520,12 +521,26 @@ model Appointment {
   deviceModel      String
   faultDescription String
   scheduledAt      DateTime
-  duration         Int      @default(60)
-  status           String   @default("PENDING")
+  duration         Int       @default(60)
+  status           String    @default("PENDING")
   notes            String?
-  createdAt        DateTime @default(now())
+  checkedInAt      DateTime?
+  createdAt        DateTime  @default(now())
 
   shop Shop @relation(fields: [shopId], references: [id])
+
+  @@index([shopId])
+}
+
+model WalkIn {
+  id            String   @id @default(cuid())
+  shopId        String
+  customerName  String
+  customerPhone String
+  checkedInAt   DateTime @default(now())
+  workOrderId   String?
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
 }

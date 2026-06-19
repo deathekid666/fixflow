@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
 import { REFERRAL_LABELS, REFERRAL_BADGE_CLASS } from "@/lib/referralSources";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Customer = {
   name: string; phone: string; email: string;
@@ -31,6 +32,7 @@ type SortKey = "totalOrders" | "totalSpent" | "lastVisit" | "name";
 export default function CustomersPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -156,7 +158,7 @@ export default function CustomersPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-      <PageHeader title="Customers" subtitle="Customer profiles and repair history" />
+      <PageHeader title={t("customers")} subtitle="Customer profiles and repair history" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -246,7 +248,7 @@ export default function CustomersPage() {
       {/* Search */}
       <input
         className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-        placeholder="Search by name, phone or email..."
+        placeholder={t("searchCustomers")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -328,11 +330,11 @@ export default function CustomersPage() {
                 <div className="flex items-center gap-2 flex-shrink-0 mt-1" onClick={e => e.stopPropagation()}>
                   <button onClick={e => isEditing ? (e.stopPropagation(), setEditingPhone(null)) : openEdit(c, e)}
                     className={`text-xs transition-colors ${isEditing ? "text-blue-500 font-medium" : "text-slate-400 hover:text-blue-500"}`}>
-                    {isEditing ? "✕" : "Edit"}
+                    {isEditing ? "✕" : t("edit")}
                   </button>
                   <button onClick={e => handleDelete(c.phone, c.name, e)}
-                    className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
-                  <span className="text-xs text-blue-400" onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}>View →</span>
+                    className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">{t("deleteBtn")}</button>
+                  <span className="text-xs text-blue-400" onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}>{t("view")} →</span>
                 </div>
               </div>
               {isEditing && (
@@ -353,11 +355,11 @@ export default function CustomersPage() {
                   <div className="flex gap-2">
                     <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}
                       className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                      {savingEdit ? "Saving..." : "Save"}
+                      {savingEdit ? t("saving") : t("save")}
                     </button>
                     <button onClick={e => { e.stopPropagation(); setEditingPhone(null); }}
                       className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
-                      Cancel
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>
@@ -400,10 +402,10 @@ export default function CustomersPage() {
             <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">
                 <button onClick={() => toggleSort("name")} className="flex items-center hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-                  Customer <SortIcon k="name" />
+                  {t("customer")} <SortIcon k="name" />
                 </button>
               </th>
-              <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Phone</th>
+              <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("phone")}</th>
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">
                 <button onClick={() => toggleSort("totalOrders")} className="flex items-center hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                   Visits <SortIcon k="totalOrders" />
@@ -500,9 +502,9 @@ export default function CustomersPage() {
                           Edit
                         </button>
                         <button onClick={e => handleDelete(c.phone, c.name, e)}
-                          className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
+                          className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">{t("deleteBtn")}</button>
                         <button onClick={e => { e.stopPropagation(); router.push(`/dashboard/customers/${encodeURIComponent(c.phone)}`); }}
-                          className="text-xs text-blue-400 hover:text-blue-300 transition-colors">View →</button>
+                          className="text-xs text-blue-400 hover:text-blue-300 transition-colors">{t("view")} →</button>
                       </div>
                     </td>
                   </tr>
@@ -524,11 +526,11 @@ export default function CustomersPage() {
                           <div className="flex gap-2">
                             <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}
                               className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                              {savingEdit ? "Saving..." : "Save"}
+                              {savingEdit ? t("saving") : t("save")}
                             </button>
                             <button onClick={e => { e.stopPropagation(); setEditingPhone(null); }}
                               className="px-4 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">
-                              Cancel
+                              {t("cancel")}
                             </button>
                           </div>
                         </div>

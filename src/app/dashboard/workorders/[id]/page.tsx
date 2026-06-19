@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { loyaltyTier } from "@/lib/loyaltyTier";
 import { formatCurrency } from "@/lib/currency";
 import { buildWaUrl, fillTemplate, DEFAULT_TEMPLATES, statusLabel, APP_URL } from "@/lib/whatsapp";
+import { useLanguage } from "@/context/LanguageContext";
 
 type LineItem = { id: string; label: string; amount: number };
 type Note = { id: string; message: string; createdAt: string; user: { name: string; role: string } };
@@ -66,6 +67,7 @@ const INPUT_INNER_FOCUS_GREEN = "w-full bg-slate-200 dark:bg-slate-700 border bo
 export default function WorkOrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.role === "ADMIN";
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -657,7 +659,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
+          <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← {t("back")}</button>
           <h1 className="text-slate-900 dark:text-white font-bold">
             {order.orderNumber.startsWith("wo-")
               ? order.orderNumber.toUpperCase()
@@ -675,9 +677,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 Print</a>
+          <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 {t("print")}</a>
           {order.status === "DELIVERED" && order.attachments.some(a => a.tag === "intake") && order.attachments.some(a => a.tag === "completion") && (
-            <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 Share</button>
+            <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 {t("share")}</button>
           )}
           {order.customerPhone && (() => {
             const trackingLink = `${APP_URL}/track/${order.orderNumber.slice(0, 6)}`;
@@ -697,17 +699,17 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           })()}
           <div className="flex items-center gap-1.5">
             <button onClick={sendReminder} disabled={sendingReminder} className="text-xs px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/35 text-amber-700 dark:text-amber-400 rounded-lg transition-colors disabled:opacity-50">
-              {sendingReminder ? "..." : "🔔 Send Reminder"}
+              {sendingReminder ? "..." : `🔔 ${t("sendReminder")}`}
             </button>
             {order.lastReminderAt && (
               <span className="text-xs text-slate-400">Last: {new Date(order.lastReminderAt).toLocaleDateString()}</span>
             )}
           </div>
           {(order.status === "DONE" || order.status === "DELIVERED") && (
-            <a href={`/dashboard/workorders/${params.id}/health-report`} target="_blank" className="text-xs px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-700 dark:text-emerald-400 rounded-lg transition-colors font-medium">🩺 Health Report</a>
+            <a href={`/dashboard/workorders/${params.id}/health-report`} target="_blank" className="text-xs px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-700 dark:text-emerald-400 rounded-lg transition-colors font-medium">🩺 {t("healthReport")}</a>
           )}
-          <button onClick={() => router.push(`/dashboard/workorders/${params.id}/edit`)} className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">✏️ Edit</button>
-          <button onClick={() => setShowBounceForm(!showBounceForm)} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-600 dark:text-red-400 rounded-lg transition-colors">Report Bounce</button>
+          <button onClick={() => router.push(`/dashboard/workorders/${params.id}/edit`)} className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">✏️ {t("edit")}</button>
+          <button onClick={() => setShowBounceForm(!showBounceForm)} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-600 dark:text-red-400 rounded-lg transition-colors">{t("reportBounce")}</button>
           {isAdmin && !showDeleteConfirm && <button onClick={() => setShowDeleteConfirm(true)} className="text-xs px-3 py-1.5 bg-red-700/40 hover:bg-red-700/70 text-red-600 dark:text-red-400 rounded-lg transition-colors">🗑 Delete</button>}
           {isAdmin && showDeleteConfirm && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -720,22 +722,22 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           )}
           {order.status === "RECEIVED" && (
             <button onClick={() => setPendingStatus("DIAGNOSING")} className="text-xs px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium">
-              → Start Diagnosis
+              → {t("startDiagnosis")}
             </button>
           )}
           {order.status === "DIAGNOSING" && (
             <button onClick={() => setPendingStatus("REPAIRING")} className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors font-medium">
-              → Start Repair
+              → {t("startRepair")}
             </button>
           )}
           {order.status === "REPAIRING" && (
             <button onClick={() => setPendingStatus("DONE")} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Done
+              → {t("markDone")}
             </button>
           )}
           {order.status === "DONE" && (
             <button onClick={() => setPendingStatus("DELIVERED")} className="text-xs px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium">
-              → Mark Delivered
+              → {t("markDelivered")}
             </button>
           )}
           <select className={`text-xs px-3 py-1.5 rounded-full font-medium border-0 focus:outline-none cursor-pointer ${STATUS_COLORS[order.status] ?? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
@@ -768,7 +770,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <button onClick={submitBounce} disabled={submittingBounce}
               style={(!bounceReason || !bounceScenario) ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
               className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg">{submittingBounce ? "..." : "Submit"}</button>
-            <button onClick={() => setShowBounceForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+            <button onClick={() => setShowBounceForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
           </div>
         </div>
       )}
@@ -819,11 +821,11 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           {/* Device info */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Device Information</h2>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">{t("deviceInformation")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <Info label="Brand" value={order.deviceBrand} />
-              <Info label="Model" value={order.deviceModel} />
-              <Info label="Serial Number" value={order.serialNumber || "—"} />
+              <Info label={t("brand")} value={order.deviceBrand} />
+              <Info label={t("model")} value={order.deviceModel} />
+              <Info label={t("serialNumber")} value={order.serialNumber || "—"} />
               <div>
                 <p className="text-xs text-slate-500 mb-1">IMEI</p>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -866,15 +868,15 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   </div>
                 )}
               </div>
-              <Info label="Warranty Start" value={order.warrantyStart ? new Date(order.warrantyStart).toLocaleDateString() : "—"} />
-              <Info label="Warranty End" value={order.warrantyEnd ? new Date(order.warrantyEnd).toLocaleDateString() : "—"} />
+              <Info label={t("warrantyStart")} value={order.warrantyStart ? new Date(order.warrantyStart).toLocaleDateString() : "—"} />
+              <Info label={t("warrantyEnd")} value={order.warrantyEnd ? new Date(order.warrantyEnd).toLocaleDateString() : "—"} />
             </div>
           </section>
 
           {/* Customer info */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Customer Information</h2>
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("customerInformation")}</h2>
               <button
                 onClick={openDraftModal}
                 className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-800/40 text-violet-700 dark:text-violet-300 rounded-lg font-medium transition-colors"
@@ -882,12 +884,12 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
-                Draft Message
+                {t("draftMessage")}
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-xs text-slate-500">Name</p>
+                <p className="text-xs text-slate-500">{t("name")}</p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <span className="text-slate-900 dark:text-white">{order.customerName}</span>
                   {customerTier && (
@@ -905,27 +907,27 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   )}
                 </div>
               </div>
-              <Info label="Phone" value={order.customerPhone} />
-              <Info label="Email" value={order.customerEmail || "—"} />
+              <Info label={t("phone")} value={order.customerPhone} />
+              <Info label={t("email")} value={order.customerEmail || "—"} />
             </div>
           </section>
 
           {/* Fault & service */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Fault & Service</h2>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">{t("faultAndService")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-3">
-              <Info label="Service Type" value={order.serviceType} />
-              <Info label="Repair Type" value={order.repairType || "—"} />
-              <Info label="Fault Level" value={order.faultLevel} />
-              <Info label="Appearance" value={order.appearance || "—"} />
+              <Info label={t("serviceType")} value={order.serviceType} />
+              <Info label={t("repairType")} value={order.repairType || "—"} />
+              <Info label={t("faultLevel")} value={order.faultLevel} />
+              <Info label={t("appearance")} value={order.appearance || "—"} />
             </div>
             <div className="space-y-2">
-              <p className="text-xs text-slate-500">Fault Description</p>
+              <p className="text-xs text-slate-500">{t("faultDescription")}</p>
               <p className="text-sm text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-lg p-3">{order.faultDescription}</p>
             </div>
             {order.remarks && (
               <div className="space-y-2 mt-3">
-                <p className="text-xs text-slate-500">Remarks</p>
+                <p className="text-xs text-slate-500">{t("remarks")}</p>
                 <p className="text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg p-3">{order.remarks}</p>
               </div>
             )}
@@ -934,39 +936,39 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Spare parts */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Spare Parts</h2>
-              <button onClick={() => setShowPartForm(!showPartForm)} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">+ Add Part</button>
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("spareParts")}</h2>
+              <button onClick={() => setShowPartForm(!showPartForm)} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">+ {t("addPart")}</button>
             </div>
             {showPartForm && (
               <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 mb-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Part</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("part")}</label>
                     <select className={INPUT_INNER + " focus:outline-none"} value={selectedPart} onChange={(e) => setSelectedPart(e.target.value)}>
                       <option value="">Select part...</option>
                       {spareParts.map(p => <option key={p.id} value={p.id}>{p.name} — {p.unitPrice.toFixed(2)} (stock: {p.stock})</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Quantity</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("quantity")}</label>
                     <input type="number" min="1" className={INPUT_INNER} value={partQty} onChange={(e) => setPartQty(e.target.value)} />
                   </div>
                 </div>
                 {selectedPartData && <p className="text-xs text-slate-500">Total: <span className="text-slate-900 dark:text-white font-medium">{(selectedPartData.unitPrice * parseInt(partQty || "1")).toFixed(2)}</span></p>}
                 <div className="flex gap-2">
-                  <button onClick={addPart} disabled={addingPart || !selectedPart} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{addingPart ? "Adding..." : "Add"}</button>
-                  <button onClick={() => setShowPartForm(false)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                  <button onClick={addPart} disabled={addingPart || !selectedPart} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{addingPart ? t("adding") : t("addPart")}</button>
+                  <button onClick={() => setShowPartForm(false)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
                 </div>
               </div>
             )}
-            {order.parts.length === 0 ? <p className="text-sm text-slate-500">No parts added yet.</p> : (
+            {order.parts.length === 0 ? <p className="text-sm text-slate-500">{t("noPartsAdded")}</p> : (
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-slate-200 dark:border-slate-800">
-                  <th className="text-left pb-2 text-xs text-slate-500">Part</th>
-                  <th className="text-left pb-2 text-xs text-slate-500">Part #</th>
-                  <th className="text-right pb-2 text-xs text-slate-500">Qty</th>
-                  <th className="text-right pb-2 text-xs text-slate-500">Price</th>
-                  <th className="text-right pb-2 text-xs text-slate-500">Total</th>
+                  <th className="text-left pb-2 text-xs text-slate-500">{t("part")}</th>
+                  <th className="text-left pb-2 text-xs text-slate-500">{t("partNumber")}</th>
+                  <th className="text-right pb-2 text-xs text-slate-500">{t("quantity")}</th>
+                  <th className="text-right pb-2 text-xs text-slate-500">{t("price")}</th>
+                  <th className="text-right pb-2 text-xs text-slate-500">{t("total")}</th>
                 </tr></thead>
                 <tbody>
                   {order.parts.map(p => (
@@ -986,7 +988,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Attachments */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Attachments</h2>
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("attachments")}</h2>
               <div className="flex items-center gap-2 ml-auto">
                 {order.attachments.length > 0 && (
                   <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
@@ -1000,7 +1002,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     </button>
                   </div>
                 )}
-                <button onClick={() => fileRef.current?.click()} disabled={uploadingFile || !!pendingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">{uploadingFile ? "Uploading..." : "Upload File"}</button>
+                <button onClick={() => fileRef.current?.click()} disabled={uploadingFile || !!pendingFile} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">{uploadingFile ? "Uploading..." : t("uploadFile")}</button>
                 <input ref={fileRef} type="file" className="hidden" accept="image/*,.pdf,.txt" onChange={onFileSelected} />
               </div>
             </div>
@@ -1034,7 +1036,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               </div>
             )}
             {order.attachments.length === 0 ? (
-              <p className="text-sm text-slate-500">No attachments yet.</p>
+              <p className="text-sm text-slate-500">{t("noAttachments")}</p>
             ) : photoView === "grid" ? (
               <div className="grid grid-cols-3 gap-3">
                 {order.attachments.map(a => (
@@ -1595,7 +1597,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   <label className="text-xs text-slate-500 mb-1 block">Quotation Remarks</label>
                   <textarea rows={2} className={INPUT_INNER + " resize-none"} value={quotationRemarks} onChange={(e) => setQuotationRemarks(e.target.value)} />
                 </div>
-                <button onClick={saveQuotation} disabled={savingQuotation} className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{savingQuotation ? "Saving..." : "Save"}</button>
+                <button onClick={saveQuotation} disabled={savingQuotation} className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{savingQuotation ? t("saving") : t("save")}</button>
               </div>
             )}
             <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
@@ -1677,9 +1679,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   <div className="flex gap-2">
                     <button onClick={collectPayment} disabled={savingPayment || !paymentAmount || (paymentMethod === "OTHER" && !otherDesc)}
                       className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg">
-                      {savingPayment ? "Saving..." : "Record Payment"}
+                      {savingPayment ? t("saving") : "Record Payment"}
                     </button>
-                    <button onClick={() => setShowPaymentForm(false)} className="px-3 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                    <button onClick={() => setShowPaymentForm(false)} className="px-3 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
                   </div>
                 </div>
               )}
@@ -1845,7 +1847,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <div className="flex justify-end gap-2">
               <button onClick={() => setPendingStatus(null)}
                 className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
-                Cancel
+                {t("cancel")}
               </button>
               <button onClick={() => { const s = pendingStatus; setPendingStatus(null); if (s) changeStatus(s); }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">

@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CopilotPanel } from "@/components/CopilotPanel";
+import { useLanguage } from "@/context/LanguageContext";
 
 type WorkOrder = {
   id: string; orderNumber: string; customerName: string; customerPhone: string;
@@ -34,16 +35,7 @@ function orderLabel(o: WorkOrder) {
   return o.orderNumber.startsWith("wo-") ? o.orderNumber.toUpperCase() : o.orderNumber.slice(0, 8).toUpperCase();
 }
 
-function timeAgo(date: string): string {
-  const diff = Date.now() - new Date(date).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
+// timeAgo is defined inside the component to access t()
 
 function SlaBadge({ o }: { o: WorkOrder }) {
   if (!o.slaDeadline || ["DELIVERED", "CANCELLED"].includes(o.status)) return null;
@@ -69,7 +61,19 @@ function SortableTh({ label, sortField, sortKey, sortDir, onSort }: {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
+
+  function timeAgo(date: string): string {
+    const diff = Date.now() - new Date(date).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return t("justNow");
+    if (mins < 60) return `${mins}${t("mAgo")}`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}${t("hAgo")}`;
+    const days = Math.floor(hours / 24);
+    return `${days}${t("dAgo")}`;
+  }
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const [orders, setOrders] = useState<WorkOrder[]>([]);
@@ -355,13 +359,13 @@ export default function DashboardPage() {
 
   const IC18 = "w-[18px] h-[18px]";
   const stats = [
-    { label: "Total Orders", value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", icon: <ClipboardList className={IC18} />, filter: "" },
-    { label: "Received", value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: <Inbox className={IC18} />, filter: "RECEIVED" },
-    { label: "In Progress", value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: <Wrench className={IC18} />, filter: "DIAGNOSING" },
-    { label: "Ready", value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: <CheckCircle2 className={IC18} />, filter: "DONE" },
-    { label: "Revenue", value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", icon: <DollarSign className={IC18} />, filter: null, href: "/dashboard/analytics" },
-    { label: "Delivered", value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", icon: <PackageCheck className={IC18} />, filter: "DELIVERED" },
-    { label: "Cancelled", value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", icon: <XCircle className={IC18} />, filter: "CANCELLED" },
+    { label: t("totalOrders"), value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", icon: <ClipboardList className={IC18} />, filter: "" },
+    { label: t("received"), value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: <Inbox className={IC18} />, filter: "RECEIVED" },
+    { label: t("inProgress"), value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: <Wrench className={IC18} />, filter: "DIAGNOSING" },
+    { label: t("ready"), value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: <CheckCircle2 className={IC18} />, filter: "DONE" },
+    { label: t("revenue"), value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", icon: <DollarSign className={IC18} />, filter: null, href: "/dashboard/analytics" },
+    { label: t("delivered"), value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", icon: <PackageCheck className={IC18} />, filter: "DELIVERED" },
+    { label: t("cancelled"), value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", icon: <XCircle className={IC18} />, filter: "CANCELLED" },
   ];
 
   const emptyState = (colSpan: number) => (
@@ -369,11 +373,11 @@ export default function DashboardPage() {
       <td colSpan={colSpan} className="px-4 py-12 text-center">
         <div className="space-y-3">
           <ClipboardList className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-          <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? "No orders match your search" : "No work orders yet"}</p>
-          <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
+          <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? t("noOrdersMatchSearch") : t("noWorkOrdersYet")}</p>
+          <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? t("tryDifferentSearch") : t("createFirstWorkOrder")}</p>
           {!search && !statusFilter && !noContactFilter && (
             <Link href="/dashboard/workorders/new" className="inline-block mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
-              + New Work Order
+              + {t("newWorkOrder")}
             </Link>
           )}
         </div>
@@ -401,18 +405,18 @@ export default function DashboardPage() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !bulkLoading && setDeleteConfirm(false)}>
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Delete work orders</h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t("deleteWorkOrders")}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Delete {selected.size} order{selected.size === 1 ? "" : "s"}? This cannot be undone.
+              Delete {selected.size} order{selected.size === 1 ? "" : "s"}? {t("cannotBeUndone")}
             </p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setDeleteConfirm(false)} disabled={bulkLoading}
                 className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
-                Cancel
+                {t("cancel")}
               </button>
               <button onClick={bulkDelete} disabled={bulkLoading}
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-                {bulkLoading ? "Deleting..." : "Delete"}
+                {bulkLoading ? t("deleting") : t("deleteBtn")}
               </button>
             </div>
           </div>
@@ -421,7 +425,7 @@ export default function DashboardPage() {
 
       {/* Header */}
       <PageHeader
-        title="Work Orders"
+        title={t("workOrders")}
         subtitle="Manage all repair jobs"
         actions={
           <>
@@ -429,7 +433,7 @@ export default function DashboardPage() {
               <RefreshCw className="w-[18px] h-[18px]" />
             </button>
             <Link href="/dashboard/workorders/new" className="px-3 py-2 md:px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium whitespace-nowrap">
-              <span className="hidden sm:inline">+ New Work Order</span>
+              <span className="hidden sm:inline">+ {t("newWorkOrder")}</span>
               <span className="sm:hidden">+ New</span>
             </Link>
           </>
@@ -465,7 +469,7 @@ export default function DashboardPage() {
       {/* ── Copilot Morning Briefing ─────────────────────────────────── */}
       {user?.role === "ADMIN" && !user?.isSuperAdmin && !briefingDismissed && (briefing || briefingLoading || briefingError) && (
         <CopilotPanel
-          title="Morning Briefing"
+          title={t("morningBriefing")}
           description={`Generated for ${new Date().toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}`}
           loading={briefingLoading}
           error={briefingError}
@@ -481,11 +485,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Today&apos;s Appointments</h2>
-            <Link href="/dashboard/appointments" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500">View all →</Link>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("todaysAppointments")}</h2>
+            <Link href="/dashboard/appointments" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500">{t("viewAll")} →</Link>
           </div>
           {todayAppts.length === 0 ? (
-            <p className="text-sm text-slate-400 py-3 text-center">No appointments today</p>
+            <p className="text-sm text-slate-400 py-3 text-center">{t("noAppointmentsToday")}</p>
           ) : (
             <div className="space-y-2">
               {todayAppts.map(a => (
@@ -502,9 +506,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Recent Activity</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t("recentActivity")}</h2>
           {recentActivity.length === 0 ? (
-            <p className="text-sm text-slate-400 py-3 text-center">No recent activity</p>
+            <p className="text-sm text-slate-400 py-3 text-center">{t("noRecentActivity")}</p>
           ) : (
             <div className="space-y-1 max-h-48 overflow-y-auto -mx-1 px-1">
               {recentActivity.map(a => (
@@ -529,7 +533,7 @@ export default function DashboardPage() {
       {/* Search */}
       <input
         className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-        placeholder="Search by customer, phone, device, order #..."
+        placeholder={t("searchWorkOrders")}
         value={search} onChange={(e) => setSearch(e.target.value)} />
 
       {/* Status filter pills — horizontally scrollable on mobile */}
@@ -538,17 +542,17 @@ export default function DashboardPage() {
           {["", ...STATUS_OPTIONS].map((s) => (
             <button key={s} onClick={() => { setStatusFilter(s); setNoContactFilter(false); }}
               className={`px-3.5 py-1.5 text-xs rounded-full border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${!noContactFilter && statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
-              {s || "All"}
+              {s || t("all")}
             </button>
           ))}
           <button onClick={() => { setNoContactFilter(v => !v); setStatusFilter(""); }}
             className={`px-3.5 py-1.5 text-xs rounded-full border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
-            No contact 3d+
+            {t("noContact3d")}
           </button>
           {branches.length > 0 && (
             <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
               className="px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 focus:outline-none focus:border-blue-500">
-              <option value="">🏢 All Branches</option>
+              <option value="">🏢 {t("allBranches")}</option>
               {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           )}
@@ -567,32 +571,32 @@ export default function DashboardPage() {
       {/* Bulk actions */}
       {selected.size > 0 && (
         <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800/50 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
-          <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">{selected.size} selected</span>
+          <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">{selected.size} {t("selected")}</span>
           <div className="flex items-center gap-2 flex-wrap">
             <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
               className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none">
-              <option value="">Change status...</option>
+              <option value="">{t("changeStatus")}</option>
               {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <button onClick={applyBulkStatus} disabled={!bulkStatus || bulkLoading}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">Apply</button>
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{t("apply")}</button>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <select value={bulkEngineer} onChange={e => setBulkEngineer(e.target.value)}
               className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none">
-              <option value="">Assign engineer...</option>
+              <option value="">{t("assignEngineer")}</option>
               {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
             <button onClick={applyBulkEngineer} disabled={!bulkEngineer || bulkLoading}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">Assign</button>
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg">{t("assign")}</button>
           </div>
           <div className="flex items-center gap-2 sm:ml-auto">
             <button onClick={exportSelected} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">
-              ⬇ Export ({selected.size})
+              ⬇ {t("exportBtn")} ({selected.size})
             </button>
             <button onClick={() => setDeleteConfirm(true)} disabled={bulkLoading}
               className="px-3 py-1.5 bg-red-100 dark:bg-red-700/40 hover:bg-red-200 dark:hover:bg-red-700/70 disabled:opacity-50 text-red-600 dark:text-red-400 text-xs rounded-lg transition-colors">
-              🗑 Delete ({selected.size})
+              🗑 {t("deleteBtn")} ({selected.size})
             </button>
             <button onClick={() => setSelected(new Set())} className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">✕</button>
           </div>
@@ -621,11 +625,11 @@ export default function DashboardPage() {
         {!loading && orders.length === 0 && (
           <div className="py-12 text-center space-y-3">
             <ClipboardList className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-            <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? "No orders match your search" : "No work orders yet"}</p>
-            <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? "Try a different search or filter" : "Create your first work order to get started"}</p>
+            <p className="text-slate-400 font-medium">{search || statusFilter || noContactFilter ? t("noOrdersMatchSearch") : t("noWorkOrdersYet")}</p>
+            <p className="text-slate-400 text-sm">{search || statusFilter || noContactFilter ? t("tryDifferentSearch") : t("createFirstWorkOrder")}</p>
             {!search && !statusFilter && !noContactFilter && (
               <Link href="/dashboard/workorders/new" className="inline-block mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
-                + New Work Order
+                + {t("newWorkOrder")}
               </Link>
             )}
           </div>
@@ -636,7 +640,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 px-1">
             <input type="checkbox" checked={orders.length > 0 && selected.size === orders.length}
               onChange={toggleSelectAll} className="rounded border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-pointer" />
-            <span className="text-xs text-slate-500">Select all</span>
+            <span className="text-xs text-slate-500">{t("selectAll")}</span>
           </div>
         )}
 
@@ -690,7 +694,7 @@ export default function DashboardPage() {
               </div>
               <Link href={`/dashboard/workorders/${o.id}`}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium transition-colors">
-                View →
+                {t("view")} →
               </Link>
             </div>
           </div>
@@ -702,7 +706,7 @@ export default function DashboardPage() {
         <div style={{ position: "relative" }}>
           <button onClick={() => setShowColPicker(o => !o)}
             className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            Columns ▾
+            {t("columns")} ▾
           </button>
           {showColPicker && (
             <>
@@ -730,14 +734,14 @@ export default function DashboardPage() {
                 <input type="checkbox" checked={orders.length > 0 && selected.size === orders.length}
                   onChange={toggleSelectAll} className="rounded border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-pointer" />
               </th>
-              {visibleCols.orderNumber && <SortableTh label="Order #" sortField="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-              {visibleCols.customer && <SortableTh label="Customer" sortField="customer" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-              {visibleCols.device && <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Device</th>}
-              {visibleCols.fault && <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Fault</th>}
-              {visibleCols.status && <SortableTh label="Status" sortField="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-              {visibleCols.assignee && <SortableTh label="Assigned To" sortField="assignee" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-              {visibleCols.total && <SortableTh label="Total" sortField="total" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-              {visibleCols.received && <SortableTh label="Date" sortField="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.orderNumber && <SortableTh label={t("orderHash")} sortField="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.customer && <SortableTh label={t("customer")} sortField="customer" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.device && <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("device")}</th>}
+              {visibleCols.fault && <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("fault")}</th>}
+              {visibleCols.status && <SortableTh label={t("status")} sortField="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.assignee && <SortableTh label={t("assignedTo")} sortField="assignee" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.total && <SortableTh label={t("total")} sortField="total" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+              {visibleCols.received && <SortableTh label={t("date")} sortField="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
               <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium"></th>
             </tr>
           </thead>
@@ -816,7 +820,7 @@ export default function DashboardPage() {
                   <td className="px-4 py-3 text-slate-500 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
                 )}
                 <td className="px-4 py-3">
-                  <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">View →</Link>
+                  <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">{t("view")} →</Link>
                 </td>
               </tr>
             ))}
@@ -827,13 +831,13 @@ export default function DashboardPage() {
       {/* Pagination */}
       {(orders.length === PAGE_SIZE || page > 1) && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500">Showing {(page - 1) * PAGE_SIZE + 1}–{(page - 1) * PAGE_SIZE + orders.length}</p>
+          <p className="text-xs text-slate-500">{t("showing")} {(page - 1) * PAGE_SIZE + 1}–{(page - 1) * PAGE_SIZE + orders.length}</p>
           <div className="flex gap-2">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">← Prev</button>
-            <span className="px-3 py-1.5 text-xs text-slate-400">Page {page}</span>
+              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">← {t("prev")}</button>
+            <span className="px-3 py-1.5 text-xs text-slate-400">{t("page")} {page}</span>
             <button onClick={() => setPage(p => p + 1)} disabled={orders.length < PAGE_SIZE}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">Next →</button>
+              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">{t("next")} →</button>
           </div>
         </div>
       )}
