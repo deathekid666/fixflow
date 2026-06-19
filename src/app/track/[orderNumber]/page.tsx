@@ -207,6 +207,16 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
               </div>
             )}
 
+            {/* Delivered banner — only when status is exactly DELIVERED */}
+            {data.status === "DELIVERED" && (
+              <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", border: "2px solid #475569", borderRadius: 20, padding: "24px 20px", textAlign: "center", boxShadow: "0 0 40px rgba(71,85,105,0.25)" }}>
+                <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
+                <p style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: "#e2e8f0", letterSpacing: "-0.02em" }}>
+                  Your device has been delivered. Thank you!
+                </p>
+              </div>
+            )}
+
             {/* Status banner */}
             <div style={{ background: config.bg, borderRadius: 16, padding: 20, border: `1px solid ${config.color}30` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
