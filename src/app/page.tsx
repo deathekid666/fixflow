@@ -1,429 +1,923 @@
 "use client";
-
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Wrench, ArrowRight, Check, Zap, Users, BarChart3, Package, Calendar, Star } from "lucide-react";
+import {
+  Wrench, CheckCircle2, Zap, Users, BarChart3, Package,
+  Calendar, ChevronDown, Menu, X, MessageSquare,
+} from "lucide-react";
 
-const BG = "#0a0f1e";
+// ── CountUp ──────────────────────────────────────────────────────────────────
+function CountUp({ to, started }: { to: number; started: boolean }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!started) return;
+    let current = 0;
+    const duration = 1400;
+    const step = 16;
+    const increment = to / (duration / step);
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= to) { setCount(to); clearInterval(timer); }
+      else setCount(Math.floor(current));
+    }, step);
+    return () => clearInterval(timer);
+  }, [started, to]);
+  return <>{count}</>;
+}
 
+// ── Nav links ─────────────────────────────────────────────────────────────────
+const NAV = [
+  { label: "Features", href: "#features" },
+  { label: "AI", href: "#ai" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "FAQ", href: "#faq" },
+  { label: "Track Repairs", href: "/track" },
+];
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [typeText, setTypeText] = useState("");
+  const [aiVisible, setAiVisible] = useState(false);
+  const [countersOn, setCountersOn] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  const QUERY = "iPhone 14 black screen after drop";
+
+  // Typewriter
+  useEffect(() => {
+    let i = 0;
+    const t = setInterval(() => {
+      setTypeText(QUERY.slice(0, i + 1));
+      i++;
+      if (i >= QUERY.length) {
+        clearInterval(t);
+        setTimeout(() => setAiVisible(true), 600);
+      }
+    }, 55);
+    return () => clearInterval(t);
+  }, []);
+
+  // Counter IntersectionObserver
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setCountersOn(true); }, { threshold: 0.4 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <div style={{ background: BG, minHeight: "100vh", color: "white", fontFamily: "inherit" }}>
+    <>
+      {/* ── Global styles ────────────────────────────────────────────────── */}
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideResponse {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.85)} }
 
-      {/* NAVBAR */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: 56,
-        background: "rgba(10,15,30,0.9)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
-      }}>
-        <div style={{
-          maxWidth: 1200, margin: "0 auto", height: "100%",
-          display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 30, height: 30, borderRadius: 8, background: "#2563eb",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Wrench size={15} color="white" />
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: "white" }}>FixFlow</span>
-          </div>
+        .fu { animation: fadeUp 0.65s cubic-bezier(.22,1,.36,1) both; }
+        .fi { animation: fadeIn 0.5s ease both; }
+        .d1 { animation-delay:.08s }
+        .d2 { animation-delay:.18s }
+        .d3 { animation-delay:.30s }
+        .d4 { animation-delay:.44s }
+        .d5 { animation-delay:.60s }
+        .d6 { animation-delay:.78s }
 
-          <nav style={{ display: "flex", gap: 28 }}>
-            {[["#features", "Features"], ["#pricing", "Pricing"], ["#faq", "FAQ"], ["/track", "Track Repair"]].map(([href, label]) => (
-              <Link key={href} href={href} style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", textDecoration: "none" }}>
-                {label}
-              </Link>
-            ))}
-          </nav>
+        .slide-r { animation: slideResponse 0.35s ease both; }
+        .cursor  { display:inline-block;width:2px;height:.9em;background:#fff;margin-left:1px;vertical-align:middle;animation:blink 1s step-end infinite; }
+        .pulse-d { animation: pulse-dot 2s ease-in-out infinite; }
 
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <Link href="/login" style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", textDecoration: "none" }}>
-              Sign in
-            </Link>
-            <Link href="/register" style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "#2563eb", color: "white", fontSize: 14, fontWeight: 600,
-              padding: "9px 20px", borderRadius: 8, textDecoration: "none",
-            }}>
-              Get started <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
-      </div>
+        .card {
+          transition: transform 0.2s cubic-bezier(.22,1,.36,1), box-shadow 0.2s ease;
+        }
+        .card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 24px 48px rgba(0,0,0,.5);
+        }
 
-      {/* HERO */}
-      <div style={{ paddingTop: 140, paddingBottom: 80, textAlign: "center", paddingLeft: 24, paddingRight: 24 }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <p style={{
-            fontSize: 13, fontWeight: 600, color: "#60a5fa",
-            letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 20,
-          }}>
-            REPAIR SHOP PLATFORM
-          </p>
-          <h1 style={{
-            fontSize: "clamp(40px,6vw,68px)", fontWeight: 800, color: "white",
-            lineHeight: 1.08, letterSpacing: -2, margin: "0 0 20px",
-          }}>
-            Your repair shop, finally organized.
-          </h1>
-          <p style={{
-            fontSize: 18, color: "rgba(255,255,255,0.45)", lineHeight: 1.6,
-            maxWidth: 520, margin: "0 auto 36px",
-          }}>
-            Work orders, customer tracking, inventory, payments, and AI diagnostics — one dashboard that replaces WhatsApp and spreadsheets.
-          </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
-            <Link href="/register" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#2563eb", color: "white", fontWeight: 600, fontSize: 15,
-              padding: "12px 28px", borderRadius: 10, textDecoration: "none",
-            }}>
-              Start free trial <ArrowRight size={15} />
-            </Link>
-            <Link href="#features" style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)",
-              fontSize: 15, padding: "12px 24px", borderRadius: 10,
-              textDecoration: "none", background: "transparent",
-            }}>
-              See features
-            </Link>
-          </div>
-          <div style={{ display: "flex", gap: 20, justifyContent: "center", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>
-            {["No credit card", "Cancel anytime", "Free for 14 days"].map((text) => (
-              <span key={text} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                <Check size={13} color="#22c55e" /> {text}
-              </span>
-            ))}
-          </div>
-        </div>
+        .hero-grid {
+          background-image:
+            linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+          background-size: 72px 72px;
+        }
 
-        {/* DASHBOARD MOCKUP */}
-        <div style={{
-          marginTop: 56, marginLeft: "auto", marginRight: "auto", maxWidth: 900,
-          borderRadius: 14, overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.5)",
-        }}>
-          {/* Browser bar */}
-          <div style={{
-            height: 38, background: "#111827",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
-            display: "flex", alignItems: "center", padding: "0 14px", gap: 6,
-          }}>
-            {[["#ff5f57"], ["#febc2e"], ["#28c840"]].map(([bg], i) => (
-              <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: bg }} />
-            ))}
-            <div style={{ flex: 1, textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
-              app.fixflow.io/dashboard
-            </div>
-          </div>
+        html { scroll-behavior: smooth; }
+      `}</style>
 
-          {/* Dashboard body */}
-          <div style={{ display: "flex", background: "#0d1117", height: 380 }}>
-            {/* Sidebar */}
-            <div style={{ width: 180, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "18px 10px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 8px", marginBottom: 20 }}>
-                <Wrench size={14} color="#60a5fa" />
-                <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>FixFlow</span>
+      <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+
+        {/* ════════════════════════════════════════════════════════════════
+            NAVBAR
+        ════════════════════════════════════════════════════════════════ */}
+        <nav className="fixed top-0 inset-x-0 z-50 h-16 flex items-center backdrop-blur-xl bg-slate-950/80 border-b border-white/5">
+          <div className="max-w-7xl mx-auto w-full px-6 flex items-center justify-between gap-6">
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
+                <Wrench className="w-4 h-4 text-white" />
               </div>
-              {[
-                ["Work Orders", true],
-                ["Customers", false],
-                ["Parts", false],
-                ["Analytics", false],
-                ["Settings", false],
-              ].map(([label, active]) => (
-                <div key={label as string} style={{
-                  display: "flex", alignItems: "center", gap: 9,
-                  padding: "7px 10px", borderRadius: 7, fontSize: 12, marginBottom: 2,
-                  background: active ? "rgba(37,99,235,0.15)" : "transparent",
-                  color: active ? "#60a5fa" : "rgba(255,255,255,0.3)",
-                }}>
+              <span className="font-bold text-xl text-white tracking-tight">FixFlow</span>
+            </Link>
+
+            {/* Center links */}
+            <div className="hidden md:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
+              {NAV.map(({ label, href }) => (
+                <a key={label} href={href}
+                  className="text-sm text-slate-400 hover:text-white transition-colors duration-150 whitespace-nowrap">
                   {label}
-                </div>
+                </a>
               ))}
             </div>
 
-            {/* Main content */}
-            <div style={{ flex: 1, padding: 20, overflow: "hidden" }}>
-              {/* Stats row */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
-                {[
-                  ["Active Orders", "24", "#60a5fa"],
-                  ["Revenue", "$8,420", "#34d399"],
-                  ["Avg Time", "2.4h", "#a78bfa"],
-                  ["Rating", "4.9★", "#fbbf24"],
-                ].map(([label, value, color]) => (
-                  <div key={label as string} style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: 8, padding: "10px 12px",
-                  }}>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>{label}</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: color as string }}>{value}</div>
-                  </div>
-                ))}
-              </div>
+            {/* Right */}
+            <div className="hidden md:flex items-center gap-4 flex-shrink-0">
+              <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+                Sign in
+              </Link>
+              <Link href="/register"
+                className="bg-white text-slate-900 font-semibold text-sm px-5 py-2 rounded-lg hover:bg-slate-100 transition-all duration-150 shadow-sm">
+                Start Free Trial
+              </Link>
+            </div>
 
-              {/* Table */}
-              <div style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.05)",
-                borderRadius: 8, overflow: "hidden",
-              }}>
-                <div style={{
-                  display: "grid", gridTemplateColumns: "90px 1fr 130px 90px",
-                  padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  fontSize: 10, color: "rgba(255,255,255,0.2)",
-                }}>
-                  {["ORDER", "CUSTOMER", "DEVICE", "STATUS"].map((h) => <div key={h}>{h}</div>)}
-                </div>
-                {[
-                  ["WO-0091", "Ahmed K.", "iPhone 14 Pro", "REPAIRING", "rgba(249,115,22,0.15)", "#f97316"],
-                  ["WO-0090", "Sara M.", "Samsung S23", "DONE", "rgba(34,197,94,0.15)", "#22c55e"],
-                  ["WO-0089", "Karim B.", "Pixel 7", "DIAGNOSING", "rgba(234,179,8,0.15)", "#eab308"],
-                  ["WO-0088", "Nadia R.", "iPhone 13", "DELIVERED", "rgba(100,116,139,0.15)", "#94a3b8"],
-                ].map(([id, name, device, status, bg, color]) => (
-                  <div key={id as string} style={{
-                    display: "grid", gridTemplateColumns: "90px 1fr 130px 90px",
-                    padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.03)",
-                    fontSize: 12, alignItems: "center",
-                  }}>
-                    <div style={{ fontFamily: "monospace", color: "rgba(255,255,255,0.3)" }}>{id}</div>
-                    <div style={{ fontWeight: 500, color: "white" }}>{name}</div>
-                    <div style={{ color: "rgba(255,255,255,0.4)" }}>{device}</div>
-                    <div>
-                      <span style={{
-                        background: bg as string, color: color as string,
-                        fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 100,
-                      }}>{status}</span>
+            {/* Mobile toggle */}
+            <button onClick={() => setMobileOpen(v => !v)}
+              className="md:hidden text-slate-400 hover:text-white transition-colors -mr-1 p-1">
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+          {/* Mobile drawer */}
+          {mobileOpen && (
+            <div className="absolute top-16 inset-x-0 bg-slate-900/95 backdrop-blur-xl border-b border-white/5 px-6 py-5 flex flex-col gap-4 md:hidden">
+              {NAV.map(({ label, href }) => (
+                <a key={label} href={href} onClick={() => setMobileOpen(false)}
+                  className="text-sm text-slate-300 hover:text-white transition-colors py-1">
+                  {label}
+                </a>
+              ))}
+              <div className="flex gap-3 pt-3 border-t border-white/10">
+                <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors py-1">Sign in</Link>
+                <Link href="/register"
+                  className="bg-white text-slate-900 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-slate-100 transition-all">
+                  Start Free Trial
+                </Link>
+              </div>
+            </div>
+          )}
+        </nav>
+
+        {/* ════════════════════════════════════════════════════════════════
+            HERO
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="relative min-h-screen flex items-center justify-center pt-16 pb-12 overflow-hidden">
+          {/* Grid */}
+          <div className="absolute inset-0 hero-grid pointer-events-none" />
+          {/* Radial glow */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse 90% 55% at 50% 20%, rgba(37,99,235,.13), transparent 70%)" }} />
+
+          <div className="relative max-w-5xl mx-auto px-6 text-center w-full">
+
+            {/* Badge */}
+            <div className="fu d1 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 pulse-d" />
+              ✦ AI-Powered Repair Shop Platform
+            </div>
+
+            {/* Headline */}
+            <h1 className="fu d2 text-5xl md:text-7xl font-bold text-white leading-[1.08] tracking-tight">
+              The smarter way to<br />
+              <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent">
+                run your repair shop
+              </span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="fu d3 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mt-6 leading-relaxed">
+              Work orders, AI diagnostics, customer tracking, inventory, and payments —
+              one platform that replaces WhatsApp and spreadsheets.
+            </p>
+
+            {/* CTAs */}
+            <div className="fu d4 flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
+              <Link href="/register"
+                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105 hover:shadow-blue-500/40">
+                Start Free Trial — 14 Days
+              </Link>
+              <a href="#features"
+                className="text-slate-300 hover:text-white text-base inline-flex items-center justify-center gap-1.5 transition-colors duration-150 hover:underline underline-offset-4">
+                See how it works →
+              </a>
+            </div>
+
+            {/* Trust */}
+            <p className="fu d5 text-sm text-slate-500 mt-5">
+              No credit card required · Cancel anytime · 14-day free trial
+            </p>
+
+            {/* Dashboard mockup */}
+            <div className="fu d6 mt-16 max-w-5xl mx-auto">
+              <div className="rounded-2xl border border-white/10 shadow-2xl shadow-blue-500/[0.07] overflow-hidden ring-1 ring-white/5">
+                {/* Browser chrome */}
+                <div className="bg-slate-800/90 px-4 py-3 flex items-center gap-3 border-b border-white/5">
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/70" />
+                  </div>
+                  <div className="flex-1 flex justify-center">
+                    <div className="bg-slate-700/60 rounded-md px-4 py-1 text-xs text-slate-400 max-w-xs w-full text-center">
+                      app.fixflow.ma/dashboard
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SOCIAL PROOF BAR */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "18px 24px", textAlign: "center" }}>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", margin: 0 }}>
-          Used by repair shops across Europe, Middle East, and Americas
-        </p>
-      </div>
-
-      {/* FEATURES */}
-      <div id="features" style={{ padding: "88px 24px", maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: "#60a5fa", letterSpacing: "0.1em", margin: "0 0 12px" }}>
-            FEATURES
-          </p>
-          <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 700, color: "white", letterSpacing: -1, margin: "0 0 14px" }}>
-            Everything your shop needs
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", maxWidth: 420, margin: "0 auto" }}>
-            Replace the chaos of WhatsApp groups and spreadsheets with one tool.
-          </p>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-          {/* Card 1 — span 2 */}
-          <div style={{
-            gridColumn: "span 2",
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 14, padding: 28,
-          }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(37,99,235,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-              <Wrench size={18} color="#60a5fa" />
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "white", letterSpacing: -0.5, margin: "0 0 8px" }}>Work Orders</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, margin: 0 }}>
-              Full lifecycle tracking from intake to delivery. Photos, checklists, parts, payments, and customer chat — all in one place.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div style={{
-            background: "linear-gradient(135deg, rgba(124,58,237,0.12), rgba(37,99,235,0.08))",
-            border: "1px solid rgba(124,58,237,0.15)", borderRadius: 14, padding: 28,
-          }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(124,58,237,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-              <Zap size={18} color="#a78bfa" />
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "white", letterSpacing: -0.5, margin: "0 0 8px" }}>AI Assistant</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, margin: "0 0 14px" }}>
-              Describe the fault, get repair steps, parts list, and price suggestion instantly.
-            </p>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", background: "rgba(124,58,237,0.15)", padding: "3px 10px", borderRadius: 100 }}>
-              Only on FixFlow
-            </span>
-          </div>
-
-          {/* Card 3 */}
-          <div style={{
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 14, padding: 28,
-          }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-              <BarChart3 size={18} color="#34d399" />
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "white", letterSpacing: -0.5, margin: "0 0 8px" }}>Analytics</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, margin: 0 }}>
-              Revenue charts, engineer performance, and industry benchmarks.
-            </p>
-          </div>
-
-          {/* Card 4 — span 2 */}
-          <div style={{
-            gridColumn: "span 2",
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 14, padding: 28,
-          }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-              <Users size={18} color="#34d399" />
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "white", letterSpacing: -0.5, margin: "0 0 8px" }}>Customer Portal</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, margin: 0 }}>
-              Customers track repairs in real time, chat with your shop, and rate the service. No app needed.
-            </p>
-          </div>
-
-          {/* Card 5 */}
-          <div style={{
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 14, padding: 28,
-          }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(251,191,36,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-              <Calendar size={18} color="#fbbf24" />
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "white", letterSpacing: -0.5, margin: "0 0 8px" }}>Appointments</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, margin: 0 }}>
-              Smart booking slots based on your capacity. Customers book online, you confirm.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* STATS */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "72px 24px" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24, textAlign: "center" }}>
-          {[
-            ["122+", "Features"],
-            ["30+", "Countries"],
-            ["$0", "Setup cost"],
-            ["14", "Day free trial"],
-          ].map(([value, label]) => (
-            <div key={label}>
-              <div style={{ fontSize: "clamp(36px,5vw,52px)", fontWeight: 800, color: "white", letterSpacing: -2 }}>{value}</div>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", margin: "6px 0 0" }}>{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* PRICING */}
-      <div id="pricing" style={{ padding: "88px 24px", maxWidth: 960, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", marginBottom: 48 }}>
-          <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 700, color: "white", letterSpacing: -1, margin: "0 0 10px" }}>
-            Simple pricing
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", margin: 0 }}>
-            Start free. No credit card required.
-          </p>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
-          {[
-            {
-              name: "Starter", price: "$29", desc: "For solo technicians", popular: false,
-              features: ["50 work orders/month", "Up to 3 engineers", "Customer portal", "Basic analytics", "Email support"],
-            },
-            {
-              name: "Pro", price: "$59", desc: "For growing shops", popular: true,
-              features: ["Unlimited work orders", "Unlimited engineers", "AI Repair Assistant", "Advanced analytics", "Commission tracking", "Priority support"],
-            },
-            {
-              name: "Business", price: "$99", desc: "For multiple locations", popular: false,
-              features: ["Everything in Pro", "Multiple branches", "Custom permissions", "White label", "API access", "Dedicated support"],
-            },
-          ].map(({ name, price, desc, popular, features }) => (
-            <div key={name} style={{
-              background: popular ? "rgba(37,99,235,0.06)" : "rgba(255,255,255,0.02)",
-              border: popular ? "1px solid rgba(37,99,235,0.35)" : "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 14, padding: 26, position: "relative",
-              boxShadow: popular ? "0 0 40px rgba(37,99,235,0.08)" : "none",
-            }}>
-              {popular && (
-                <div style={{
-                  position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)",
-                  background: "#2563eb", color: "white", fontSize: 10, fontWeight: 700,
-                  padding: "4px 14px", borderRadius: "0 0 8px 8px", letterSpacing: "0.05em",
-                }}>
-                  MOST POPULAR
                 </div>
-              )}
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: "0 0 6px" }}>{name}</p>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                <span style={{ fontSize: 42, fontWeight: 800, color: "white", letterSpacing: -2 }}>{price}</span>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>/mo</span>
-              </div>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", margin: "6px 0 20px" }}>{desc}</p>
-              <Link href="/register" style={{
-                display: "block", textAlign: "center", textDecoration: "none",
-                fontWeight: 600, fontSize: 14, padding: "11px 0", borderRadius: 8, marginBottom: 20,
-                background: popular ? "#2563eb" : "rgba(255,255,255,0.06)",
-                color: "white",
-                border: popular ? "none" : "1px solid rgba(255,255,255,0.08)",
-              }}>
-                Get started
-              </Link>
-              <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                {features.map((f) => (
-                  <div key={f} style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
-                    <Check size={13} color={popular ? "#60a5fa" : "#34d399"} />
-                    {f}
+
+                {/* App */}
+                <div className="bg-slate-900 flex" style={{ minHeight: 400 }}>
+                  {/* Sidebar */}
+                  <div className="w-44 bg-slate-900 border-r border-white/5 p-3 flex-shrink-0 hidden sm:flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2 px-2 py-2 mb-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
+                        <Wrench className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-xs font-bold text-white">FixFlow</span>
+                    </div>
+                    {[
+                      { label: "Work Orders", active: true },
+                      { label: "Customers" },
+                      { label: "Inventory" },
+                      { label: "Analytics" },
+                      { label: "Appointments" },
+                      { label: "Settings" },
+                    ].map(item => (
+                      <div key={item.label}
+                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                          item.active
+                            ? "bg-blue-600/15 text-blue-400 font-medium"
+                            : "text-slate-500 hover:text-slate-300"
+                        }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${item.active ? "bg-blue-400" : "bg-transparent"}`} />
+                        {item.label}
+                      </div>
+                    ))}
                   </div>
-                ))}
+
+                  {/* Content */}
+                  <div className="flex-1 p-5 overflow-hidden">
+                    {/* Stat cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                      {[
+                        { label: "Active Orders", value: "24", delta: "+3 today" },
+                        { label: "Revenue (MTD)", value: "$8,420", delta: "+12%" },
+                        { label: "Avg Repair Time", value: "2.4h", delta: "−18 min" },
+                        { label: "Satisfaction", value: "4.9★", delta: "98%" },
+                      ].map(s => (
+                        <div key={s.label} className="bg-slate-800/70 rounded-xl p-3 border border-white/5">
+                          <div className="text-[10px] text-slate-500 mb-1 uppercase tracking-wide">{s.label}</div>
+                          <div className="text-sm font-bold text-white">{s.value}</div>
+                          <div className="text-[10px] text-emerald-400 mt-0.5">{s.delta}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Table */}
+                    <div className="bg-slate-800/50 rounded-xl border border-white/5 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5">
+                        <span className="text-xs font-semibold text-white">Recent Work Orders</span>
+                        <span className="text-[11px] text-blue-400">View all →</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs min-w-[520px]">
+                          <thead>
+                            <tr className="border-b border-white/5">
+                              {["Order #", "Customer", "Device", "Issue", "Status", "Total"].map(h => (
+                                <th key={h} className="text-left px-4 py-2 text-slate-500 font-medium">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[
+                              { id: "WO-2841", name: "James Carter", device: "iPhone 15 Pro", issue: "Screen replacement", status: "In Progress", amt: "$289", c: "blue" },
+                              { id: "WO-2840", name: "Maria Santos", device: "Samsung S24", issue: "Battery swap", status: "Ready", amt: "$95", c: "green" },
+                              { id: "WO-2839", name: "Ahmed Al-Rashid", device: "MacBook Air M2", issue: "Keyboard repair", status: "Diagnosed", amt: "$175", c: "yellow" },
+                              { id: "WO-2838", name: "Sophie Williams", device: "iPad Pro 12.9", issue: "Charging port", status: "Delivered", amt: "$120", c: "slate" },
+                            ].map(r => (
+                              <tr key={r.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                                <td className="px-4 py-2.5 font-mono text-slate-400">{r.id}</td>
+                                <td className="px-4 py-2.5 text-slate-200">{r.name}</td>
+                                <td className="px-4 py-2.5 text-slate-400">{r.device}</td>
+                                <td className="px-4 py-2.5 text-slate-400">{r.issue}</td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                    r.c === "blue"   ? "bg-blue-500/15 text-blue-400" :
+                                    r.c === "green"  ? "bg-emerald-500/15 text-emerald-400" :
+                                    r.c === "yellow" ? "bg-yellow-500/15 text-yellow-400" :
+                                                       "bg-slate-500/15 text-slate-400"
+                                  }`}>
+                                    <span className={`w-1 h-1 rounded-full ${
+                                      r.c === "blue" ? "bg-blue-400" : r.c === "green" ? "bg-emerald-400" :
+                                      r.c === "yellow" ? "bg-yellow-400" : "bg-slate-400"
+                                    }`} />
+                                    {r.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 text-white font-semibold">{r.amt}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* FINAL CTA */}
-      <div style={{ padding: "88px 24px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-        <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 700, color: "white", letterSpacing: -1, margin: "0 0 12px" }}>
-          Ready to run a better shop?
-        </h2>
-        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", margin: "0 0 32px" }}>
-          14-day free trial. No credit card. Cancel anytime.
-        </p>
-        <Link href="/register" style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          background: "#2563eb", color: "white", fontWeight: 600, fontSize: 15,
-          padding: "13px 32px", borderRadius: 10, textDecoration: "none",
-          boxShadow: "0 0 40px rgba(37,99,235,0.25)",
-        }}>
-          Get started free <ArrowRight size={15} />
-        </Link>
-      </div>
-
-      {/* FOOTER */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "32px 24px", textAlign: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 22, height: 22, borderRadius: 6, background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Wrench size={11} color="white" />
           </div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>FixFlow</span>
-        </div>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", margin: 0 }}>
-          © 2026 FixFlow. Built for repair shops worldwide.
-        </p>
-      </div>
+        </section>
 
-    </div>
+        {/* ════════════════════════════════════════════════════════════════
+            PROBLEM SECTION
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-24 px-6 bg-slate-900/40 border-y border-white/5">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                Still running your shop on WhatsApp?
+              </h2>
+              <p className="text-slate-400 text-lg max-w-xl mx-auto">
+                You&apos;re not alone. Most repair shops lose hours every day to manual work.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                {
+                  emoji: "🧾",
+                  title: "Lost receipts",
+                  desc: "Paper receipts disappear. No history means disputes, no warranty tracking, and customers claiming they already paid.",
+                },
+                {
+                  emoji: "💸",
+                  title: "Missed payments",
+                  desc: "No unified system means repairs go out unpaid. Tracking in WhatsApp threads leaves real money on the table.",
+                },
+                {
+                  emoji: "😤",
+                  title: "Angry customers",
+                  desc: "\"Is my phone ready?\" — you hear it 10 times a day. You lose 30 minutes just answering status questions.",
+                },
+              ].map(card => (
+                <div key={card.title}
+                  className="card bg-slate-900 border border-red-500/10 rounded-2xl p-6 hover:border-red-500/20 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-xl mb-4">
+                    {card.emoji}
+                  </div>
+                  <h3 className="text-white font-semibold text-base mb-2">{card.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{card.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            FEATURES BENTO GRID
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-24 px-6 bg-slate-950" id="features">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-blue-400 text-xs font-semibold uppercase tracking-[0.15em]">Features</span>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mt-3">Everything your shop needs</h2>
+              <p className="text-slate-400 mt-4 max-w-lg mx-auto">
+                One platform to replace every spreadsheet, WhatsApp thread, and paper receipt.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-12 gap-4">
+
+              {/* Work Orders — large */}
+              <div className="col-span-12 md:col-span-8 card bg-slate-900 border border-white/[0.07] rounded-2xl p-7 overflow-hidden">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-blue-400 uppercase tracking-widest">Work Orders</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1 mb-1">Every repair, perfectly tracked</h3>
+                <p className="text-slate-400 text-sm mb-5">From intake to delivery — photos, notes, payments, warranty — all in one place.</p>
+                <div className="bg-slate-800/60 rounded-xl border border-white/5 overflow-hidden">
+                  <div className="grid grid-cols-4 px-4 py-2 border-b border-white/5 text-[11px] text-slate-500 font-medium">
+                    <span>Customer</span><span>Device</span><span>Status</span><span>Amount</span>
+                  </div>
+                  {[
+                    { name: "James C.", device: "iPhone 15 Pro", status: "In Progress", amt: "$289", dot: "blue" },
+                    { name: "Maria S.", device: "Samsung S24", status: "Ready", amt: "$95", dot: "green" },
+                    { name: "Ahmed R.", device: "MacBook Air", status: "Diagnosed", amt: "$175", dot: "yellow" },
+                  ].map(r => (
+                    <div key={r.name} className="grid grid-cols-4 px-4 py-2.5 border-b border-white/[0.04] text-xs hover:bg-white/[0.02] transition-colors last:border-0">
+                      <span className="text-slate-200">{r.name}</span>
+                      <span className="text-slate-400">{r.device}</span>
+                      <span className="flex items-center gap-1.5 text-slate-400">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                          r.dot === "blue" ? "bg-blue-400" : r.dot === "green" ? "bg-emerald-400" : "bg-yellow-400"
+                        }`} />
+                        {r.status}
+                      </span>
+                      <span className="text-white font-semibold">{r.amt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI — small */}
+              <div className="col-span-12 md:col-span-4 card bg-slate-900 border border-white/[0.07] rounded-2xl p-7 relative overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse 80% 60% at 80% 20%, rgba(37,99,235,.07), transparent)" }} />
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-blue-400 uppercase tracking-widest">AI Assistant</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1 mb-1">Instant repair intelligence</h3>
+                <p className="text-slate-400 text-sm mb-5">Diagnose faults, suggest prices, draft messages.</p>
+                <div className="space-y-2">
+                  <div className="bg-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 border border-white/5">
+                    &ldquo;iPhone 14 no display after screen swap&rdquo;
+                  </div>
+                  <div className="bg-blue-600/15 rounded-xl px-3.5 py-2.5 text-xs text-blue-200 border border-blue-500/20">
+                    Likely backlight IC or FPC connector damage. Suggested price: $120–$180.
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Portal — small */}
+              <div className="col-span-12 md:col-span-4 card bg-slate-900 border border-white/[0.07] rounded-2xl p-7">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-widest">Customer Portal</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1 mb-1">Zero status calls</h3>
+                <p className="text-slate-400 text-sm mb-5">Customers track repairs with a live link. No app needed.</p>
+                <div className="bg-slate-800 rounded-xl border border-white/5 p-4">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-400 flex-shrink-0">JC</div>
+                    <div>
+                      <div className="text-white text-xs font-semibold">WO-2841 · iPhone 15 Pro</div>
+                      <div className="text-slate-500 text-[10px]">Screen replacement</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0">
+                    {["Received", "Diagnosed", "Repairing", "Ready"].map((step, i) => (
+                      <div key={step} className="flex items-center flex-1 last:flex-none">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className={`w-2.5 h-2.5 rounded-full border-2 flex-shrink-0 ${
+                            i <= 2 ? "border-blue-400 bg-blue-400" : "border-slate-600 bg-transparent"
+                          }`} />
+                          <span className={`text-[9px] whitespace-nowrap ${i <= 2 ? "text-blue-400" : "text-slate-600"}`}>{step}</span>
+                        </div>
+                        {i < 3 && <div className={`flex-1 h-px mb-3.5 mx-0.5 ${i < 2 ? "bg-blue-400" : "bg-slate-700"}`} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Analytics — large */}
+              <div className="col-span-12 md:col-span-8 card bg-slate-900 border border-white/[0.07] rounded-2xl p-7 overflow-hidden">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-purple-400 uppercase tracking-widest">Analytics</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1 mb-1">Revenue insights at a glance</h3>
+                <p className="text-slate-400 text-sm mb-5">Most profitable repairs, busiest days, growth trends — always current.</p>
+                <div className="flex items-end gap-1.5 h-28">
+                  {[38,58,44,72,50,88,65,82,55,96,70,100].map((h, i) => (
+                    <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                      <div className="rounded-t-[3px] transition-all" style={{
+                        height: `${h}%`,
+                        background: i >= 10
+                          ? "linear-gradient(to top, #2563eb, #60a5fa)"
+                          : i >= 8
+                          ? "rgba(37,99,235,.35)"
+                          : "rgba(37,99,235,.2)",
+                        minHeight: 4,
+                      }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-600 mt-2">
+                  {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map(m => (
+                    <span key={m}>{m}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Appointments — medium */}
+              <div className="col-span-12 md:col-span-6 card bg-slate-900 border border-white/[0.07] rounded-2xl p-7">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-orange-400 uppercase tracking-widest">Appointments</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1 mb-1">Fill your bench, not your voicemail</h3>
+                <p className="text-slate-400 text-sm mb-5">Customers book online. You stay focused on repairs.</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { time: "9:00 AM", name: "Maria S.", type: "Battery", open: false },
+                    { time: "10:30 AM", name: "Open slot", type: "", open: true },
+                    { time: "2:00 PM", name: "Ahmed R.", type: "Screen", open: false },
+                  ].map(slot => (
+                    <div key={slot.time} className={`rounded-xl p-3 border text-xs ${
+                      slot.open
+                        ? "border-dashed border-slate-700 bg-transparent"
+                        : "bg-slate-800/70 border-white/5"
+                    }`}>
+                      <div className="text-slate-500 text-[10px] mb-1">{slot.time}</div>
+                      <div className={`font-medium ${slot.open ? "text-slate-600" : "text-white"}`}>{slot.name}</div>
+                      {slot.type && <div className="text-slate-400 text-[10px] mt-0.5">{slot.type}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Inventory — medium */}
+              <div className="col-span-12 md:col-span-6 card bg-slate-900 border border-white/[0.07] rounded-2xl p-7">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                    <Package className="w-4 h-4 text-teal-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-widest">Inventory</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1 mb-1">Never run out of a critical part</h3>
+                <p className="text-slate-400 text-sm mb-5">Smart low-stock alerts. Supplier reorders in one click.</p>
+                <div className="space-y-3">
+                  {[
+                    { name: "iPhone 15 Pro Screen", qty: 3, max: 20, warn: true },
+                    { name: "Samsung S24 Battery", qty: 12, max: 20, warn: false },
+                    { name: "USB-C Charging Port", qty: 28, max: 30, warn: false },
+                    { name: "iPhone 14 Battery", qty: 1, max: 20, warn: true },
+                  ].map(item => (
+                    <div key={item.name} className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-300 flex-1 truncate">{item.name}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${item.warn ? "bg-red-400" : "bg-teal-400"}`}
+                            style={{ width: `${Math.min(100, (item.qty / item.max) * 100)}%` }} />
+                        </div>
+                        <span className={`w-5 text-right font-mono tabular-nums ${item.warn ? "text-red-400" : "text-slate-400"}`}>
+                          {item.qty}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            AI SECTION
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-24 px-6 relative overflow-hidden" id="ai">
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(37,99,235,.08), transparent 70%)" }} />
+          <div className="max-w-4xl mx-auto relative">
+            <div className="text-center mb-12">
+              <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-5">
+                <Zap className="w-3 h-3" /> Only on FixFlow
+              </span>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Meet your AI repair assistant</h2>
+              <p className="text-slate-400 text-lg max-w-xl mx-auto">
+                Describe the issue. Get instant diagnosis, estimated repair cost, and a customer message — in seconds.
+              </p>
+            </div>
+
+            {/* Chat UI */}
+            <div className="bg-slate-900 border border-white/[0.07] rounded-2xl overflow-hidden max-w-2xl mx-auto shadow-2xl shadow-black/50">
+              {/* Header */}
+              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5 bg-slate-800/40">
+                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-600/40">
+                  <Zap className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white leading-none">FixFlow AI</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Repair Assistant</div>
+                </div>
+                <div className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-d" />
+                  Online
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="p-5 space-y-4 min-h-52">
+                {/* User */}
+                <div className="flex justify-end">
+                  <div className="bg-blue-600 text-white text-sm px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-xs leading-relaxed">
+                    {typeText}
+                    {typeText.length < QUERY.length && <span className="cursor" />}
+                  </div>
+                </div>
+                {/* AI */}
+                {aiVisible && (
+                  <div className="flex gap-3 slide-r">
+                    <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Zap className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="bg-slate-800 border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-slate-200 leading-relaxed">
+                        <p className="font-semibold text-white mb-2">Diagnosis: Broken display assembly</p>
+                        <ul className="text-slate-300 text-xs space-y-1.5 list-none">
+                          <li>• Inspect for backlight damage before ordering a new screen</li>
+                          <li>• Test Face ID FPC connector — commonly damaged in drops</li>
+                          <li>• Use OEM display to preserve Face ID functionality</li>
+                        </ul>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 text-xs text-emerald-400">
+                          💰 Suggested price: $180–$240
+                        </div>
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 text-xs text-blue-400 cursor-pointer hover:bg-blue-500/15 transition-colors">
+                          📱 Draft customer message →
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="px-5 py-4 border-t border-white/5 bg-slate-900/50">
+                <div className="bg-slate-800/80 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-slate-500 flex items-center gap-2 cursor-text">
+                  <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                  Ask anything about a repair...
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            STATS
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-20 px-6 border-y border-white/5 bg-slate-950" ref={statsRef}>
+          <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
+            {[
+              { to: 122, suffix: "+", label: "Features built-in" },
+              { to: 30, suffix: "+", label: "Countries" },
+              { to: 0, prefix: "$", suffix: "", label: "Setup cost" },
+              { to: 14, suffix: "-day", label: "Free trial" },
+            ].map(s => (
+              <div key={s.label}>
+                <div className="text-4xl md:text-5xl font-bold text-white tabular-nums tracking-tight">
+                  {s.prefix}<CountUp to={s.to} started={countersOn} />{s.suffix}
+                </div>
+                <div className="text-slate-500 text-sm mt-2">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            PRICING
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-24 px-6 bg-slate-950" id="pricing">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-blue-400 text-xs font-semibold uppercase tracking-[0.15em]">Pricing</span>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mt-3">Simple, honest pricing</h2>
+              <p className="text-slate-400 mt-4">No hidden fees. Cancel anytime. 14-day free trial on all plans.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+
+              {/* Starter */}
+              <div className="card bg-slate-900 border border-white/[0.07] rounded-2xl p-7">
+                <div className="text-slate-400 text-sm font-medium mb-3">Starter</div>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-4xl font-bold text-white tracking-tight">$29</span>
+                  <span className="text-slate-500 text-sm">/month</span>
+                </div>
+                <p className="text-slate-500 text-sm mb-7 leading-relaxed">Perfect for solo technicians getting organized.</p>
+                <div className="space-y-3 mb-8">
+                  {["Up to 100 work orders/mo", "Customer tracking portal", "Basic analytics", "WhatsApp notifications", "Email support"].map(f => (
+                    <div key={f} className="flex items-start gap-2.5 text-sm text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+                <Link href="/register"
+                  className="block w-full text-center py-3 rounded-xl border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors">
+                  Start free trial
+                </Link>
+              </div>
+
+              {/* Pro — highlighted */}
+              <div className="card relative rounded-2xl p-px" style={{
+                background: "linear-gradient(135deg, rgba(37,99,235,.8) 0%, rgba(96,165,250,.4) 50%, rgba(37,99,235,.15) 100%)",
+              }}>
+                <div className="rounded-2xl p-7 h-full" style={{
+                  background: "linear-gradient(160deg, #0f1e3a 0%, #0f172a 60%)",
+                }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-white text-sm font-medium">Pro</span>
+                    <span className="bg-blue-600 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wide">
+                      Most Popular
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-4xl font-bold text-white tracking-tight">$59</span>
+                    <span className="text-slate-400 text-sm">/month</span>
+                  </div>
+                  <p className="text-slate-400 text-sm mb-7 leading-relaxed">For growing shops that want every feature.</p>
+                  <div className="space-y-3 mb-8">
+                    {["Unlimited work orders", "AI repair assistant", "Advanced analytics & reports", "Appointment booking", "Inventory management", "Multi-technician support", "Priority support"].map(f => (
+                      <div key={f} className="flex items-start gap-2.5 text-sm text-slate-200">
+                        <CheckCircle2 className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/register"
+                    className="block w-full text-center py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-blue-500/25">
+                    Start free trial
+                  </Link>
+                </div>
+              </div>
+
+              {/* Business */}
+              <div className="card bg-slate-900 border border-white/[0.07] rounded-2xl p-7">
+                <div className="text-slate-400 text-sm font-medium mb-3">Business</div>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-4xl font-bold text-white tracking-tight">$99</span>
+                  <span className="text-slate-500 text-sm">/month</span>
+                </div>
+                <p className="text-slate-500 text-sm mb-7 leading-relaxed">For multi-location chains and franchises.</p>
+                <div className="space-y-3 mb-8">
+                  {["Everything in Pro", "Multi-branch management", "White-label customer portal", "API access & webhooks", "Custom integrations", "Dedicated account manager", "SLA & uptime guarantee"].map(f => (
+                    <div key={f} className="flex items-start gap-2.5 text-sm text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+                <Link href="/register"
+                  className="block w-full text-center py-3 rounded-xl border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors">
+                  Start free trial
+                </Link>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            FAQ
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-24 px-6 bg-slate-900/30" id="faq">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-14">
+              <span className="text-blue-400 text-xs font-semibold uppercase tracking-[0.15em]">FAQ</span>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">Frequently asked questions</h2>
+            </div>
+            <div className="space-y-2">
+              {[
+                {
+                  q: "Do I need a credit card to start?",
+                  a: "No. Your 14-day free trial starts immediately with no payment info required. We only ask for a card when you decide to subscribe.",
+                },
+                {
+                  q: "Can I import my existing data?",
+                  a: "Yes. FixFlow supports CSV import for customers and work orders. Our onboarding wizard guides you through it in under 10 minutes.",
+                },
+                {
+                  q: "How does the customer tracking portal work?",
+                  a: "Each work order gets a unique link sent via WhatsApp or SMS. Customers see real-time status, photos, and pickup info — no app download needed.",
+                },
+                {
+                  q: "Is the AI assistant accurate?",
+                  a: "FixFlow AI gives actionable suggestions trained on repair data, not guarantees. Technicians always verify before acting. It's a powerful second opinion.",
+                },
+                {
+                  q: "Can I manage multiple locations?",
+                  a: "Yes. The Business plan supports multi-location management. Each branch has its own dashboard with central oversight and consolidated reporting.",
+                },
+                {
+                  q: "What happens when my trial ends?",
+                  a: "You'll get a reminder 3 days before. If you don't subscribe, your data is preserved for 30 days so you can export anytime. We never delete without warning.",
+                },
+              ].map((item, i) => (
+                <div key={i} className="border border-white/[0.07] rounded-xl overflow-hidden transition-colors hover:border-white/10">
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
+                    <span className="text-white font-medium text-sm pr-4">{item.q}</span>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
+                  </button>
+                  {openFaq === i && (
+                    <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed border-t border-white/5 pt-3">
+                      {item.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            CTA BANNER
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-24 px-6 relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(37,99,235,.1), transparent 70%)" }} />
+          <div className="max-w-2xl mx-auto text-center relative">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
+              Ready to ditch the spreadsheets?
+            </h2>
+            <p className="text-slate-400 text-lg mb-10">
+              Join repair shops across 30+ countries running on FixFlow.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/register"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105">
+                Start free trial — no credit card
+              </Link>
+              <Link href="/login"
+                className="text-slate-300 hover:text-white text-base flex items-center justify-center gap-1.5 transition-colors duration-150">
+                Already have an account →
+              </Link>
+            </div>
+            <p className="text-slate-600 text-sm mt-6">No credit card required · Cancel anytime</p>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            FOOTER
+        ════════════════════════════════════════════════════════════════ */}
+        <footer className="border-t border-white/5 py-16 px-6 bg-slate-950">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+              <div className="col-span-2 md:col-span-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <Wrench className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="font-bold text-white tracking-tight">FixFlow</span>
+                </div>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  The all-in-one repair shop management platform.
+                </p>
+              </div>
+              {[
+                { title: "Product", links: ["Features", "AI Assistant", "Pricing", "Changelog"] },
+                { title: "Company", links: ["About", "Blog", "Careers", "Press"] },
+                { title: "Support", links: ["Documentation", "Track Repair", "Status", "Contact"] },
+                { title: "Legal", links: ["Privacy Policy", "Terms of Service", "Security", "Cookies"] },
+              ].map(col => (
+                <div key={col.title}>
+                  <div className="text-white font-semibold text-sm mb-4">{col.title}</div>
+                  <div className="space-y-3">
+                    {col.links.map(link => (
+                      <div key={link}>
+                        <a href="#" className="text-slate-500 text-sm hover:text-white transition-colors duration-150">
+                          {link}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-slate-600 text-sm">© 2026 FixFlow. All rights reserved.</p>
+              <p className="text-slate-700 text-sm">Built for repair shops. Made for growth.</p>
+            </div>
+          </div>
+        </footer>
+
+      </div>
+    </>
   );
 }
