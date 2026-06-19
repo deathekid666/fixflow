@@ -801,6 +801,27 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
       )}
 
+      {/* Ready for pickup banner — only when status is exactly DONE */}
+      {order.status === "DONE" && (
+        <div className="rounded-xl px-5 py-4 flex items-center gap-4 bg-green-50 dark:bg-green-950/30 border-2 border-green-400 dark:border-green-600">
+          <span className="text-2xl">🎉</span>
+          <div>
+            <p className="text-sm font-bold text-green-700 dark:text-green-400">Device is ready for pickup!</p>
+            <p className="text-xs text-green-600 dark:text-green-500">Please notify the customer to come collect their device.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Delivered banner — only when status is exactly DELIVERED */}
+      {order.status === "DELIVERED" && (
+        <div className="rounded-xl px-5 py-4 flex items-center gap-4 bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700">
+          <span className="text-2xl">✅</span>
+          <div>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Device has been delivered. Thank you!</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
 
