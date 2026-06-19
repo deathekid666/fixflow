@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Wrench, CheckCircle2, Zap, Users, BarChart3, Package,
   Calendar, ChevronDown, Menu, X, MessageSquare,
+  ClipboardList, CreditCard, Bell, Shield,
 } from "lucide-react";
 
 // ── CountUp ──────────────────────────────────────────────────────────────────
@@ -120,59 +121,63 @@ export default function LandingPage() {
         {/* ════════════════════════════════════════════════════════════════
             NAVBAR
         ════════════════════════════════════════════════════════════════ */}
-        <nav className="fixed top-0 inset-x-0 z-50 h-16 flex items-center backdrop-blur-xl bg-slate-950/80 border-b border-white/5">
+        <nav className="fixed top-0 inset-x-0 z-50 h-16 flex items-center bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto w-full px-6 flex items-center justify-between gap-6">
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
+              <div className="w-8 h-8 bg-emerald-800 rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-xl text-white tracking-tight">FixFlow</span>
+              <span className="font-bold text-xl text-gray-900 tracking-tight">FixFlow</span>
             </Link>
 
             {/* Center links */}
             <div className="hidden md:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
               {NAV.map(({ label, href }) => (
                 <a key={label} href={href}
-                  className="text-sm text-slate-400 hover:text-white transition-colors duration-150 whitespace-nowrap">
+                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap">
                   {label}
                 </a>
               ))}
             </div>
 
             {/* Right */}
-            <div className="hidden md:flex items-center gap-4 flex-shrink-0">
-              <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+            <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+              <Link href="/login"
+                className="text-sm text-gray-700 hover:text-gray-900 border border-gray-300 px-4 py-2 rounded-full transition-colors">
                 Sign in
               </Link>
               <Link href="/register"
-                className="bg-white text-slate-900 font-semibold text-sm px-5 py-2 rounded-lg hover:bg-slate-100 transition-all duration-150 shadow-sm">
-                Start Free Trial
+                className="bg-emerald-800 text-white font-semibold text-sm px-5 py-2 rounded-full hover:bg-emerald-700 transition-all duration-150 shadow-sm">
+                Free Trial
               </Link>
             </div>
 
             {/* Mobile toggle */}
             <button onClick={() => setMobileOpen(v => !v)}
-              className="md:hidden text-slate-400 hover:text-white transition-colors -mr-1 p-1">
+              className="md:hidden text-gray-600 hover:text-gray-900 transition-colors -mr-1 p-1">
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
           {/* Mobile drawer */}
           {mobileOpen && (
-            <div className="absolute top-16 inset-x-0 bg-slate-900/95 backdrop-blur-xl border-b border-white/5 px-6 py-5 flex flex-col gap-4 md:hidden">
+            <div className="absolute top-16 inset-x-0 bg-white border-b border-gray-100 px-6 py-5 flex flex-col gap-4 md:hidden shadow-md">
               {NAV.map(({ label, href }) => (
                 <a key={label} href={href} onClick={() => setMobileOpen(false)}
-                  className="text-sm text-slate-300 hover:text-white transition-colors py-1">
+                  className="text-sm text-gray-700 hover:text-gray-900 transition-colors py-1">
                   {label}
                 </a>
               ))}
-              <div className="flex gap-3 pt-3 border-t border-white/10">
-                <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors py-1">Sign in</Link>
+              <div className="flex gap-3 pt-3 border-t border-gray-100">
+                <Link href="/login"
+                  className="text-sm text-gray-700 hover:text-gray-900 border border-gray-300 px-4 py-2 rounded-full transition-colors">
+                  Sign in
+                </Link>
                 <Link href="/register"
-                  className="bg-white text-slate-900 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-slate-100 transition-all">
-                  Start Free Trial
+                  className="bg-emerald-800 text-white font-semibold text-sm px-4 py-2 rounded-full hover:bg-emerald-700 transition-all">
+                  Free Trial
                 </Link>
               </div>
             </div>
@@ -182,75 +187,79 @@ export default function LandingPage() {
         {/* ════════════════════════════════════════════════════════════════
             HERO
         ════════════════════════════════════════════════════════════════ */}
-        <section className="relative min-h-screen flex items-center justify-center pt-16 pb-12 overflow-hidden">
-          {/* Grid */}
-          <div className="absolute inset-0 hero-grid pointer-events-none" />
-          {/* Radial glow */}
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ background: "radial-gradient(ellipse 90% 55% at 50% 20%, rgba(37,99,235,.13), transparent 70%)" }} />
+        <section className="min-h-screen flex flex-col md:flex-row pt-16 overflow-hidden" style={{ backgroundColor: "#1a3a35" }}>
 
-          <div className="relative max-w-5xl mx-auto px-6 text-center w-full">
+          {/* Left column — 55% */}
+          <div className="w-full md:w-[55%] flex items-center px-8 md:pl-20 md:pr-10 py-16 md:py-0">
+            <div className="max-w-xl">
 
-            {/* Badge */}
-            <div className="fu d1 inline-flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-8">
-              <span className="w-1.5 h-1.5 rounded-lg bg-blue-400 pulse-d" />
-              ✦ AI-Powered Repair Shop Platform
+              {/* Label */}
+              <p className="fu d1 text-xs font-semibold text-green-300 uppercase tracking-widest mb-4">
+                All-in-One Repair Shop Management Software
+              </p>
+
+              {/* Headline */}
+              <h1 className="fu d2 text-4xl md:text-5xl font-bold text-yellow-300 leading-tight mb-6">
+                Run Your Whole Repair Shop From One Platform
+              </h1>
+
+              {/* Subtext */}
+              <p className="fu d3 text-white/80 text-lg mb-8 max-w-lg leading-relaxed">
+                Work orders, AI diagnostics, customer tracking, inventory, and payments —
+                one platform that replaces WhatsApp and spreadsheets.
+              </p>
+
+              {/* CTA buttons */}
+              <div className="fu d4 flex flex-wrap gap-4 mb-10">
+                <Link href="/register"
+                  className="bg-white text-gray-900 font-semibold px-8 py-3 rounded-full hover:bg-gray-100 transition-all duration-200 shadow-md text-sm">
+                  Start My Free Trial
+                </Link>
+                <a href="#pricing"
+                  className="border-2 border-white text-white font-semibold px-8 py-3 rounded-full hover:bg-white/10 transition-all duration-200 text-sm">
+                  See Pricing
+                </a>
+              </div>
+
+              {/* Social proof */}
+              <div className="fu d5 flex items-center gap-3 flex-wrap">
+                <span className="text-yellow-400 text-base tracking-tight">★★★★★</span>
+                <span className="text-white/60 text-sm">1000+ reviews on</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-semibold text-xs bg-white/10 px-2.5 py-1 rounded-md">G2</span>
+                  <span className="text-white font-semibold text-xs bg-white/10 px-2.5 py-1 rounded-md">Capterra</span>
+                  <span className="text-white font-semibold text-xs bg-white/10 px-2.5 py-1 rounded-md">Trustpilot</span>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Headline */}
-            <h1 className="fu d2 text-5xl md:text-7xl font-bold text-white leading-[1.08] tracking-tight">
-              The smarter way to<br />
-              <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent">
-                run your repair shop
-              </span>
-            </h1>
+          {/* Right column — 45% */}
+          <div className="w-full md:w-[45%] flex items-center justify-center px-8 md:pr-12 py-12 md:py-16">
+            <div className="w-full max-w-lg">
+              <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ backgroundColor: "#d4ede6" }}>
 
-            {/* Subheadline */}
-            <p className="fu d3 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mt-6 leading-relaxed">
-              Work orders, AI diagnostics, customer tracking, inventory, and payments —
-              one platform that replaces WhatsApp and spreadsheets.
-            </p>
-
-            {/* CTAs */}
-            <div className="fu d4 flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
-              <Link href="/register"
-                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-lg text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105 hover:shadow-blue-500/40">
-                Start Free Trial — 14 Days
-              </Link>
-              <a href="#features"
-                className="text-slate-300 hover:text-white text-base inline-flex items-center justify-center gap-1.5 transition-colors duration-150 hover:underline underline-offset-4">
-                See how it works →
-              </a>
-            </div>
-
-            {/* Trust */}
-            <p className="fu d5 text-sm text-slate-500 mt-5">
-              No credit card required · Cancel anytime · 14-day free trial
-            </p>
-
-            {/* Dashboard mockup */}
-            <div className="fu d6 mt-16 max-w-5xl mx-auto">
-              <div className="rounded-2xl border border-white/10 shadow-2xl shadow-blue-500/[0.07] overflow-hidden ring-1 ring-white/5">
                 {/* Browser chrome */}
-                <div className="bg-slate-800/90 px-4 py-3 flex items-center gap-3 border-b border-white/5">
+                <div className="bg-slate-700 px-4 py-3 flex items-center gap-3">
                   <div className="flex gap-1.5 flex-shrink-0">
-                    <div className="w-3 h-3 rounded-lg bg-red-500/70" />
-                    <div className="w-3 h-3 rounded-lg bg-yellow-500/70" />
-                    <div className="w-3 h-3 rounded-lg bg-green-500/70" />
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
                   </div>
                   <div className="flex-1 flex justify-center">
-                    <div className="bg-slate-700/60 rounded-md px-4 py-1 text-xs text-slate-400 max-w-xs w-full text-center">
+                    <div className="bg-slate-600/60 rounded-md px-4 py-1 text-xs text-slate-300 max-w-xs w-full text-center">
                       app.fixflow.ma/dashboard
                     </div>
                   </div>
                 </div>
 
                 {/* App */}
-                <div className="bg-slate-900 flex" style={{ minHeight: 400 }}>
+                <div className="bg-slate-900 flex" style={{ minHeight: 380 }}>
+
                   {/* Sidebar */}
-                  <div className="w-44 bg-slate-900 border-r border-white/5 p-3 flex-shrink-0 hidden sm:flex flex-col gap-0.5">
+                  <div className="w-40 bg-slate-900 border-r border-white/5 p-3 flex-shrink-0 hidden sm:flex flex-col gap-0.5">
                     <div className="flex items-center gap-2 px-2 py-2 mb-3">
-                      <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
+                      <div className="w-6 h-6 bg-emerald-700 rounded-md flex items-center justify-center">
                         <Wrench className="w-3 h-3 text-white" />
                       </div>
                       <span className="text-xs font-bold text-white">FixFlow</span>
@@ -266,19 +275,19 @@ export default function LandingPage() {
                       <div key={item.label}
                         className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
                           item.active
-                            ? "bg-blue-600/15 text-blue-400 font-medium"
+                            ? "bg-emerald-600/20 text-emerald-400 font-medium"
                             : "text-slate-500 hover:text-slate-300"
                         }`}>
-                        <div className={`w-1.5 h-1.5 rounded-lg ${item.active ? "bg-blue-400" : "bg-transparent"}`} />
+                        <div className={`w-1.5 h-1.5 rounded-lg ${item.active ? "bg-emerald-400" : "bg-transparent"}`} />
                         {item.label}
                       </div>
                     ))}
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 p-5 overflow-hidden">
+                  <div className="flex-1 p-4 overflow-hidden">
                     {/* Stat cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                    <div className="grid grid-cols-2 gap-2.5 mb-4">
                       {[
                         { label: "Active Orders", value: "24", delta: "+3 today" },
                         { label: "Revenue (MTD)", value: "$8,420", delta: "+12%" },
@@ -297,30 +306,28 @@ export default function LandingPage() {
                     <div className="bg-slate-800/50 rounded-xl border border-white/5 overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5">
                         <span className="text-xs font-semibold text-white">Recent Work Orders</span>
-                        <span className="text-[11px] text-blue-400">View all →</span>
+                        <span className="text-[11px] text-emerald-400">View all →</span>
                       </div>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs min-w-[520px]">
+                        <table className="w-full text-xs min-w-[320px]">
                           <thead>
                             <tr className="border-b border-white/5">
-                              {["Order #", "Customer", "Device", "Issue", "Status", "Total"].map(h => (
-                                <th key={h} className="text-left px-4 py-2 text-slate-500 font-medium">{h}</th>
+                              {["Customer", "Device", "Status", "Total"].map(h => (
+                                <th key={h} className="text-left px-3 py-2 text-slate-500 font-medium">{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {[
-                              { id: "WO-2841", name: "James Carter", device: "iPhone 15 Pro", issue: "Screen replacement", status: "In Progress", amt: "$289", c: "blue" },
-                              { id: "WO-2840", name: "Maria Santos", device: "Samsung S24", issue: "Battery swap", status: "Ready", amt: "$95", c: "green" },
-                              { id: "WO-2839", name: "Ahmed Al-Rashid", device: "MacBook Air M2", issue: "Keyboard repair", status: "Diagnosed", amt: "$175", c: "yellow" },
-                              { id: "WO-2838", name: "Sophie Williams", device: "iPad Pro 12.9", issue: "Charging port", status: "Delivered", amt: "$120", c: "slate" },
+                              { name: "James Carter", device: "iPhone 15 Pro", status: "In Progress", amt: "$289", c: "blue" },
+                              { name: "Maria Santos", device: "Samsung S24", status: "Ready", amt: "$95", c: "green" },
+                              { name: "Ahmed Al-Rashid", device: "MacBook Air M2", status: "Diagnosed", amt: "$175", c: "yellow" },
+                              { name: "Sophie Williams", device: "iPad Pro 12.9", status: "Delivered", amt: "$120", c: "slate" },
                             ].map(r => (
-                              <tr key={r.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                                <td className="px-4 py-2.5 font-mono text-slate-400">{r.id}</td>
-                                <td className="px-4 py-2.5 text-slate-200">{r.name}</td>
-                                <td className="px-4 py-2.5 text-slate-400">{r.device}</td>
-                                <td className="px-4 py-2.5 text-slate-400">{r.issue}</td>
-                                <td className="px-4 py-2.5">
+                              <tr key={r.name} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                                <td className="px-3 py-2 text-slate-200">{r.name}</td>
+                                <td className="px-3 py-2 text-slate-400">{r.device}</td>
+                                <td className="px-3 py-2">
                                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium ${
                                     r.c === "blue"   ? "bg-blue-500/15 text-blue-400" :
                                     r.c === "green"  ? "bg-emerald-500/15 text-emerald-400" :
@@ -334,7 +341,7 @@ export default function LandingPage() {
                                     {r.status}
                                   </span>
                                 </td>
-                                <td className="px-4 py-2.5 text-white font-semibold">{r.amt}</td>
+                                <td className="px-3 py-2 text-white font-semibold">{r.amt}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -344,6 +351,43 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            MANAGEMENT CONTROL
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="py-20 px-6 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Repair Shop Management Control
+              </h2>
+              <p className="text-gray-500 text-lg max-w-2xl mx-auto">
+                Everything you need to run your repair shop efficiently — all in one platform.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {([
+                { icon: ClipboardList, label: "Work Orders", desc: "Track every repair from intake to delivery" },
+                { icon: Users, label: "Customer CRM", desc: "Full customer history and communication" },
+                { icon: Package, label: "Inventory", desc: "Real-time stock tracking and low-stock alerts" },
+                { icon: BarChart3, label: "Analytics", desc: "Revenue insights and performance metrics" },
+                { icon: Calendar, label: "Appointments", desc: "Online booking that fills your schedule" },
+                { icon: Zap, label: "AI Assistant", desc: "Instant diagnoses and repair suggestions" },
+                { icon: CreditCard, label: "Payments", desc: "Invoicing and payment tracking built-in" },
+                { icon: Bell, label: "Notifications", desc: "SMS and WhatsApp updates for customers" },
+              ] as { icon: React.ElementType; label: string; desc: string }[]).map(({ icon: Icon, label, desc }) => (
+                <div key={label}
+                  className="flex flex-col items-center text-center p-6 rounded-2xl border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all duration-200 cursor-default">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-emerald-700" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1 text-sm">{label}</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
