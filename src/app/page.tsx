@@ -192,8 +192,8 @@ export default function LandingPage() {
           <div className="relative max-w-5xl mx-auto px-6 text-center w-full">
 
             {/* Badge */}
-            <div className="fu d1 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 pulse-d" />
+            <div className="fu d1 inline-flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-8">
+              <span className="w-1.5 h-1.5 rounded-lg bg-blue-400 pulse-d" />
               ✦ AI-Powered Repair Shop Platform
             </div>
 
@@ -214,7 +214,7 @@ export default function LandingPage() {
             {/* CTAs */}
             <div className="fu d4 flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
               <Link href="/register"
-                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105 hover:shadow-blue-500/40">
+                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-lg text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105 hover:shadow-blue-500/40">
                 Start Free Trial — 14 Days
               </Link>
               <a href="#features"
@@ -234,9 +234,9 @@ export default function LandingPage() {
                 {/* Browser chrome */}
                 <div className="bg-slate-800/90 px-4 py-3 flex items-center gap-3 border-b border-white/5">
                   <div className="flex gap-1.5 flex-shrink-0">
-                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/70" />
+                    <div className="w-3 h-3 rounded-lg bg-red-500/70" />
+                    <div className="w-3 h-3 rounded-lg bg-yellow-500/70" />
+                    <div className="w-3 h-3 rounded-lg bg-green-500/70" />
                   </div>
                   <div className="flex-1 flex justify-center">
                     <div className="bg-slate-700/60 rounded-md px-4 py-1 text-xs text-slate-400 max-w-xs w-full text-center">
@@ -269,7 +269,7 @@ export default function LandingPage() {
                             ? "bg-blue-600/15 text-blue-400 font-medium"
                             : "text-slate-500 hover:text-slate-300"
                         }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${item.active ? "bg-blue-400" : "bg-transparent"}`} />
+                        <div className={`w-1.5 h-1.5 rounded-lg ${item.active ? "bg-blue-400" : "bg-transparent"}`} />
                         {item.label}
                       </div>
                     ))}
@@ -321,13 +321,13 @@ export default function LandingPage() {
                                 <td className="px-4 py-2.5 text-slate-400">{r.device}</td>
                                 <td className="px-4 py-2.5 text-slate-400">{r.issue}</td>
                                 <td className="px-4 py-2.5">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium ${
                                     r.c === "blue"   ? "bg-blue-500/15 text-blue-400" :
                                     r.c === "green"  ? "bg-emerald-500/15 text-emerald-400" :
                                     r.c === "yellow" ? "bg-yellow-500/15 text-yellow-400" :
                                                        "bg-slate-500/15 text-slate-400"
                                   }`}>
-                                    <span className={`w-1 h-1 rounded-full ${
+                                    <span className={`w-1 h-1 rounded-lg ${
                                       r.c === "blue" ? "bg-blue-400" : r.c === "green" ? "bg-emerald-400" :
                                       r.c === "yellow" ? "bg-yellow-400" : "bg-slate-400"
                                     }`} />
@@ -430,7 +430,7 @@ export default function LandingPage() {
                       <span className="text-slate-200">{r.name}</span>
                       <span className="text-slate-400">{r.device}</span>
                       <span className="flex items-center gap-1.5 text-slate-400">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                        <span className={`w-1.5 h-1.5 rounded-lg flex-shrink-0 ${
                           r.dot === "blue" ? "bg-blue-400" : r.dot === "green" ? "bg-emerald-400" : "bg-yellow-400"
                         }`} />
                         {r.status}
@@ -475,7 +475,7 @@ export default function LandingPage() {
                 <p className="text-slate-400 text-sm mb-5">Customers track repairs with a live link. No app needed.</p>
                 <div className="bg-slate-800 rounded-xl border border-white/5 p-4">
                   <div className="flex items-center gap-2.5 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-400 flex-shrink-0">JC</div>
+                    <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-400 flex-shrink-0">JC</div>
                     <div>
                       <div className="text-white text-xs font-semibold">WO-2841 · iPhone 15 Pro</div>
                       <div className="text-slate-500 text-[10px]">Screen replacement</div>
@@ -485,7 +485,7 @@ export default function LandingPage() {
                     {["Received", "Diagnosed", "Repairing", "Ready"].map((step, i) => (
                       <div key={step} className="flex items-center flex-1 last:flex-none">
                         <div className="flex flex-col items-center gap-1">
-                          <div className={`w-2.5 h-2.5 rounded-full border-2 flex-shrink-0 ${
+                          <div className={`w-2.5 h-2.5 rounded-lg border-2 flex-shrink-0 ${
                             i <= 2 ? "border-blue-400 bg-blue-400" : "border-slate-600 bg-transparent"
                           }`} />
                           <span className={`text-[9px] whitespace-nowrap ${i <= 2 ? "text-blue-400" : "text-slate-600"}`}>{step}</span>
@@ -578,8 +578,8 @@ export default function LandingPage() {
                     <div key={item.name} className="flex items-center gap-3 text-xs">
                       <span className="text-slate-300 flex-1 truncate">{item.name}</span>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${item.warn ? "bg-red-400" : "bg-teal-400"}`}
+                        <div className="w-20 h-1.5 bg-slate-800 rounded-lg overflow-hidden">
+                          <div className={`h-full rounded-lg transition-all ${item.warn ? "bg-red-400" : "bg-teal-400"}`}
                             style={{ width: `${Math.min(100, (item.qty / item.max) * 100)}%` }} />
                         </div>
                         <span className={`w-5 text-right font-mono tabular-nums ${item.warn ? "text-red-400" : "text-slate-400"}`}>
@@ -603,7 +603,7 @@ export default function LandingPage() {
             style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(37,99,235,.08), transparent 70%)" }} />
           <div className="max-w-4xl mx-auto relative">
             <div className="text-center mb-12">
-              <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-5">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs px-4 py-1.5 mb-5">
                 <Zap className="w-3 h-3" /> Only on FixFlow
               </span>
               <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Meet your AI repair assistant</h2>
@@ -616,7 +616,7 @@ export default function LandingPage() {
             <div className="bg-slate-900 border border-white/[0.07] rounded-2xl overflow-hidden max-w-2xl mx-auto shadow-2xl shadow-black/50">
               {/* Header */}
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5 bg-slate-800/40">
-                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-600/40">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-600/40">
                   <Zap className="w-3.5 h-3.5 text-white" />
                 </div>
                 <div>
@@ -624,7 +624,7 @@ export default function LandingPage() {
                   <div className="text-[10px] text-slate-500 mt-0.5">Repair Assistant</div>
                 </div>
                 <div className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-d" />
+                  <span className="w-1.5 h-1.5 rounded-lg bg-emerald-400 pulse-d" />
                   Online
                 </div>
               </div>
@@ -641,7 +641,7 @@ export default function LandingPage() {
                 {/* AI */}
                 {aiVisible && (
                   <div className="flex gap-3 slide-r">
-                    <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Zap className="w-3.5 h-3.5 text-blue-400" />
                     </div>
                     <div className="space-y-2 flex-1">
@@ -742,7 +742,7 @@ export default function LandingPage() {
                 }}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-white text-sm font-medium">Pro</span>
-                    <span className="bg-blue-600 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wide">
+                    <span className="bg-blue-600 text-white text-[11px] px-3 py-1 rounded-lg font-semibold tracking-wide">
                       Most Popular
                     </span>
                   </div>
@@ -861,7 +861,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105">
+                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-lg text-base shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-105">
                 Start free trial — no credit card
               </Link>
               <Link href="/login"
