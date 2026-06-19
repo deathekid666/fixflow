@@ -149,7 +149,7 @@ export default function LandingPage() {
                 Sign in
               </Link>
               <Link href="/register"
-                className="bg-emerald-800 text-white font-semibold text-sm px-5 py-2 rounded-full hover:bg-emerald-700 transition-all duration-150 shadow-sm">
+                className="bg-blue-600 text-white font-semibold text-sm px-5 py-2 rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm">
                 Free Trial
               </Link>
             </div>
@@ -176,7 +176,7 @@ export default function LandingPage() {
                   Sign in
                 </Link>
                 <Link href="/register"
-                  className="bg-emerald-800 text-white font-semibold text-sm px-4 py-2 rounded-full hover:bg-emerald-700 transition-all">
+                  className="bg-blue-600 text-white font-semibold text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-all">
                   Free Trial
                 </Link>
               </div>
