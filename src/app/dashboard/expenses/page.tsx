@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Expense = {
   id: string; title: string; amount: number; category: string;
@@ -21,6 +22,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function ExpensesPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -144,20 +146,20 @@ export default function ExpensesPage() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Expenses</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Track your shop expenses</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("expenses")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("expensesSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           {expenses.length > 0 && (
             <button onClick={exportCSV}
               className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors font-medium">
-              ⬇ Export CSV
+              ⬇ {t("exportCsv")}
             </button>
           )}
           {user?.role === "ADMIN" && (
             <button onClick={() => setShowForm(!showForm)}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-              + Add Expense
+              + {t("addExpense")}
             </button>
           )}
         </div>
@@ -166,7 +168,7 @@ export default function ExpensesPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 col-span-2">
-          <p className="text-xs text-slate-500 mb-1">Total Expenses</p>
+          <p className="text-xs text-slate-500 mb-1">{t("totalExpenses")}</p>
           <p className="text-3xl font-bold text-red-600 dark:text-red-400">{fmt(totalExpenses)}</p>
           <p className="text-xs text-slate-400 mt-1">{expenses.length} entries</p>
         </div>
@@ -182,34 +184,34 @@ export default function ExpensesPage() {
       {/* Add form */}
       {showForm && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">New Expense</h2>
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("newExpense")}</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="text-xs text-slate-400 mb-1 block">Title *</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("titleLabel")} *</label>
               <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                 placeholder="e.g. Monthly rent, Electricity bill"
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Amount ({currency}) *</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("amountLabel")} ({currency}) *</label>
               <input type="number" min="0" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
                 placeholder="0.00"
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Category</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("categoryLabel")}</label>
               <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Date</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("date")}</label>
               <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Note</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("noteLabel")}</label>
               <input value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
                 placeholder="Optional note"
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
@@ -218,7 +220,7 @@ export default function ExpensesPage() {
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg">
-              {saving ? "Saving..." : "Save Expense"}
+              {saving ? "Saving..." : t("saveExpense")}
             </button>
             <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm rounded-lg">Cancel</button>
           </div>
@@ -233,7 +235,7 @@ export default function ExpensesPage() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search by title or note..."
+          placeholder={t("searchExpensesByTitle")}
           className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
         />
       </div>
@@ -257,7 +259,7 @@ export default function ExpensesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
-              {["Date", "Title", "Category", "Amount", "Note", "By", ""].map(h => (
+              {[t("date"), t("titleLabel"), t("categoryLabel"), t("amountLabel"), t("noteLabel"), t("byHeader"), ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
@@ -279,14 +281,14 @@ export default function ExpensesPage() {
                 <div className="py-16 flex flex-col items-center gap-3">
                   <span className="text-5xl">💸</span>
                   <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">
-                    {search ? "No matching expenses" : "No expenses yet"}
+                    {search ? t("noMatchingExpenses") : t("noExpensesYet")}
                   </p>
                   <p className="text-slate-400 text-sm text-center max-w-xs">
-                    {search ? "Try a different search or category filter." : "Track rent, salaries, supplies and more to get a clear picture of your shop's costs."}
+                    {search ? "Try a different search or category filter." : t("noExpensesDesc")}
                   </p>
                   {!search && user?.role === "ADMIN" && (
                     <button onClick={() => setShowForm(true)} className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
-                      + Add First Expense
+                      {t("addFirstExpense")}
                     </button>
                   )}
                 </div>
@@ -323,29 +325,29 @@ export default function ExpensesPage() {
                     <td colSpan={7} className="px-4 py-4">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div className="md:col-span-2">
-                          <label className="text-xs text-slate-400 mb-1 block">Title *</label>
+                          <label className="text-xs text-slate-400 mb-1 block">{t("titleLabel")} *</label>
                           <input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                         </div>
                         <div>
-                          <label className="text-xs text-slate-400 mb-1 block">Amount ({currency}) *</label>
+                          <label className="text-xs text-slate-400 mb-1 block">{t("amountLabel")} ({currency}) *</label>
                           <input type="number" min="0" value={editForm.amount} onChange={e => setEditForm(p => ({ ...p, amount: e.target.value }))}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                         </div>
                         <div>
-                          <label className="text-xs text-slate-400 mb-1 block">Category</label>
+                          <label className="text-xs text-slate-400 mb-1 block">{t("categoryLabel")}</label>
                           <select value={editForm.category} onChange={e => setEditForm(p => ({ ...p, category: e.target.value }))}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
                             {CATEGORIES.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs text-slate-400 mb-1 block">Date</label>
+                          <label className="text-xs text-slate-400 mb-1 block">{t("date")}</label>
                           <input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                         </div>
                         <div>
-                          <label className="text-xs text-slate-400 mb-1 block">Note</label>
+                          <label className="text-xs text-slate-400 mb-1 block">{t("noteLabel")}</label>
                           <input value={editForm.note} onChange={e => setEditForm(p => ({ ...p, note: e.target.value }))}
                             placeholder="Optional"
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
@@ -354,7 +356,7 @@ export default function ExpensesPage() {
                       <div className="flex gap-2 mt-3">
                         <button onClick={saveEdit} disabled={savingEdit || !editForm.title || !editForm.amount}
                           className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                          {savingEdit ? "Saving..." : "Save Changes"}
+                          {savingEdit ? "Saving..." : t("saveChanges")}
                         </button>
                         <button onClick={() => setEditingId(null)} className="px-4 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
                       </div>

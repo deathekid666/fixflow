@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 type CourseCard = {
   id: string;
@@ -39,6 +40,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 export default function AcademyPage() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,20 +83,20 @@ export default function AcademyPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">🎓 FixFlow Academy</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("academyTitle")}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-            Free courses to help you master your repair shop
+            {t("academySubtitle")}
           </p>
         </div>
         {totalEnrolled > 0 && (
           <div className="flex gap-4 text-center">
             <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg px-4 py-2">
               <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{totalEnrolled}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">Enrolled</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">{t("enrolledLabel")}</div>
             </div>
             <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg px-4 py-2">
               <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{totalCompleted}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">Completed</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">{t("completedCourses")}</div>
             </div>
           </div>
         )}
@@ -134,7 +136,7 @@ export default function AcademyPage() {
 
               {/* Stats */}
               <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400">
-                <span>📖 {course.lessonCount} lessons</span>
+                <span>📖 {course.lessonCount} {t("lessonsCount")}</span>
                 <span>⏱ {course.duration} min</span>
                 <span>👤 {course.instructor}</span>
               </div>
@@ -143,7 +145,7 @@ export default function AcademyPage() {
               {course.enrolled && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <span>{course.doneLessons}/{course.lessonCount} lessons</span>
+                    <span>{course.doneLessons}/{course.lessonCount} {t("lessonsCount")}</span>
                     <span>{course.progress}%</span>
                   </div>
                   <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -162,7 +164,7 @@ export default function AcademyPage() {
                   target="_blank"
                   className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  🏆 Certificate earned · View
+                  {t("certificateEarned")}
                 </Link>
               )}
 
@@ -178,7 +180,7 @@ export default function AcademyPage() {
                         : "bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                   }`}
                 >
-                  {course.completedAt ? "Review Course" : course.enrolled ? (course.progress > 0 ? "Continue →" : "Start Learning →") : "Enroll Free →"}
+                  {course.completedAt ? t("reviewCourse") : course.enrolled ? (course.progress > 0 ? t("continueCourse") : t("startLearning")) : t("enrollFree")}
                 </Link>
               </div>
             </div>

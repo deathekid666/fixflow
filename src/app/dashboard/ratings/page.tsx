@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Rating {
   id: string; rating: number; comment: string | null; createdAt: string;
@@ -11,6 +12,7 @@ function Stars({ n }: { n: number }) {
 }
 
 export default function RatingsPage() {
+  const { t } = useLanguage();
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,7 +22,7 @@ export default function RatingsPage() {
       const res = await fetch("/api/ratings", { credentials: "include" });
       const data = await res.json();
       setRatings(Array.isArray(data) ? data : []);
-    } catch { setError("Failed to load ratings"); }
+    } catch { setError(t("failedLoadRatings")); }
     finally { setLoading(false); }
   }, []);
 
@@ -32,15 +34,15 @@ export default function RatingsPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Customer Satisfaction</h1>
-        <p className="text-sm text-slate-500 mt-1">Ratings collected after delivery</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("customerSatisfaction")}</h1>
+        <p className="text-sm text-slate-500 mt-1">{t("ratingsSubtitle")}</p>
       </div>
       {!loading && ratings.length > 0 && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col sm:flex-row gap-8 items-start">
           <div className="text-center min-w-[100px]">
             <div className="text-5xl font-bold text-slate-900 dark:text-slate-100">{avg}</div>
             <div className="text-yellow-500 dark:text-yellow-400 text-xl mt-1">{"★".repeat(Math.round(parseFloat(avg!)))}</div>
-            <div className="text-xs text-slate-400 mt-1">{ratings.length} reviews</div>
+            <div className="text-xs text-slate-400 mt-1">{ratings.length} {t("reviewsLabel")}</div>
           </div>
           <div className="flex-1 space-y-2 w-full">
             {dist.map(({ star, count }) => {
@@ -77,8 +79,8 @@ export default function RatingsPage() {
       ) : error ? <p className="text-sm text-red-400">{error}</p> : ratings.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-4xl mb-4">⭐</p>
-          <p className="text-base font-semibold text-slate-700 dark:text-slate-200">No ratings yet</p>
-          <p className="text-sm text-slate-400 mt-1 max-w-xs">Customer ratings appear here after work orders are marked as delivered.</p>
+          <p className="text-base font-semibold text-slate-700 dark:text-slate-200">{t("noRatingsYet")}</p>
+          <p className="text-sm text-slate-400 mt-1 max-w-xs">{t("ratingsWillAppear")}</p>
         </div>
       ) : (
         <div className="space-y-3">

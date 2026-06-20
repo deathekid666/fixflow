@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { useLanguage } from "@/context/LanguageContext";
 
 type SparePart = { id: string; name: string; partNumber: string | null; unitPrice: number };
 type DefaultPart = { sparePartId: string; quantity: number };
@@ -32,6 +33,7 @@ const FAULT_COLORS: Record<string, string> = {
 const CATEGORIES = ["", "Apple", "Samsung", "Huawei", "Honor", "Xiaomi", "Other"];
 
 export default function TemplatesPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const currency = user?.shop?.currency ?? "MAD";
@@ -114,7 +116,7 @@ export default function TemplatesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this template?")) return;
+    if (!confirm(t("deleteTemplateConfirm"))) return;
     await fetch("/api/templates", { method: "DELETE", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ id }) });
     await load();
   }
@@ -132,12 +134,12 @@ export default function TemplatesPage() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Work Order Templates</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Pre-fill common repairs to save time</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("workOrderTemplates")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("templatesSubtitle")}</p>
         </div>
         {isAdmin && (
           <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-medium transition-colors">
-            + New Template
+            + {t("newTemplate")}
           </button>
         )}
       </div>
@@ -145,29 +147,29 @@ export default function TemplatesPage() {
       {/* Create form */}
       {showForm && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-5">
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">New Template</h2>
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("newTemplate")}</h2>
           {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 
           {/* Basic info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="text-xs text-slate-400 mb-1 block">Template Name *</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("templateName")} *</label>
               <input placeholder="e.g. iPhone 13 Screen Replacement" value={form.name} onChange={e => set("name", e.target.value)}
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Category</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("categoryLabel2")}</label>
               <select value={form.category} onChange={e => set("category", e.target.value)}
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none">
-                {CATEGORIES.map(c => <option key={c} value={c}>{c || "No category"}</option>)}
+                {CATEGORIES.map(c => <option key={c} value={c}>{c || t("noCategory")}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Estimated Duration</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("estimatedDuration")}</label>
               <div className="flex gap-2 items-center">
                 <input type="number" placeholder="e.g. 60" value={form.estimatedDuration} onChange={e => set("estimatedDuration", e.target.value)}
                   className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-                <span className="text-xs text-slate-500">minutes</span>
+                <span className="text-xs text-slate-500">{t("minutes")}</span>
               </div>
             </div>
             <div>
@@ -191,7 +193,7 @@ export default function TemplatesPage() {
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Default Price ({currency})</label>
+              <label className="text-xs text-slate-400 mb-1 block">{t("defaultPrice")} ({currency})</label>
               <input type="number" placeholder="0.00" value={form.defaultPrice} onChange={e => set("defaultPrice", e.target.value)}
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
             </div>
@@ -217,7 +219,7 @@ export default function TemplatesPage() {
 
           {/* Default spare parts */}
           <div className="space-y-2">
-            <label className="text-xs text-slate-400 font-medium block">Default Spare Parts</label>
+            <label className="text-xs text-slate-400 font-medium block">{t("defaultSpareParts")}</label>
             <div className="flex gap-2">
               <select value={newPartId} onChange={e => setNewPartId(e.target.value)}
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
@@ -249,9 +251,9 @@ export default function TemplatesPage() {
 
           {/* Default line items */}
           <div className="space-y-2">
-            <label className="text-xs text-slate-400 font-medium block">Default Line Items (Labor, Services)</label>
+            <label className="text-xs text-slate-400 font-medium block">{t("defaultLineItems")}</label>
             <div className="flex gap-2">
-              <input placeholder="e.g. Labor fee" value={newLineLabel} onChange={e => setNewLineLabel(e.target.value)}
+              <input placeholder={t("laborFeeHint")} value={newLineLabel} onChange={e => setNewLineLabel(e.target.value)}
                 className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" />
               <input type="number" placeholder="Amount" value={newLineAmount} onChange={e => setNewLineAmount(e.target.value)}
                 className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none" />
@@ -274,7 +276,7 @@ export default function TemplatesPage() {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={handleCreate} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">{saving ? "Saving..." : "Save Template"}</button>
+            <button onClick={handleCreate} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">{saving ? "Saving..." : t("saveTemplate")}</button>
             <button onClick={() => { setShowForm(false); setDefaultParts([]); setDefaultLineItems([]); }} className="px-5 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
           </div>
         </div>
@@ -309,14 +311,14 @@ export default function TemplatesPage() {
         <div className="py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center gap-3">
           <span className="text-5xl">🗂️</span>
           <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">
-            {filterCategory ? `No templates in "${filterCategory}"` : "No templates yet"}
+            {filterCategory ? `${t("noTemplatesInCategory")} "${filterCategory}"` : t("noTemplatesYet")}
           </p>
           <p className="text-slate-400 text-sm text-center max-w-xs">
-            {filterCategory ? "Try a different category or clear the filter." : "Templates let you pre-fill common repairs — brand, fault, parts, and pricing in one click."}
+            {filterCategory ? t("tryClearFilter") : t("noTemplatesDesc")}
           </p>
           {!filterCategory && isAdmin && (
             <button onClick={() => setShowForm(true)} className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
-              + Create First Template
+              {t("createFirstTemplate")}
             </button>
           )}
         </div>

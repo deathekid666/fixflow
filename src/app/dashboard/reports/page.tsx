@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { REFERRAL_LABELS, REFERRAL_BADGE_CLASS } from "@/lib/referralSources";
+import { useLanguage } from "@/context/LanguageContext";
 
 type MonthRow = { label: string; total: number; collected: number; expenses: number; profit: number; count: number };
 
@@ -33,6 +34,7 @@ function monthLabel(iso: string) {
 const ACCT_DATE_INPUT = "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500";
 
 export default function ReportsPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency, 0);
@@ -131,8 +133,8 @@ export default function ReportsPage() {
         {/* Page header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Reports</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Monthly revenue, expenses, and profit summary</p>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("reports")}</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{t("reportsSubtitle")}</p>
           </div>
           <button
             onClick={() => window.print()}
@@ -141,12 +143,12 @@ export default function ReportsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
-            Export PDF
+            {t("exportPdf")}
           </button>
         </div>
 
         {loading ? (
-          <p className="text-slate-500 text-sm py-10 text-center">Loading report...</p>
+          <p className="text-slate-500 text-sm py-10 text-center">{t("loadingReport")}</p>
         ) : (
           <>
             {/* Year tabs */}
@@ -163,15 +165,15 @@ export default function ReportsPage() {
 
             {/* KPI summary for year */}
             <div className="print-section">
-              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">{year} Summary</h2>
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">{year} {t("yearlySummary")}</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { label: "Revenue", value: fmt(ys.revenue), color: "text-slate-900 dark:text-white", sub: `${ys.orders} orders` },
-                  { label: "Collected", value: fmt(ys.collected), color: "text-green-600 dark:text-green-400", sub: `${collectionRate}% rate` },
-                  { label: "Outstanding", value: fmt(ys.revenue - ys.collected), color: ys.revenue - ys.collected > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", sub: "uncollected" },
-                  { label: "Expenses", value: fmt(ys.expenses), color: "text-red-600 dark:text-red-400", sub: "total costs" },
-                  { label: "Net Profit", value: fmt(ys.profit), color: ys.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", sub: ys.collected > 0 ? `${Math.round((ys.profit / ys.collected) * 100)}% margin` : "" },
-                  { label: "Orders", value: ys.orders.toString(), color: "text-blue-600 dark:text-blue-400", sub: `avg ${ys.orders > 0 ? fmt(ys.revenue / ys.orders) : "0"}` },
+                  { label: t("revenue"), value: fmt(ys.revenue), color: "text-slate-900 dark:text-white", sub: `${ys.orders} ${t("ordersLabel")}` },
+                  { label: t("collectedLabel"), value: fmt(ys.collected), color: "text-green-600 dark:text-green-400", sub: `${collectionRate}% ${t("collRate")}` },
+                  { label: t("outstandingLabel"), value: fmt(ys.revenue - ys.collected), color: ys.revenue - ys.collected > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", sub: t("uncollected") },
+                  { label: t("expenses"), value: fmt(ys.expenses), color: "text-red-600 dark:text-red-400", sub: t("totalCosts") },
+                  { label: t("netProfit"), value: fmt(ys.profit), color: ys.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", sub: ys.collected > 0 ? `${Math.round((ys.profit / ys.collected) * 100)}% margin` : "" },
+                  { label: t("ordersLabel"), value: ys.orders.toString(), color: "text-blue-600 dark:text-blue-400", sub: `avg ${ys.orders > 0 ? fmt(ys.revenue / ys.orders) : "0"}` },
                 ].map(s => (
                   <div key={s.label} className="print-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
                     <p className="text-xs text-slate-500 mb-1">{s.label}</p>
@@ -185,16 +187,16 @@ export default function ReportsPage() {
             {/* Monthly breakdown table */}
             <div className="print-section bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden print-card">
               <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
-                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Month-by-Month Breakdown — {year}</h2>
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("monthByMonth")} — {year}</h2>
               </div>
               {filtered.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-slate-500">No data for {year}.</p>
+                <p className="px-5 py-8 text-sm text-slate-500">{t("noDataForYear")} {year}.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-800">
-                        {["Month", "Orders", `Revenue (${currency})`, `Collected (${currency})`, "Coll. Rate", `Expenses (${currency})`, `Net Profit (${currency})`].map(h => (
+                        {[t("monthLabel"), t("ordersLabel"), `${t("revenue")} (${currency})`, `${t("collectedLabel")} (${currency})`, t("collRate"), `${t("expenses")} (${currency})`, `${t("netProfit")} (${currency})`].map(h => (
                           <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -224,7 +226,7 @@ export default function ReportsPage() {
                       })}
                       {/* Totals row */}
                       <tr className="bg-slate-100 dark:bg-slate-800/40 border-t-2 border-slate-300 dark:border-slate-700">
-                        <td className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("totalRow")}</td>
                         <td className="px-4 py-3 text-slate-900 dark:text-white font-semibold">{ys.orders}</td>
                         <td className="px-4 py-3 text-slate-900 dark:text-white font-semibold">{fmt(ys.revenue)}</td>
                         <td className="px-4 py-3 text-green-600 dark:text-green-400 font-semibold">{fmt(ys.collected)}</td>
@@ -243,25 +245,25 @@ export default function ReportsPage() {
 
             {/* ── Accounting Export ── */}
             <div className="no-print pt-2 border-t border-slate-200 dark:border-slate-800">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Accounting Export</h2>
-              <p className="text-sm text-slate-500 mb-5">Export payments, expenses, and commissions for your accounting software. Includes tax breakdown per transaction.</p>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{t("accountingExport")}</h2>
+              <p className="text-sm text-slate-500 mb-5">{t("accountingSubtitle")}</p>
 
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-5">
                 {/* Date range */}
                 <div className="flex gap-3 items-end flex-wrap">
                   <div>
-                    <label className="text-xs text-slate-400 mb-1 block">From</label>
+                    <label className="text-xs text-slate-400 mb-1 block">{t("fromLabel")}</label>
                     <input type="date" value={acctFrom} onChange={e => setAcctFrom(e.target.value)} className={ACCT_DATE_INPUT} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1 block">To</label>
+                    <label className="text-xs text-slate-400 mb-1 block">{t("toLabel")}</label>
                     <input type="date" value={acctTo} onChange={e => setAcctTo(e.target.value)} className={ACCT_DATE_INPUT} />
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {[
-                      { label: "This month", from: `${thisYear}-${String(new Date().getMonth()+1).padStart(2,"0")}-01`, to: new Date().toISOString().slice(0,10) },
-                      { label: "This year",  from: `${thisYear}-01-01`, to: new Date().toISOString().slice(0,10) },
-                      { label: "Last year",  from: `${thisYear-1}-01-01`, to: `${thisYear-1}-12-31` },
+                      { label: t("thisMonthLabel"), from: `${thisYear}-${String(new Date().getMonth()+1).padStart(2,"0")}-01`, to: new Date().toISOString().slice(0,10) },
+                      { label: t("thisYearLabel"),  from: `${thisYear}-01-01`, to: new Date().toISOString().slice(0,10) },
+                      { label: t("lastYearLabel"),  from: `${thisYear-1}-01-01`, to: `${thisYear-1}-12-31` },
                     ].map(p => (
                       <button key={p.label} onClick={() => { setAcctFrom(p.from); setAcctTo(p.to); }}
                         className="px-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
@@ -282,7 +284,7 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500">Date, Type, Num, Name, Description, Amount, Tax, Total</p>
                     <button onClick={() => downloadAccounting("quickbooks")} disabled={exporting === "quickbooks"}
                       className="w-full py-2 text-xs font-semibold bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
-                      {exporting === "quickbooks" ? "Preparing…" : "⬇ Export for QuickBooks"}
+                      {exporting === "quickbooks" ? t("preparingLabel") : "⬇ Export for QuickBooks"}
                     </button>
                   </div>
 
@@ -295,7 +297,7 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500">ContactName, InvoiceNumber, InvoiceDate, DueDate, Description, Quantity, UnitAmount, TaxType, AccountCode</p>
                     <button onClick={() => downloadAccounting("xero")} disabled={exporting === "xero"}
                       className="w-full py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
-                      {exporting === "xero" ? "Preparing…" : "⬇ Export for Xero"}
+                      {exporting === "xero" ? t("preparingLabel") : "⬇ Export for Xero"}
                     </button>
                   </div>
 
@@ -308,7 +310,7 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500">Date, Type, Reference, Party, Description, NetAmount, TaxAmount, GrossAmount, Method, Currency</p>
                     <button onClick={() => downloadAccounting("all-transactions")} disabled={exporting === "all-transactions"}
                       className="w-full py-2 text-xs font-semibold bg-slate-700 hover:bg-slate-600 disabled:opacity-60 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
-                      {exporting === "all-transactions" ? "Preparing…" : "⬇ Export All Transactions"}
+                      {exporting === "all-transactions" ? t("preparingLabel") : "⬇ Export All Transactions"}
                     </button>
                   </div>
                 </div>
@@ -325,29 +327,29 @@ export default function ReportsPage() {
             {/* ── Parts section ── */}
             <div className="no-print">
               <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Parts Report</h2>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-4">{t("partsReport")}</h2>
               </div>
 
               {/* Date filter */}
               <div className="flex gap-3 items-end flex-wrap mb-5">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">From</label>
+                  <label className="text-xs text-slate-400 mb-1 block">{t("fromLabel")}</label>
                   <input type="date" value={partsFrom} onChange={e => setPartsFrom(e.target.value)}
                     className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">To</label>
+                  <label className="text-xs text-slate-400 mb-1 block">{t("toLabel")}</label>
                   <input type="date" value={partsTo} onChange={e => setPartsTo(e.target.value)}
                     className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <button onClick={loadParts} disabled={partsLoading}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-                  {partsLoading ? "Loading..." : "Apply"}
+                  {partsLoading ? t("loadingLabel") : t("applyBtn")}
                 </button>
                 {(partsFrom || partsTo) && (
                   <button onClick={() => { setPartsFrom(""); setPartsTo(""); setTimeout(loadParts, 0); }}
                     className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
-                    Clear
+                    {t("clearBtn")}
                   </button>
                 )}
               </div>
@@ -356,25 +358,25 @@ export default function ReportsPage() {
                 <div className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                      <p className="text-xs text-slate-500">Total Parts Used</p>
+                      <p className="text-xs text-slate-500">{t("totalPartsUsed")}</p>
                       <p className="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{parts.totals.totalQuantity}</p>
                     </div>
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                      <p className="text-xs text-slate-500">Parts Revenue</p>
+                      <p className="text-xs text-slate-500">{t("partsRevenue")}</p>
                       <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">{fmt(parts.totals.totalRevenue)}</p>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Parts Consumption</h3>
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">{t("partsConsumption")}</h3>
                     {parts.usage.length === 0 ? (
-                      <p className="text-sm text-slate-500">No data for this period.</p>
+                      <p className="text-sm text-slate-500">{t("noPartsThisPeriod")}</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-800">
-                              {["Part", "Part #", "Times Used", "Qty", "Revenue", "Stock"].map(h => (
+                              {["Part", "Part #", t("timesUsed"), t("qtyHeader"), t("revenueHeader"), "Stock"].map(h => (
                                 <th key={h} className="text-left pb-2 px-1 text-xs text-slate-500">{h}</th>
                               ))}
                             </tr>
@@ -401,15 +403,15 @@ export default function ReportsPage() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Stock Adjustment History</h3>
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">{t("stockAdjustmentHistory")}</h3>
                     {parts.adjustments.length === 0 ? (
-                      <p className="text-sm text-slate-500">No adjustments recorded.</p>
+                      <p className="text-sm text-slate-500">{t("noAdjustments")}</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-800">
-                              {["Part", "Type", "Qty", "Reason", "By", "Date"].map(h => (
+                              {["Part", t("typeHeader"), t("qtyHeader"), t("reasonHeader"), t("byHeader"), "Date"].map(h => (
                                 <th key={h} className="text-left pb-2 px-1 text-xs text-slate-500">{h}</th>
                               ))}
                             </tr>
@@ -441,6 +443,7 @@ export default function ReportsPage() {
 }
 
 function ReferralReport({ fmt, currency }: { fmt: (n: number) => string; currency: string }) {
+  const { t } = useLanguage();
   type ReferralRow = { source: string; count: number; revenue: number; quotedRevenue: number; avgOrderValue: number };
   type ReferralData = { rows: ReferralRow[]; totalOrders: number; totalRevenue: number };
 
@@ -466,46 +469,46 @@ function ReferralReport({ fmt, currency }: { fmt: (n: number) => string; currenc
 
   return (
     <div className="no-print pt-2 border-t border-slate-200 dark:border-slate-800">
-      <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Referral Sources</h2>
-      <p className="text-sm text-slate-500 mb-4">Which channels bring the most customers and revenue.</p>
+      <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{t("referralSourcesTitle")}</h2>
+      <p className="text-sm text-slate-500 mb-4">{t("referralSubtitle")}</p>
 
       <div className="flex gap-3 items-end flex-wrap mb-4">
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">From</label>
+          <label className="text-xs text-slate-400 mb-1 block">{t("fromLabel")}</label>
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} className={INPUT} />
         </div>
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">To</label>
+          <label className="text-xs text-slate-400 mb-1 block">{t("toLabel")}</label>
           <input type="date" value={to} onChange={e => setTo(e.target.value)} className={INPUT} />
         </div>
         <button onClick={load} disabled={loading}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-          {loading ? "Loading..." : "Apply"}
+          {loading ? t("loadingLabel") : t("applyBtn")}
         </button>
         {(from || to) && (
           <button onClick={() => { setFrom(""); setTo(""); setTimeout(load, 0); }}
             className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
-            Clear
+            {t("clearBtn")}
           </button>
         )}
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-500 py-4">Loading...</p>
+        <p className="text-sm text-slate-500 py-4">{t("loadingLabel")}</p>
       ) : !hasData ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
-          <p className="text-slate-400 text-sm">No referral source data yet. Start selecting a source when creating work orders.</p>
+          <p className="text-slate-400 text-sm">{t("noReferralData")}</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Source</th>
-                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Orders</th>
-                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Share</th>
-                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Revenue ({currency})</th>
-                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">Avg Order</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("sourceHeader")}</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("ordersHeader")}</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("shareHeader")}</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("revenueHeader")} ({currency})</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{t("avgOrderHeader")}</th>
               </tr>
             </thead>
             <tbody>

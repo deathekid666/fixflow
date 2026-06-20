@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 type LessonItem = { id: string; title: string; duration: number; order: number; completed: boolean };
 
@@ -31,6 +32,7 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 
 export default function CourseDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
@@ -76,7 +78,7 @@ export default function CourseDetailPage() {
   }
 
   if (error || !course) {
-    return <div className="p-6 text-rose-600">{error || "Course not found"}</div>;
+    return <div className="p-6 text-rose-600">{error || t("courseNotFound")}</div>;
   }
 
   const firstIncomplete = course.lessons.find(l => !l.completed);
@@ -113,7 +115,7 @@ export default function CourseDetailPage() {
 
         <div className="flex gap-4 text-sm text-slate-500 dark:text-slate-400 flex-wrap">
           <span>📖 {course.totalLessons} lessons</span>
-          <span>⏱ {course.duration} minutes total</span>
+          <span>⏱ {course.duration} {t("totalMinutes")}</span>
           <span>👤 {course.instructor}</span>
         </div>
 
@@ -137,14 +139,14 @@ export default function CourseDetailPage() {
         {course.certificate && (
           <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
-              🏆 Certificate of Completion earned
+              🏆 {t("certOfCompletion")}
             </div>
             <Link
               href={`/verify/${course.certificate.code}`}
               target="_blank"
               className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
             >
-              View certificate →
+              {t("viewCertificate")}
             </Link>
           </div>
         )}
@@ -156,7 +158,7 @@ export default function CourseDetailPage() {
             disabled={enrolling}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-60"
           >
-            {enrolling ? "Enrolling…" : "Enroll for Free & Start Learning"}
+            {enrolling ? t("enrolling") : t("enrollFree")}
           </button>
         ) : nextLesson ? (
           <Link
@@ -171,7 +173,7 @@ export default function CourseDetailPage() {
       {/* Lesson List */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="font-semibold text-slate-900 dark:text-white">Course Content</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-white">{t("courseContent")}</h2>
         </div>
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {course.lessons.map((lesson, idx) => {

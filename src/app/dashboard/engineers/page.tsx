@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Engineer = {
   id: string;
@@ -26,6 +27,7 @@ type Stats = {
 type EngineerWithStats = Engineer & { stats: Stats };
 
 export default function EngineersPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -78,7 +80,7 @@ export default function EngineersPage() {
 
       setEngineers(withStats);
     } catch {
-      setError("Failed to load");
+      setError(t("failedToLoad"));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export default function EngineersPage() {
 
   async function handleCreate() {
     setError("");
-    if (!form.name || !form.email || !form.password) { setError("All fields are required"); return; }
+    if (!form.name || !form.email || !form.password) { setError(t("allFieldsRequired")); return; }
     setSaving(true);
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -137,30 +139,30 @@ export default function EngineersPage() {
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Engineers</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Team performance overview</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("engineers")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("teamPerformance")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/dashboard/engineers/commissions"
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg transition-colors font-medium">
-            💸 Commissions
+            {t("commissionsLink")}
           </Link>
           <button onClick={() => setShowForm(!showForm)}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
-            + Add Engineer
+            + {t("addEngineer")}
           </button>
         </div>
       </div>
 
       {showForm && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">New Engineer</h2>
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("newEngineer")}</h2>
           {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: "Name", field: "name", placeholder: "Full name" },
-              { label: "Email", field: "email", placeholder: "email@example.com" },
-              { label: "Password", field: "password", placeholder: "Temporary password", type: "password" },
+              { label: t("name"), field: "name", placeholder: t("fullName") },
+              { label: t("email"), field: "email", placeholder: "email@example.com" },
+              { label: "Password", field: "password", placeholder: t("temporaryPassword"), type: "password" },
             ].map((f) => (
               <div key={f.field}>
                 <label className="text-xs text-slate-400 mb-1 block">{f.label}</label>
@@ -177,11 +179,11 @@ export default function EngineersPage() {
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-              {saving ? "Saving..." : "Add Engineer"}
+              {saving ? t("saving") : t("addEngineer")}
             </button>
             <button onClick={() => setShowForm(false)}
               className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors">
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         </div>
@@ -207,9 +209,9 @@ export default function EngineersPage() {
       ) : engineers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-4xl mb-4">👥</p>
-          <p className="text-base font-semibold text-slate-700 dark:text-slate-200">No team members yet</p>
-          <p className="text-sm text-slate-400 mt-1 max-w-xs">Add engineers to your shop so they can log in and work on orders.</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">+ Add Engineer</button>
+          <p className="text-base font-semibold text-slate-700 dark:text-slate-200">{t("noTeamMembersYet")}</p>
+          <p className="text-sm text-slate-400 mt-1 max-w-xs">{t("addEngineersHint")}</p>
+          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">+ {t("addEngineer")}</button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -238,11 +240,11 @@ export default function EngineersPage() {
                 </div>
                 <div className="flex items-start gap-6">
                   <div className="text-right">
-                    <p className="text-xs text-slate-500">Total Revenue</p>
+                    <p className="text-xs text-slate-500">{t("totalRevenueStat")}</p>
                     <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{fmt(e.stats.revenue)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-500">Commission ({e.commissionRate}%)</p>
+                    <p className="text-xs text-slate-500">{t("commissionStat")} ({e.commissionRate}%)</p>
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                       {fmt((e.stats.revenue * e.commissionRate) / 100)}
                     </p>
@@ -256,23 +258,23 @@ export default function EngineersPage() {
                   {editError && <p className="text-red-500 dark:text-red-400 text-xs">{editError}</p>}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Name *</label>
+                      <label className="text-xs text-slate-400 mb-1 block">{t("name")} *</label>
                       <input value={editForm.name} onChange={ev => setEditForm(p => ({ ...p, name: ev.target.value }))}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Email</label>
+                      <label className="text-xs text-slate-400 mb-1 block">{t("email")}</label>
                       <input value={editForm.email} onChange={ev => setEditForm(p => ({ ...p, email: ev.target.value }))}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">New Password <span className="text-slate-500">(leave blank to keep)</span></label>
+                      <label className="text-xs text-slate-400 mb-1 block">{t("newPassword")} <span className="text-slate-500">({t("leaveBlank")})</span></label>
                       <input type="password" value={editForm.password} onChange={ev => setEditForm(p => ({ ...p, password: ev.target.value }))}
                         placeholder="••••••••"
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Commission Rate (%)</label>
+                      <label className="text-xs text-slate-400 mb-1 block">{t("commissionRatePct")}</label>
                       <input type="number" min={0} max={100} step={0.5} value={editForm.commissionRate}
                         onChange={ev => setEditForm(p => ({ ...p, commissionRate: ev.target.value }))}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
@@ -281,9 +283,9 @@ export default function EngineersPage() {
                   <div className="flex gap-2">
                     <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                      {savingEdit ? "Saving..." : "Save Changes"}
+                      {savingEdit ? t("saving") : t("saveChanges")}
                     </button>
-                    <button onClick={() => setEditingId(null)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                    <button onClick={() => setEditingId(null)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
                   </div>
                 </div>
               )}
@@ -291,12 +293,12 @@ export default function EngineersPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 {[
-                  { label: "Assigned", value: e.stats.total, color: "text-slate-900 dark:text-white" },
-                  { label: "Completed", value: e.stats.completed, color: "text-green-600 dark:text-green-400" },
-                  { label: "Delivered", value: e.stats.delivered, color: "text-slate-600 dark:text-slate-300" },
-                  { label: "Cancelled", value: e.stats.cancelled, color: e.stats.cancelled > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500" },
-                  { label: "Bounces", value: e.stats.bounces, color: e.stats.bounces > 0 ? "text-orange-600 dark:text-orange-400" : "text-slate-500" },
-                  { label: "Avg TAT", value: `${e.stats.avgTat}d`, color: e.stats.avgTat > 3 ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400" },
+                  { label: t("assigned"), value: e.stats.total, color: "text-slate-900 dark:text-white" },
+                  { label: t("completed"), value: e.stats.completed, color: "text-green-600 dark:text-green-400" },
+                  { label: t("deliveredStat"), value: e.stats.delivered, color: "text-slate-600 dark:text-slate-300" },
+                  { label: t("cancelledStat"), value: e.stats.cancelled, color: e.stats.cancelled > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500" },
+                  { label: t("bounces"), value: e.stats.bounces, color: e.stats.bounces > 0 ? "text-orange-600 dark:text-orange-400" : "text-slate-500" },
+                  { label: t("avgTat"), value: `${e.stats.avgTat}d`, color: e.stats.avgTat > 3 ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400" },
                 ].map((s) => (
                   <div key={s.label} className="bg-slate-100 dark:bg-slate-800 rounded-lg p-3 text-center">
                     <p className="text-xs text-slate-500 mb-1">{s.label}</p>
@@ -309,7 +311,7 @@ export default function EngineersPage() {
               {e.stats.total > 0 && (
                 <div className="mt-4">
                   <div className="flex justify-between text-xs text-slate-500 mb-1">
-                    <span>Completion rate</span>
+                    <span>{t("completionRate")}</span>
                     <span>{Math.round((e.stats.completed / e.stats.total) * 100)}%</span>
                   </div>
                   <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">

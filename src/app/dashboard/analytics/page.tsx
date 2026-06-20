@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
 import { REFERRAL_LABELS, REFERRAL_CHART_COLORS } from "@/lib/referralSources";
 import { CopilotPanel } from "@/components/CopilotPanel";
+import { useLanguage } from "@/context/LanguageContext";
 
 type RevenueData = {
   data: { label: string; total: number; collected: number; count: number; expenses: number; profit: number }[];
@@ -74,6 +75,7 @@ function downloadChartSVG(containerId: string, filename: string) {
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -200,13 +202,13 @@ export default function AnalyticsPage() {
         borderRadius: 16, margin: "20px 0",
       }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-        <p style={{ color: "#f87171", fontWeight: 600, fontSize: 16, margin: "0 0 6px" }}>Something went wrong</p>
+        <p style={{ color: "#f87171", fontWeight: 600, fontSize: 16, margin: "0 0 6px" }}>{t("somethingWentWrong")}</p>
         <p style={{ color: "#94a3b8", fontSize: 13, margin: "0 0 20px" }}>{error}</p>
         <button onClick={() => loadAll()} style={{
           background: "#2563eb", color: "white", border: "none", borderRadius: 8,
           padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer",
         }}>
-          Try again
+          {t("tryAgain")}
         </button>
       </div>
     </div>
@@ -236,27 +238,27 @@ export default function AnalyticsPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <PageHeader title="Analytics" subtitle="Revenue, expenses, profit and insights" />
+        <PageHeader title={t("analytics")} subtitle={t("analyticsSubtitle")} />
         {tab === "overview" && (
         <div className="flex gap-2 flex-wrap">
           {["7d", "30d", "90d", "all"].map(r => (
             <button key={r} onClick={() => setDateRange(r)}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${dateRange === r ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}>
-              {r === "7d" ? "7 days" : r === "30d" ? "30 days" : r === "90d" ? "90 days" : "All time"}
+              {r === "7d" ? t("days7") : r === "30d" ? t("days30") : r === "90d" ? t("days90") : t("allTime")}
             </button>
           ))}
           <div className="w-px bg-slate-300 dark:bg-slate-700 mx-1" />
-          <button onClick={exportAnalyticsCSV} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Analytics CSV</button>
-          <button onClick={() => exportCSV("workorders")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Orders</button>
-          <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Customers</button>
-          <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ Parts</button>
+          <button onClick={exportAnalyticsCSV} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ {t("analyticsCSV")}</button>
+          <button onClick={() => exportCSV("workorders")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ {t("orders")}</button>
+          <button onClick={() => exportCSV("customers")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ {t("customers")}</button>
+          <button onClick={() => exportCSV("parts")} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">⬇ {t("parts")}</button>
         </div>
         )}
       </div>
 
       {/* Tab nav */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
-        {([["overview", "📊 Overview"], ["benchmarks", "🏆 Benchmarks"], ["copilot", "✨ Copilot"]] as const).map(([id, label]) => (
+        {([["overview", `📊 ${t("tabOverview")}`], ["benchmarks", `🏆 ${t("tabBenchmarks")}`], ["copilot", `✨ ${t("tabCopilot")}`]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => {
@@ -275,12 +277,12 @@ export default function AnalyticsPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: "Total Orders", value: revenue.summary.totalOrders, sub: `${activeOrders} active`, color: "text-slate-900 dark:text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
-          { label: "Revenue", value: formatCurrency(revenue.summary.totalRevenue, currency, 0), sub: `Avg: ${formatCurrency(revenue.summary.avgOrderValue, currency, 0)}`, color: "text-slate-900 dark:text-white", icon: "💰", bg: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
-          { label: "Collected", value: formatCurrency(revenue.summary.totalCollected, currency, 0), sub: `${collectionRate}% rate`, color: "text-green-600 dark:text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
-          { label: "Expenses", value: formatCurrency(revenue.summary.totalExpenses, currency, 0), sub: "Total costs", color: "text-red-600 dark:text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
-          { label: "Net Profit", value: formatCurrency(revenue.summary.profit, currency, 0), sub: `${profitMargin}% margin`, color: revenue.summary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
-          { label: "Outstanding", value: formatCurrency(outstanding, currency, 0), sub: `${100 - collectionRate}% unpaid`, color: outstanding > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
+          { label: t("kpiTotalOrders"), value: revenue.summary.totalOrders, sub: `${activeOrders} ${t("kpiActive")}`, color: "text-slate-900 dark:text-white", icon: "📋", bg: "bg-blue-500/10 border-blue-500/20" },
+          { label: t("revenue"), value: formatCurrency(revenue.summary.totalRevenue, currency, 0), sub: `Avg: ${formatCurrency(revenue.summary.avgOrderValue, currency, 0)}`, color: "text-slate-900 dark:text-white", icon: "💰", bg: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
+          { label: t("kpiCollected"), value: formatCurrency(revenue.summary.totalCollected, currency, 0), sub: `${collectionRate}% ${t("kpiRate")}`, color: "text-green-600 dark:text-green-400", icon: "✅", bg: "bg-green-500/10 border-green-500/20" },
+          { label: t("kpiExpenses"), value: formatCurrency(revenue.summary.totalExpenses, currency, 0), sub: t("kpiTotalCosts"), color: "text-red-600 dark:text-red-400", icon: "💸", bg: "bg-red-500/10 border-red-500/20" },
+          { label: t("kpiNetProfit"), value: formatCurrency(revenue.summary.profit, currency, 0), sub: `${profitMargin}% ${t("kpiMargin")}`, color: revenue.summary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", icon: revenue.summary.profit >= 0 ? "📈" : "📉", bg: revenue.summary.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20" },
+          { label: t("kpiOutstanding"), value: formatCurrency(outstanding, currency, 0), sub: `${100 - collectionRate}% ${t("kpiUnpaid")}`, color: outstanding > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500", icon: "⏳", bg: outstanding > 0 ? "bg-yellow-500/10 border-yellow-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" },
         ].map(s => (
           <div key={s.label} className={`border rounded-xl p-4 ${s.bg}`}>
             <div className="flex items-center justify-between mb-2">
@@ -319,35 +321,35 @@ export default function AnalyticsPage() {
 
         const metrics = [
           {
-            label: "Revenue",
+            label: t("revenue"),
             icon: "💰",
             curr: tm.revenue, prev: lm.revenue,
             fmt: (v: number) => formatCurrency(v, currency, 0),
             invert: false,
           },
           {
-            label: "Orders",
+            label: t("orders"),
             icon: "📋",
             curr: tm.orders, prev: lm.orders,
             fmt: (v: number) => v.toString(),
             invert: false,
           },
           {
-            label: "Collection Rate",
+            label: t("collectionRate"),
             icon: "✅",
             curr: tm.collectionRate, prev: lm.collectionRate,
             fmt: (v: number) => `${v}%`,
             invert: false,
           },
           {
-            label: "Expenses",
+            label: t("kpiExpenses"),
             icon: "💸",
             curr: tm.expenses, prev: lm.expenses,
             fmt: (v: number) => formatCurrency(v, currency, 0),
             invert: true,
           },
           {
-            label: "Net Profit",
+            label: t("kpiNetProfit"),
             icon: tm.profit >= 0 ? "📈" : "📉",
             curr: tm.profit, prev: lm.profit,
             fmt: (v: number) => formatCurrency(v, currency, 0),
@@ -359,7 +361,7 @@ export default function AnalyticsPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Month-over-Month</h2>
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("momTitle")}</h2>
                 <p className="text-xs text-slate-500 mt-0.5">{thisMonthName} vs {lastMonthName}</p>
               </div>
             </div>
@@ -371,7 +373,7 @@ export default function AnalyticsPage() {
                     <span className="text-sm">{m.icon}</span>
                   </div>
                   <div>
-                    <p className={`text-lg font-bold ${m.label === "Net Profit" ? (m.curr >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400") : m.label === "Expenses" ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
+                    <p className={`text-lg font-bold ${m.label === t("kpiNetProfit") ? (m.curr >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400") : m.label === t("kpiExpenses") ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
                       {m.fmt(m.curr)}
                     </p>
                     <DeltaBadge curr={m.curr} prev={m.prev} invert={m.invert} />
@@ -390,8 +392,8 @@ export default function AnalyticsPage() {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Revenue, Expenses & Profit</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Billed vs collected vs expenses vs net profit</p>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("revenueExpensesProfit")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t("revenueExpensesSubtitle")}</p>
           </div>
           <div className="flex gap-2">
             {["daily", "weekly", "monthly"].map(p => (
@@ -408,7 +410,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
         {revenue.data.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8">No data yet.</p>
+          <p className="text-sm text-slate-500 text-center py-8">{t("noDataYet")}</p>
         ) : (
           <div id="chart-revenue" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <div style={{ minWidth: 500 }}>
@@ -452,15 +454,15 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Work Orders Volume</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("workOrdersVolume")}</h2>
             <button onClick={() => downloadChartSVG("chart-orders", `orders-${dateRange}.svg`)}
               title="Download chart as SVG"
               className="px-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               ⬇
             </button>
           </div>
-          <p className="text-xs text-slate-500 mb-4">Number of orders per period</p>
-          {revenue.data.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">No data yet.</p> : (
+          <p className="text-xs text-slate-500 mb-4">{t("ordersPerPeriod")}</p>
+          {revenue.data.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">{t("noDataYet")}</p> : (
             <div id="chart-orders" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
               <div style={{ minWidth: 400 }}>
               <ResponsiveContainer width="100%" height={200}>
@@ -479,15 +481,15 @@ export default function AnalyticsPage() {
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Orders by Status</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("ordersByStatus")}</h2>
             <button onClick={() => downloadChartSVG("chart-status", `status-${dateRange}.svg`)}
               title="Download chart as SVG"
               className="px-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               ⬇
             </button>
           </div>
-          <p className="text-xs text-slate-500 mb-4">Current distribution</p>
-          {pieData.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">No data.</p> : (
+          <p className="text-xs text-slate-500 mb-4">{t("currentDistribution")}</p>
+          {pieData.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">{t("noData")}</p> : (
             <div id="chart-status" className="flex flex-col sm:flex-row items-center gap-4">
               <ResponsiveContainer width="60%" height={180}>
                 <PieChart>
@@ -515,10 +517,10 @@ export default function AnalyticsPage() {
 
       {/* Engineer leaderboard */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Engineer Leaderboard</h2>
-        <p className="text-xs text-slate-500 mb-4">Performance ranked by completed orders</p>
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">{t("engineerLeaderboard")}</h2>
+        <p className="text-xs text-slate-500 mb-4">{t("engineerLeaderboardSubtitle")}</p>
         {analytics.engineerStats.length === 0 ? (
-          <p className="text-sm text-slate-500">No engineers yet.</p>
+          <p className="text-sm text-slate-500">{t("noEngineersYet")}</p>
         ) : (
           <div className="space-y-3">
             {[...analytics.engineerStats].sort((a, b) => b.completed - a.completed).map((e, i) => {
@@ -532,16 +534,16 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-900 dark:text-white font-medium truncate">{e.name}</span>
                       <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-shrink-0 ml-2">
-                        <span className="text-green-600 dark:text-green-400 font-medium">{e.completed} done</span>
-                        <span>{e.total} total</span>
-                        {e.bounces > 0 && <span className="text-red-600 dark:text-red-400">{e.bounces} bounce{e.bounces > 1 ? "s" : ""}</span>}
-                        {e.avgTat > 0 && <span>TAT: {e.avgTat}d</span>}
+                        <span className="text-green-600 dark:text-green-400 font-medium">{e.completed} {t("completed")}</span>
+                        <span>{e.total} {t("total")}</span>
+                        {e.bounces > 0 && <span className="text-red-600 dark:text-red-400">{e.bounces} {t("bounces")}</span>}
+                        {e.avgTat > 0 && <span>{t("avgTat")}: {e.avgTat}d</span>}
                       </div>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                       <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${rate}%` }} />
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">{rate}% completion</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{rate}% {t("completionRate")}</p>
                   </div>
                 </div>
               );
@@ -553,9 +555,9 @@ export default function AnalyticsPage() {
       {/* Top parts + Low stock */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Top Spare Parts Used</h2>
-          <p className="text-xs text-slate-500 mb-4">Most used parts this period</p>
-          {analytics.topParts.length === 0 ? <p className="text-sm text-slate-500">No parts data yet.</p> : (
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">{t("topSparePartsUsed")}</h2>
+          <p className="text-xs text-slate-500 mb-4">{t("topPartsSubtitle")}</p>
+          {analytics.topParts.length === 0 ? <p className="text-sm text-slate-500">{t("noPartsDataYet")}</p> : (
             <div className="space-y-3">
               {analytics.topParts.slice(0, 6).map((p, i) => (
                 <div key={p.sparePartId} className="flex items-center gap-3">
@@ -578,13 +580,13 @@ export default function AnalyticsPage() {
 
         <div className={`border rounded-xl p-5 ${analytics.lowStock.length > 0 ? "bg-orange-50 dark:bg-orange-950/20 border-orange-300 dark:border-orange-800/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
           <h2 className={`text-sm font-semibold mb-1 ${analytics.lowStock.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-slate-700 dark:text-slate-200"}`}>
-            {analytics.lowStock.length > 0 ? `⚠️ Low Stock (${analytics.lowStock.length})` : "Stock Status"}
+            {analytics.lowStock.length > 0 ? `⚠️ ${t("lowStock")} (${analytics.lowStock.length})` : t("stockStatus")}
           </h2>
-          <p className="text-xs text-slate-500 mb-4">Parts below 5 units</p>
+          <p className="text-xs text-slate-500 mb-4">{t("partsBelowFive")}</p>
           {analytics.lowStock.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-3xl mb-2">✅</p>
-              <p className="text-sm text-slate-400">All parts well stocked</p>
+              <p className="text-sm text-slate-400">{t("allPartsWellStocked")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -609,8 +611,8 @@ export default function AnalyticsPage() {
       <div className={`border rounded-xl p-5 ${analytics.sla.compliance !== null && analytics.sla.compliance < 80 ? "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">SLA Compliance</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Orders completed within their deadline</p>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("slaCompliance")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t("slaSubtitle")}</p>
           </div>
           {analytics.sla.compliance !== null && (
             <span className={`text-2xl font-bold ${analytics.sla.compliance >= 90 ? "text-green-600 dark:text-green-400" : analytics.sla.compliance >= 70 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
@@ -619,20 +621,20 @@ export default function AnalyticsPage() {
           )}
         </div>
         {analytics.sla.total === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-4">No completed orders with SLA deadlines yet.</p>
+          <p className="text-sm text-slate-500 text-center py-4">{t("noSlaOrders")}</p>
         ) : (
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{analytics.sla.total}</p>
-              <p className="text-xs text-slate-500 mt-1">Total</p>
+              <p className="text-xs text-slate-500 mt-1">{t("total")}</p>
             </div>
             <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-xl">
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">{analytics.sla.met}</p>
-              <p className="text-xs text-slate-500 mt-1">Met SLA</p>
+              <p className="text-xs text-slate-500 mt-1">{t("slaMetLabel")}</p>
             </div>
             <div className="text-center p-3 bg-red-50 dark:bg-red-950/30 rounded-xl">
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">{analytics.sla.breached}</p>
-              <p className="text-xs text-slate-500 mt-1">Breached</p>
+              <p className="text-xs text-slate-500 mt-1">{t("slaBreachedLabel")}</p>
             </div>
           </div>
         )}
@@ -652,8 +654,8 @@ export default function AnalyticsPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Referral Sources</h2>
-              <p className="text-xs text-slate-500 mt-0.5">How customers find you</p>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("referralSources")}</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{t("howCustomersFind")}</p>
             </div>
           </div>
           <div className="grid md:grid-cols-2 gap-6 items-center">
@@ -699,23 +701,23 @@ export default function AnalyticsPage() {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Loyalty Milestones</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Customer engagement highlights</p>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("loyaltyMilestones")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t("loyaltySubtitle")}</p>
           </div>
           <span className="text-2xl">🏆</span>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl">
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{analytics.milestones.anniversaryThisMonth}</p>
-            <p className="text-xs text-slate-500 mt-1">Anniversaries this month</p>
+            <p className="text-xs text-slate-500 mt-1">{t("anniversariesThisMonth")}</p>
           </div>
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{analytics.milestones.tenPlusCustomers}</p>
-            <p className="text-xs text-slate-500 mt-1">10+ order customers</p>
+            <p className="text-xs text-slate-500 mt-1">{t("tenPlusCustomers")}</p>
           </div>
           <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-xl">
             <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{analytics.milestones.goldCustomers}</p>
-            <p className="text-xs text-slate-500 mt-1">Gold VIP (6+ orders)</p>
+            <p className="text-xs text-slate-500 mt-1">{t("goldVip")}</p>
           </div>
         </div>
       </div>
@@ -738,7 +740,7 @@ export default function AnalyticsPage() {
               <p className="text-3xl">⚠️</p>
               <p className="text-red-500 dark:text-red-400 text-sm">{benchmarksError}</p>
               <button onClick={() => { setBenchmarks(null); loadBenchmarks(); }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg">Retry</button>
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg">{t("tryAgain")}</button>
             </div>
           )}
 
@@ -1020,14 +1022,14 @@ export default function AnalyticsPage() {
       {tab === "copilot" && (
         <div className="space-y-4">
           <CopilotPanel
-            title="Revenue Copilot"
-            description="90-day business intelligence report"
+            title={t("revenueCopilot")}
+            description={t("copilotDescription")}
             loading={copilotLoading}
             error={copilotError}
             content={copilotAnalysis}
             onRefresh={() => { setCopilotAnalysis(null); loadCopilot(); }}
             accent="violet"
-            loadingMessage="Analyzing 90 days of revenue data…"
+            loadingMessage={t("loadingAnalysis")}
           />
           {!copilotLoading && !copilotAnalysis && !copilotError && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -1036,9 +1038,9 @@ export default function AnalyticsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
               </div>
-              <h3 className="text-base font-semibold text-slate-800 dark:text-white mb-1">FixFlow Copilot</h3>
+              <h3 className="text-base font-semibold text-slate-800 dark:text-white mb-1">{t("revenueCopilot")}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-5">
-                Get an AI-powered analysis of your last 90 days — insights, opportunities, and one clear action to grow revenue.
+                {t("copilotDescription")}
               </p>
               <button
                 onClick={loadCopilot}
@@ -1047,7 +1049,7 @@ export default function AnalyticsPage() {
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
-                Generate Analysis
+                {t("generateAnalysis")}
               </button>
             </div>
           )}

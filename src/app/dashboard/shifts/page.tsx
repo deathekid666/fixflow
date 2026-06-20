@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ShiftUser {
   id: string;
@@ -55,6 +56,7 @@ function weekStart(): Date {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ShiftsPage() {
+  const { t } = useLanguage();
   const { user: me } = useAuth();
   const isAdmin = me?.role === "ADMIN" || me?.role === "SUPER_ADMIN";
 
@@ -154,9 +156,9 @@ export default function ShiftsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Shifts</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("shifts")}</h1>
         <p className="text-sm text-slate-400 mt-1">
-          {isAdmin ? "Track work hours across all staff" : "Track your work hours"}
+          {isAdmin ? t("shiftsSubtitle") : t("shiftsSubtitleOwn")}
         </p>
       </div>
 
@@ -173,7 +175,7 @@ export default function ShiftsPage() {
             <div className="flex items-center gap-3">
               <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
               <div>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">Currently working</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{t("currentlyWorking")}</p>
                 <p className="text-sm text-slate-500">
                   Since {fmtDateTime(activeShift.startTime)} · <span className="text-green-600 dark:text-green-400 font-medium">{activeDuration}</span>
                 </p>
@@ -183,14 +185,14 @@ export default function ShiftsPage() {
               onClick={() => clockOut(activeShift.id)}
               className="px-6 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold rounded-lg transition"
             >
-              Clock Out
+              {t("clockOut")}
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 flex-shrink-0" />
-              <p className="font-medium text-slate-500 dark:text-slate-400">Not clocked in</p>
+              <p className="font-medium text-slate-500 dark:text-slate-400">{t("notClockedIn")}</p>
             </div>
             <div className="flex gap-3 flex-wrap">
               <input
@@ -206,7 +208,7 @@ export default function ShiftsPage() {
                 disabled={submitting}
                 className="px-6 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
               >
-                {submitting ? "Clocking in…" : "Clock In"}
+                {submitting ? t("clockingIn") : t("clockIn")}
               </button>
             </div>
           </div>
@@ -218,7 +220,7 @@ export default function ShiftsPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
             <h2 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-              This Week
+              {t("thisWeek")}
               <span className="ml-2 text-xs text-slate-400 font-normal">
                 (from {ws.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })})
               </span>
@@ -256,9 +258,9 @@ export default function ShiftsPage() {
       {/* Shift History Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">History</h2>
+          <h2 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{t("shiftsHistory")}</h2>
           {!loading && shifts.length > 0 && (
-            <span className="text-xs text-slate-400">{shifts.length} shifts total</span>
+            <span className="text-xs text-slate-400">{shifts.length} {t("shiftsTotal")}</span>
           )}
         </div>
 
@@ -276,19 +278,19 @@ export default function ShiftsPage() {
         ) : shifts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-3xl mb-3">🕐</p>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No shifts recorded yet</p>
-            <p className="text-xs text-slate-400 mt-1">Clock in above to start tracking hours</p>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("noShiftsYet")}</p>
+            <p className="text-xs text-slate-400 mt-1">{t("clockInToStart")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 <tr>
-                  {isAdmin && <th className="px-6 py-3 text-left">Engineer</th>}
-                  <th className="px-6 py-3 text-left">Clock In</th>
-                  <th className="px-6 py-3 text-left">Clock Out</th>
-                  <th className="px-6 py-3 text-left">Duration</th>
-                  <th className="px-6 py-3 text-left">Notes</th>
+                  {isAdmin && <th className="px-6 py-3 text-left">{t("engineerHeader")}</th>}
+                  <th className="px-6 py-3 text-left">{t("clockInHeader")}</th>
+                  <th className="px-6 py-3 text-left">{t("clockOutHeader")}</th>
+                  <th className="px-6 py-3 text-left">{t("durationHeader")}</th>
+                  <th className="px-6 py-3 text-left">{t("notesHeader")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -314,7 +316,7 @@ export default function ShiftsPage() {
                         ) : (
                           <span className="inline-flex items-center gap-1.5 text-green-600 dark:text-green-400 font-medium text-xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            Active
+                            {t("activeStatus")}
                           </span>
                         )}
                       </td>

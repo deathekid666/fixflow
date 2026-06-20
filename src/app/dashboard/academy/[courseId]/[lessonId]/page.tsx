@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { mdToHtml } from "@/lib/markdown";
+import { useLanguage } from "@/context/LanguageContext";
 
 type OutlineItem = { id: string; title: string; order: number; completed: boolean };
 
@@ -23,6 +24,7 @@ type LessonData = {
 };
 
 export default function LessonPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
@@ -90,7 +92,7 @@ export default function LessonPage() {
     );
   }
 
-  if (!lesson) return <div className="p-6 text-rose-600">Lesson not found.</div>;
+  if (!lesson) return <div className="p-6 text-rose-600">{t("lessonNotFound")}</div>;
 
   const htmlContent = mdToHtml(lesson.content);
 
@@ -168,7 +170,7 @@ export default function LessonPage() {
                 disabled={marking}
                 className="text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
               >
-                {marking ? "Saving…" : "Mark Complete"}
+                {marking ? t("markCompleteSaving") : t("markComplete")}
               </button>
             )}
           </div>
@@ -236,7 +238,7 @@ export default function LessonPage() {
                 target="_blank"
                 className="text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                View Certificate →
+                {t("viewCertificate")}
               </Link>
             </div>
           )}
@@ -285,7 +287,7 @@ export default function LessonPage() {
                 href={`/dashboard/academy/${courseId}`}
                 className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
               >
-                Back to course →
+                {t("backToCourse")}
               </Link>
             ) : (
               <button
@@ -293,7 +295,7 @@ export default function LessonPage() {
                 disabled={marking}
                 className="text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-60"
               >
-                {marking ? "Saving…" : "Mark Complete & Finish →"}
+                {marking ? t("markCompleteSaving") : t("markCompleteFinish")}
               </button>
             )}
           </div>

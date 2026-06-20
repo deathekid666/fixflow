@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 type WarrantyOrder = {
   id: string;
@@ -34,6 +35,7 @@ function orderLabel(o: WarrantyOrder) {
 }
 
 function WarrantyCard({ o, tab }: { o: WarrantyOrder; tab: Tab }) {
+  const { t } = useLanguage();
   const days = tab === "expired" ? daysSince(o.warrantyEnd) : daysUntil(o.warrantyEnd);
   const border =
     tab === "expiringSoon" && days <= 7 ? "border-red-300 dark:border-red-600/40 bg-red-50 dark:bg-red-950/10" :
@@ -67,17 +69,17 @@ function WarrantyCard({ o, tab }: { o: WarrantyOrder; tab: Tab }) {
 
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="bg-slate-100 dark:bg-slate-800/60 rounded-lg px-3 py-2">
-          <p className="text-slate-500 mb-0.5">Warranty ends</p>
+          <p className="text-slate-500 mb-0.5">{t("warrantyEnds")}</p>
           <p className="text-slate-900 dark:text-white font-medium">{new Date(o.warrantyEnd).toLocaleDateString()}</p>
         </div>
         <div className="bg-slate-100 dark:bg-slate-800/60 rounded-lg px-3 py-2">
-          <p className="text-slate-500 mb-0.5">{o.warrantyStart ? "Started" : "Repaired"}</p>
+          <p className="text-slate-500 mb-0.5">{o.warrantyStart ? t("startedLabel") : t("repairedLabel")}</p>
           <p className="text-slate-900 dark:text-white font-medium">{new Date(o.warrantyStart ?? o.createdAt).toLocaleDateString()}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-800/60">
-        <span className="text-xs text-slate-500">{o.assignee?.name ?? "Unassigned"}</span>
+        <span className="text-xs text-slate-500">{o.assignee?.name ?? t("unassigned")}</span>
         <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors font-medium">
           View →
         </Link>
@@ -87,13 +89,14 @@ function WarrantyCard({ o, tab }: { o: WarrantyOrder; tab: Tab }) {
 }
 
 function EmptyState({ tab }: { tab: Tab }) {
+  const { t } = useLanguage();
   const icon = tab === "active" ? "🛡️" : tab === "expiringSoon" ? "⏳" : "📁";
-  const title = tab === "active" ? "No active warranties" : tab === "expiringSoon" ? "Nothing expiring soon" : "No expired warranties";
+  const title = tab === "active" ? t("noActiveWarranties") : tab === "expiringSoon" ? t("nothingExpiringSoon") : t("noExpiredWarranties");
   const desc = tab === "active"
-    ? "Warranties appear here once a work order has a warranty end date set."
+    ? t("noActiveWarrantiesDesc")
     : tab === "expiringSoon"
-    ? "You're all clear — no warranties expiring within the next 30 days."
-    : "Expired warranties will show up here once they pass their end date.";
+    ? t("nothingExpiringSoonDesc")
+    : t("noExpiredWarrantiesDesc");
   return (
     <div className="py-16 flex flex-col items-center gap-3">
       <span className="text-5xl">{icon}</span>
@@ -109,12 +112,13 @@ function EmptyState({ tab }: { tab: Tab }) {
 }
 
 function WarrantyTable({ orders, tab }: { orders: WarrantyOrder[]; tab: Tab }) {
+  const { t } = useLanguage();
   if (orders.length === 0) return <EmptyState tab={tab} />;
   return (
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-slate-200 dark:border-slate-800">
-          {["Order #", "Customer", "Device", "Warranty Period", "Remaining", "Assigned", ""].map(h => (
+          {["Order #", "Customer", "Device", t("warrantyPeriod"), t("remainingLabel"), "Assigned", ""].map(h => (
             <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
           ))}
         </tr>
@@ -145,7 +149,7 @@ function WarrantyTable({ orders, tab }: { orders: WarrantyOrder[]; tab: Tab }) {
               <td className={`px-4 py-3 text-xs ${remainingColor}`}>
                 {tab === "expired" ? `${days}d ago` : `${days}d`}
               </td>
-              <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? "—"}</td>
+              <td className="px-4 py-3 text-slate-400 text-xs">{o.assignee?.name ?? t("unassigned")}</td>
               <td className="px-4 py-3">
                 <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">View →</Link>
               </td>
@@ -158,6 +162,7 @@ function WarrantyTable({ orders, tab }: { orders: WarrantyOrder[]; tab: Tab }) {
 }
 
 export default function WarrantiesPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("active");
@@ -170,9 +175,9 @@ export default function WarrantiesPage() {
   }, []);
 
   const tabs: { key: Tab; label: string; icon: string; count: number; activeClass: string }[] = data ? [
-    { key: "active", label: "Active", icon: "🛡️", count: data.active.length, activeClass: "text-green-600 dark:text-green-400 border-green-500" },
-    { key: "expiringSoon", label: "Expiring Soon", icon: "⏳", count: data.expiringSoon.length, activeClass: data.expiringSoon.length > 0 ? "text-orange-600 dark:text-orange-400 border-orange-500" : "text-slate-500 border-slate-400 dark:border-slate-500" },
-    { key: "expired", label: "Expired", icon: "📁", count: data.expired.length, activeClass: "text-slate-500 border-slate-400 dark:border-slate-500" },
+    { key: "active", label: t("tabActive"), icon: "🛡️", count: data.active.length, activeClass: "text-green-600 dark:text-green-400 border-green-500" },
+    { key: "expiringSoon", label: t("tabExpiringSoon"), icon: "⏳", count: data.expiringSoon.length, activeClass: data.expiringSoon.length > 0 ? "text-orange-600 dark:text-orange-400 border-orange-500" : "text-slate-500 border-slate-400 dark:border-slate-500" },
+    { key: "expired", label: t("tabExpired"), icon: "📁", count: data.expired.length, activeClass: "text-slate-500 border-slate-400 dark:border-slate-500" },
   ] : [];
 
   const current = data?.[tab] ?? [];
@@ -180,27 +185,27 @@ export default function WarrantiesPage() {
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Warranties</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Track warranty status across all repaired devices</p>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("warrantiesTitle")}</h1>
+        <p className="text-sm text-slate-500 mt-0.5">{t("warrantiesSubtitle")}</p>
       </div>
 
       {/* Stats */}
       {data && (
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-            <p className="text-xs text-slate-500 mb-1">Active</p>
+            <p className="text-xs text-slate-500 mb-1">{t("tabActive")}</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{data.active.length}</p>
-            <p className="text-xs text-slate-400 mt-1">under warranty</p>
+            <p className="text-xs text-slate-400 mt-1">{t("underWarrantyLabel")}</p>
           </div>
           <div className={`border rounded-xl p-4 ${data.expiringSoon.length > 0 ? "bg-orange-500/10 border-orange-500/20" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
-            <p className="text-xs text-slate-500 mb-1">Expiring Soon</p>
+            <p className="text-xs text-slate-500 mb-1">{t("expiringSoon")}</p>
             <p className={`text-2xl font-bold ${data.expiringSoon.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-slate-500"}`}>{data.expiringSoon.length}</p>
-            <p className="text-xs text-slate-400 mt-1">within 30 days</p>
+            <p className="text-xs text-slate-400 mt-1">{t("within30Days")}</p>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-            <p className="text-xs text-slate-500 mb-1">Expired</p>
+            <p className="text-xs text-slate-500 mb-1">{t("expiredLabel")}</p>
             <p className="text-2xl font-bold text-slate-500">{data.expired.length}</p>
-            <p className="text-xs text-slate-400 mt-1">past end date</p>
+            <p className="text-xs text-slate-400 mt-1">{t("pastEndDate")}</p>
           </div>
         </div>
       )}
@@ -264,7 +269,7 @@ export default function WarrantiesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800">
-                  {["Order #","Customer","Device","Warranty Period","Remaining","Assigned",""].map(h => (
+                  {["Order #","Customer","Device",t("warrantyPeriod"),t("remainingLabel"),"Assigned",""].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
                   ))}
                 </tr>

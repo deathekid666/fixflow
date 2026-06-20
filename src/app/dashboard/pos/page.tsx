@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type WorkOrder = {
   id: string;
@@ -41,6 +42,7 @@ const METHOD_ICON: Record<string, string> = {
 };
 
 export default function POSPage() {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<WorkOrder | null>(null);
@@ -147,12 +149,12 @@ export default function POSPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-5 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white">Point of Sale</h1>
-          <p className="text-xs text-slate-500">{loading ? "Loading…" : `${orders.length} order${orders.length !== 1 ? "s" : ""} ready for pickup`}</p>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t("posTitle")}</h1>
+          <p className="text-xs text-slate-500">{loading ? t("loading") : `${orders.length} ${t("ordersReadyPickup")}`}</p>
         </div>
         {summary && (
           <div className="text-right">
-            <p className="text-[11px] text-slate-400 uppercase tracking-wide font-medium">Today</p>
+            <p className="text-[11px] text-slate-400 uppercase tracking-wide font-medium">{t("todayLabel")}</p>
             <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.total.toFixed(2)} <span className="text-sm font-normal text-slate-400">MAD</span></p>
           </div>
         )}
@@ -191,8 +193,8 @@ export default function POSPage() {
           {!loading && orders.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="text-5xl mb-4">🎉</div>
-              <p className="font-semibold text-slate-700 dark:text-slate-300">No orders waiting</p>
-              <p className="text-sm text-slate-400 mt-1">All done orders have been delivered</p>
+              <p className="font-semibold text-slate-700 dark:text-slate-300">{t("noOrdersWaiting")}</p>
+              <p className="text-sm text-slate-400 mt-1">{t("allDelivered")}</p>
             </div>
           )}
 
@@ -254,7 +256,7 @@ export default function POSPage() {
 
               {/* Panel header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
-                <h2 className="font-bold text-slate-900 dark:text-white text-lg">Checkout</h2>
+                <h2 className="font-bold text-slate-900 dark:text-white text-lg">{t("checkoutTitle")}</h2>
                 <button
                   onClick={() => { setSelected(null); setError(""); }}
                   className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -271,17 +273,17 @@ export default function POSPage() {
                   <p className="text-xs text-slate-400">{selected.customerPhone} · #{selected.orderNumber.slice(-8)}</p>
                   <div className="pt-3 mt-1 border-t border-slate-200 dark:border-slate-700 space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Order total</span>
+                      <span className="text-slate-500">{t("orderTotal")}</span>
                       <span className="font-medium text-slate-900 dark:text-white">{selected.total.toFixed(2)} MAD</span>
                     </div>
                     {selected.collected > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Already collected</span>
+                        <span className="text-slate-500">{t("alreadyCollected")}</span>
                         <span className="text-green-600 dark:text-green-400">{selected.collected.toFixed(2)} MAD</span>
                       </div>
                     )}
                     <div className="flex justify-between text-base pt-1">
-                      <span className="font-semibold text-slate-900 dark:text-white">Balance due</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{t("balanceDue")}</span>
                       <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{balanceDue.toFixed(2)} MAD</span>
                     </div>
                   </div>
@@ -290,7 +292,7 @@ export default function POSPage() {
                 {/* Payment method */}
                 {balanceDue > 0 && (
                   <div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2.5">Payment method</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2.5">{t("paymentMethod")}</p>
                     <div className="grid grid-cols-3 gap-2">
                       {METHODS.map(m => (
                         <button
@@ -313,7 +315,7 @@ export default function POSPage() {
                 {/* Cash amount + change calculator */}
                 {balanceDue > 0 && (
                   <div>
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2.5">Customer pays</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2.5">{t("customerPays")}</label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -330,12 +332,12 @@ export default function POSPage() {
                       }`}>
                         {change > 0 ? (
                           <>
-                            <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide font-medium">Change to give back</p>
+                            <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide font-medium">{t("changeToGive")}</p>
                             <p className="text-4xl font-bold text-green-600 dark:text-green-400">{change.toFixed(2)}</p>
                             <p className="text-sm text-slate-400 mt-0.5">MAD</p>
                           </>
                         ) : (
-                          <p className="text-sm text-slate-400 font-medium">No change due</p>
+                          <p className="text-sm text-slate-400 font-medium">{t("noChangeDue")}</p>
                         )}
                       </div>
                     )}
@@ -344,8 +346,8 @@ export default function POSPage() {
 
                 {balanceDue === 0 && (
                   <div className="p-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
-                    <p className="text-green-700 dark:text-green-300 font-medium text-sm">Order fully paid ✓</p>
-                    <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">Tap Deliver below to complete handoff</p>
+                    <p className="text-green-700 dark:text-green-300 font-medium text-sm">{t("orderFullyPaid")}</p>
+                    <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">{t("tapDeliver")}</p>
                   </div>
                 )}
 
@@ -366,7 +368,7 @@ export default function POSPage() {
                   {processing
                     ? "Processing…"
                     : balanceDue === 0
-                      ? "✓ Mark as Delivered"
+                      ? t("markAsDelivered")
                       : `✓ Collect ${balanceDue.toFixed(2)} MAD & Deliver`
                   }
                 </button>
@@ -376,7 +378,7 @@ export default function POSPage() {
                   rel="noopener noreferrer"
                   className="w-full py-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-medium text-sm flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 transition-colors"
                 >
-                  🖨️ Print Receipt
+                  🖨️ {t("printReceipt")}
                 </a>
               </div>
             </div>
@@ -387,8 +389,8 @@ export default function POSPage() {
         {!selected && (
           <div className="hidden lg:flex w-80 xl:w-96 flex-shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-col items-center justify-center p-8 text-center">
             <div className="text-5xl mb-4">👆</div>
-            <p className="font-semibold text-slate-700 dark:text-slate-300">Select an order</p>
-            <p className="text-sm text-slate-400 mt-1">Tap a DONE order to check out the customer</p>
+            <p className="font-semibold text-slate-700 dark:text-slate-300">{t("selectAnOrder")}</p>
+            <p className="text-sm text-slate-400 mt-1">{t("tapDoneOrder")}</p>
           </div>
         )}
       </div>
@@ -396,7 +398,7 @@ export default function POSPage() {
       {/* Daily summary bar */}
       {summary && summary.count > 0 && (
         <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center gap-5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">Today</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">{t("todayLabel")}</p>
           {Object.entries(summary.byMethod).map(([m, amt]) => (
             <div key={m} className="flex items-center gap-1.5 whitespace-nowrap">
               <span className="text-base leading-none">{METHOD_ICON[m] ?? "💰"}</span>

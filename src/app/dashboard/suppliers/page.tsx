@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Supplier = {
   id: string; name: string; phone: string | null; email: string | null;
@@ -30,6 +31,7 @@ const STATUS_STYLES: Record<string, string> = {
 const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
 
 export default function SuppliersPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -278,55 +280,55 @@ export default function SuppliersPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Suppliers</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage suppliers and purchase orders</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("suppliers")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("suppliersSubtitle")}</p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-medium transition-colors">
-          + Add Supplier
+          + {t("addSupplier")}
         </button>
       </div>
 
       {/* Add Supplier Form */}
       {showAdd && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">New Supplier</h2>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("newSupplier")}</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Name *</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("name")} *</label>
               <input className={INPUT} placeholder="e.g. TechParts Morocco" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Phone</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("phone")}</label>
               <input className={INPUT} placeholder="+212 6XX XXX XXX" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Email</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("email")}</label>
               <input className={INPUT} placeholder="supplier@example.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Address</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("address")}</label>
               <input className={INPUT} placeholder="City, Country" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
             </div>
             <div className="col-span-2">
-              <label className="text-xs text-slate-500 mb-1 block">Notes</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("notes")}</label>
               <input className={INPUT} placeholder="Payment terms, lead time, etc." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>
           <div className="flex gap-2">
             <button onClick={addSupplier} disabled={saving || !form.name.trim()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg">{saving ? "Saving..." : "Save Supplier"}</button>
-            <button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm rounded-lg">Cancel</button>
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg">{saving ? t("saving") : t("saveSupplier")}</button>
+            <button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm rounded-lg">{t("cancel")}</button>
           </div>
         </div>
       )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
-        {(["suppliers", "orders"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px capitalize ${tab === t ? "border-blue-600 text-blue-600 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"}`}>
-            {t === "suppliers" ? `Suppliers (${suppliers.length})` : `Purchase Orders (${orders.length})`}
+        {(["suppliers", "orders"] as const).map(tabKey => (
+          <button key={tabKey} onClick={() => setTab(tabKey)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px capitalize ${tab === tabKey ? "border-blue-600 text-blue-600 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"}`}>
+            {tabKey === "suppliers" ? `${t("suppliers")} (${suppliers.length})` : `${t("purchaseOrders")} (${orders.length})`}
           </button>
         ))}
       </div>
@@ -340,7 +342,7 @@ export default function SuppliersPage() {
             </svg>
             <input
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-              placeholder="Search suppliers by name, phone or email..."
+              placeholder={t("searchSuppliers")}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -355,10 +357,10 @@ export default function SuppliersPage() {
           {!loading && suppliers.length === 0 && (
             <div className="py-16 flex flex-col items-center gap-3 text-center">
               <span className="text-5xl">🏭</span>
-              <p className="text-slate-700 dark:text-slate-200 font-semibold">No suppliers yet</p>
-              <p className="text-slate-400 text-sm">Add your first supplier to start creating purchase orders.</p>
+              <p className="text-slate-700 dark:text-slate-200 font-semibold">{t("noSuppliersYet")}</p>
+              <p className="text-slate-400 text-sm">{t("addFirstSupplier")}</p>
               <button onClick={() => setShowAdd(true)} className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg">
-                + Add Supplier
+                + {t("addSupplier")}
               </button>
             </div>
           )}
@@ -394,27 +396,27 @@ export default function SuppliersPage() {
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-xs text-slate-500 mb-1 block">Name *</label>
+                        <label className="text-xs text-slate-500 mb-1 block">{t("name")} *</label>
                         <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                           value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-500 mb-1 block">Phone</label>
+                        <label className="text-xs text-slate-500 mb-1 block">{t("phone")}</label>
                         <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                           value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-500 mb-1 block">Email</label>
+                        <label className="text-xs text-slate-500 mb-1 block">{t("email")}</label>
                         <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                           value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-500 mb-1 block">Address</label>
+                        <label className="text-xs text-slate-500 mb-1 block">{t("address")}</label>
                         <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                           value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} />
                       </div>
                       <div className="col-span-2">
-                        <label className="text-xs text-slate-500 mb-1 block">Notes</label>
+                        <label className="text-xs text-slate-500 mb-1 block">{t("notes")}</label>
                         <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                           value={editForm.notes} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
                       </div>
@@ -422,9 +424,9 @@ export default function SuppliersPage() {
                     <div className="flex gap-2">
                       <button onClick={saveEditSupplier} disabled={savingSupplier || !editForm.name.trim()}
                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                        {savingSupplier ? "Saving..." : "Save"}
+                        {savingSupplier ? t("saving") : t("save")}
                       </button>
-                      <button onClick={() => setEditingSupplier(null)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                      <button onClick={() => setEditingSupplier(null)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
                     </div>
                   </div>
                 )}
@@ -432,18 +434,18 @@ export default function SuppliersPage() {
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => creatingPO === s.id ? setCreatingPO(null) : openCreatePO(s.id)}
                     className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${creatingPO === s.id ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-blue-600 hover:bg-blue-500 text-white"}`}>
-                    {creatingPO === s.id ? "✕ Cancel PO" : "📦 New Purchase Order"}
+                    {creatingPO === s.id ? `✕ ${t("cancel")}` : `📦 ${t("newPurchaseOrder")}`}
                   </button>
                   <button onClick={() => { setFilterSupplier(s.id); setTab("orders"); }}
                     className="px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
-                    View Orders
+                    {t("viewOrders")}
                   </button>
                 </div>
 
                 {/* Inline Create PO Form */}
                 {creatingPO === s.id && (
                   <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">New Purchase Order — {s.name}</p>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{t("newPurchaseOrder")} — {s.name}</p>
 
                     {poItems.map((item, i) => {
                       const selectedPart = parts.find(p => p.id === item.sparePartId);
@@ -454,7 +456,7 @@ export default function SuppliersPage() {
                               className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                               value={item.sparePartId}
                               onChange={e => updatePOItem(i, "sparePartId", e.target.value)}>
-                              <option value="">Select part...</option>
+                              <option value="">{t("selectPart")}</option>
                               {parts.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}{p.partNumber ? ` (${p.partNumber})` : ""} — Stock: {p.stock}</option>
                               ))}
@@ -474,17 +476,17 @@ export default function SuppliersPage() {
                     })}
 
                     <button onClick={addPOItem} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">
-                      + Add another part
+                      {t("addAnotherPart")}
                     </button>
 
                     <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                      placeholder="Notes (optional)" value={poNotes} onChange={e => setPONotes(e.target.value)} />
+                      placeholder={t("notesOptional")} value={poNotes} onChange={e => setPONotes(e.target.value)} />
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-500">Total: <strong className="text-slate-900 dark:text-white">{fmt(poTotal)}</strong></span>
+                      <span className="text-xs text-slate-500">{t("total")}: <strong className="text-slate-900 dark:text-white">{fmt(poTotal)}</strong></span>
                       <button onClick={submitPO} disabled={submittingPO || poItems.every(i => !i.sparePartId)}
                         className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                        {submittingPO ? "Creating..." : "Create Draft PO"}
+                        {submittingPO ? t("adding") : t("createDraftPo")}
                       </button>
                     </div>
                   </div>
@@ -502,7 +504,7 @@ export default function SuppliersPage() {
             <select
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
               value={filterSupplier} onChange={e => setFilterSupplier(e.target.value)}>
-              <option value="">All Suppliers</option>
+              <option value="">{t("allSuppliersOption")}</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <span className="text-xs text-slate-400">{filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""}</span>
@@ -511,8 +513,8 @@ export default function SuppliersPage() {
           {filteredOrders.length === 0 && !loading && (
             <div className="py-16 flex flex-col items-center gap-3 text-center">
               <span className="text-5xl">📦</span>
-              <p className="text-slate-700 dark:text-slate-200 font-semibold">No purchase orders</p>
-              <p className="text-slate-400 text-sm">Create a purchase order from the Suppliers tab.</p>
+              <p className="text-slate-700 dark:text-slate-200 font-semibold">{t("noPurchaseOrders")}</p>
+              <p className="text-slate-400 text-sm">{t("createPoFromTab")}</p>
             </div>
           )}
 
@@ -541,13 +543,13 @@ export default function SuppliersPage() {
                     {o.status === "DRAFT" && (
                       <button onClick={() => updateStatus(o.id, "SENT")} disabled={updatingPO === o.id}
                         className="text-xs px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-600 dark:text-blue-400 rounded-lg transition-colors disabled:opacity-50">
-                        Mark Sent
+                        {t("markSent")}
                       </button>
                     )}
                     {o.status === "SENT" && (
                       <button onClick={() => updateStatus(o.id, "RECEIVED")} disabled={updatingPO === o.id}
                         className="text-xs px-3 py-1.5 bg-green-600/20 hover:bg-green-600/40 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50">
-                        Mark Received
+                        {t("markReceived")}
                       </button>
                     )}
                     <button onClick={() => editingPO === o.id ? setEditingPO(null) : openEditPO(o)}
@@ -565,10 +567,10 @@ export default function SuppliersPage() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-slate-400">
-                        <th className="text-left pb-1.5 font-medium">Part</th>
-                        <th className="text-right pb-1.5 font-medium">Qty</th>
-                        <th className="text-right pb-1.5 font-medium">Unit Cost</th>
-                        <th className="text-right pb-1.5 font-medium">Total</th>
+                        <th className="text-left pb-1.5 font-medium">{t("part")}</th>
+                        <th className="text-right pb-1.5 font-medium">{t("quantity")}</th>
+                        <th className="text-right pb-1.5 font-medium">{t("unitPrice")}</th>
+                        <th className="text-right pb-1.5 font-medium">{t("total")}</th>
                       </tr>
                     </thead>
                     <tbody className="text-slate-700 dark:text-slate-300">
@@ -591,7 +593,7 @@ export default function SuppliersPage() {
 
                 {editingPO === o.id && (
                   <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Edit Purchase Order</p>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{t("editPurchaseOrder")}</p>
 
                     {editItems.map((item, i) => (
                       <div key={i} className="flex gap-2 items-start">
@@ -600,7 +602,7 @@ export default function SuppliersPage() {
                             className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                             value={item.sparePartId}
                             onChange={e => updateEditItem(i, "sparePartId", e.target.value)}>
-                            <option value="">Select part...</option>
+                            <option value="">{t("selectPart")}</option>
                             {parts.map(p => (
                               <option key={p.id} value={p.id}>{p.name}{p.partNumber ? ` (${p.partNumber})` : ""} — Stock: {p.stock}</option>
                             ))}
@@ -620,23 +622,23 @@ export default function SuppliersPage() {
 
                     <button onClick={() => setEditItems(prev => [...prev, { sparePartId: "", quantity: "1", unitCost: "" }])}
                       className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors">
-                      + Add another part
+                      {t("addAnotherPart")}
                     </button>
 
                     <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                      placeholder="Notes (optional)" value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+                      placeholder={t("notesOptional")} value={editNotes} onChange={e => setEditNotes(e.target.value)} />
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-slate-500">
-                        Total: <strong className="text-slate-900 dark:text-white">
+                        {t("total")}: <strong className="text-slate-900 dark:text-white">
                           {fmt(editItems.reduce((sum, i) => sum + (parseInt(i.quantity) || 0) * (parseFloat(i.unitCost) || 0), 0))}
                         </strong>
                       </span>
                       <div className="flex gap-2">
-                        <button onClick={() => setEditingPO(null)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">Cancel</button>
+                        <button onClick={() => setEditingPO(null)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg">{t("cancel")}</button>
                         <button onClick={saveEditPO} disabled={savingEdit || editItems.every(i => !i.sparePartId)}
                           className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                          {savingEdit ? "Saving..." : "Save Changes"}
+                          {savingEdit ? t("saving") : t("saveChanges")}
                         </button>
                       </div>
                     </div>

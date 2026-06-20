@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { buildWaUrl, fillTemplate, DEFAULT_TEMPLATES } from "@/lib/whatsapp";
 import QRCode from "react-qr-code";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Appointment = {
   id: string; shopId: string;
@@ -90,6 +91,7 @@ const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dar
 export default function AppointmentsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [view, setView] = useState<"calendar" | "list" | "checkins">("calendar");
@@ -352,8 +354,8 @@ export default function AppointmentsPage() {
             <span className="text-sm font-semibold text-slate-900 dark:text-white hidden sm:inline">
               {view === "calendar"
                 ? `${fmt(weekStart, { month: "short", day: "numeric" })} – ${fmt(new Date(weekEnd.getTime() - 1), { month: "short", day: "numeric", year: "numeric" })}`
-                : view === "checkins" ? "Today's Check-ins"
-                : "All Appointments"}
+                : view === "checkins" ? t("todaysCheckins")
+                : t("allAppointments")}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -361,20 +363,20 @@ export default function AppointmentsPage() {
             <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
               <button onClick={() => setView("calendar")}
                 className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${view === "calendar" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
-                📅 Calendar
+                📅 {t("calendarView")}
               </button>
               <button onClick={() => setView("list")}
                 className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${view === "list" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
-                ☰ List
+                ☰ {t("listView")}
               </button>
               <button onClick={() => setView("checkins")}
                 className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${view === "checkins" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
-                ✅ Check-ins
+                ✅ {t("checkinsView")}
               </button>
             </div>
             <button onClick={() => { setShowForm(true); setSelected(null); setForm(EMPTY_FORM); }}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm rounded-lg font-medium transition-colors flex items-center gap-1">
-              + <span className="hidden sm:inline">New Appointment</span><span className="sm:hidden">New</span>
+              + <span className="hidden sm:inline">{t("newAppointment")}</span><span className="sm:hidden">{t("newWorkOrder").split(" ")[0]}</span>
             </button>
           </div>
         </div>
@@ -484,7 +486,7 @@ export default function AppointmentsPage() {
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${listFilter === s
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400"}`}>
-                  {s ? STATUS_LABEL[s] : "All"}
+                  {s ? STATUS_LABEL[s] : t("all")}
                   {s === "PENDING" && listAppts.filter(a => a.status === "PENDING").length > 0 && (
                     <span className="ml-1.5 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                       {listAppts.filter(a => a.status === "PENDING").length}
@@ -505,7 +507,7 @@ export default function AppointmentsPage() {
             {!loadingList && listFiltered.length === 0 && (
               <div className="text-center py-16">
                 <p className="text-3xl mb-3">📅</p>
-                <p className="text-slate-500 text-sm">{listFilter ? "No appointments with this status" : "No appointments yet"}</p>
+                <p className="text-slate-500 text-sm">{listFilter ? t("noAppointmentsStatus") : t("noAppointmentsYet")}</p>
               </div>
             )}
 
@@ -536,12 +538,12 @@ export default function AppointmentsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Date & Time</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Customer</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Device</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 hidden lg:table-cell">Issue</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Status</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Actions</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("dateTimeHeader")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("customer")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("device")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 hidden lg:table-cell">{t("issueLabel")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("status")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("actionsHeader")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -571,13 +573,13 @@ export default function AppointmentsPage() {
                               {appt.status === "PENDING" && (
                                 <button onClick={() => updateStatus(appt.id, "CONFIRMED")}
                                   className="text-xs px-2 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 rounded-md transition-colors">
-                                  Confirm
+                                  {t("confirmAction")}
                                 </button>
                               )}
                               {appt.status !== "CANCELLED" && appt.status !== "COMPLETED" && (
                                 <button onClick={() => updateStatus(appt.id, "CANCELLED")}
                                   className="text-xs px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-md transition-colors">
-                                  Cancel
+                                  {t("cancelAction")}
                                 </button>
                               )}
                             </div>
@@ -599,19 +601,19 @@ export default function AppointmentsPage() {
           {/* Panel header */}
           <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              {showForm ? "New Appointment" : editMode ? "Edit Appointment" : "Appointment Details"}
+              {showForm ? t("newAppointmentTitle") : editMode ? t("editAppointment") : t("appointmentDetails")}
             </h2>
             <div className="flex items-center gap-2">
               {selected && !showForm && !editMode && (
                 <button onClick={openEditMode}
                   className="text-xs px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
-                  ✏ Edit
+                  ✏ {t("edit")}
                 </button>
               )}
               {editMode && (
                 <button onClick={() => setEditMode(false)}
                   className="text-xs px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
-                  ← Back
+                  ← {t("back")}
                 </button>
               )}
               <button onClick={() => { setShowForm(false); setSelected(null); setEditMode(false); setRescheduling(false); }}
@@ -625,44 +627,44 @@ export default function AppointmentsPage() {
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <label className="text-xs text-slate-500 mb-1 block">Customer Name *</label>
-                    <input className={INPUT} value={form.customerName} onChange={e => setForm(p => ({ ...p, customerName: e.target.value }))} placeholder="Full name" />
+                    <label className="text-xs text-slate-500 mb-1 block">{t("customerName")} *</label>
+                    <input className={INPUT} value={form.customerName} onChange={e => setForm(p => ({ ...p, customerName: e.target.value }))} placeholder={t("name")} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Phone *</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("phone")} *</label>
                     <input className={INPUT} value={form.customerPhone} onChange={e => setForm(p => ({ ...p, customerPhone: e.target.value }))} placeholder="+212 6XX" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Date & Time *</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("dateAndTime")} *</label>
                     <input type="datetime-local" className={INPUT} value={form.scheduledAt} onChange={e => setForm(p => ({ ...p, scheduledAt: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Brand *</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("brand")} *</label>
                     <input className={INPUT} value={form.deviceBrand} onChange={e => setForm(p => ({ ...p, deviceBrand: e.target.value }))} placeholder="Apple, Samsung…" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Model *</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("model")} *</label>
                     <input className={INPUT} value={form.deviceModel} onChange={e => setForm(p => ({ ...p, deviceModel: e.target.value }))} placeholder="iPhone 15…" />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs text-slate-500 mb-1 block">Issue *</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("issueLabel")} *</label>
                     <input className={INPUT} value={form.faultDescription} onChange={e => setForm(p => ({ ...p, faultDescription: e.target.value }))} placeholder="Describe the issue…" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Duration</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("duration")}</label>
                     <select className={INPUT} value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}>
                       {[15, 30, 45, 60, 90, 120].map(d => <option key={d} value={d}>{d} min</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Notes</label>
-                    <input className={INPUT} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional" />
+                    <label className="text-xs text-slate-500 mb-1 block">{t("remarks")}</label>
+                    <input className={INPUT} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={t("save")} />
                   </div>
                 </div>
                 <button onClick={createAppointment}
                   disabled={saving || !form.customerName || !form.customerPhone || !form.deviceBrand || !form.deviceModel || !form.faultDescription || !form.scheduledAt}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
-                  {saving ? "Creating…" : "Create Appointment"}
+                  {saving ? t("creating") : t("createAppointment")}
                 </button>
               </div>
             )}
@@ -681,7 +683,7 @@ export default function AppointmentsPage() {
                       <span>📅</span>
                       <span>{fmtDateTime(selected.scheduledAt)}</span>
                     </div>
-                    <div className="text-xs text-slate-500">{selected.duration} min appointment</div>
+                    <div className="text-xs text-slate-500">{selected.duration} {t("minAppointment")}</div>
                   </div>
                 </div>
 
@@ -714,38 +716,38 @@ export default function AppointmentsPage() {
                 {/* Action buttons */}
                 {selected.status !== "CANCELLED" && selected.status !== "COMPLETED" && (
                   <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Actions</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{t("actionsHeader")}</p>
 
                     <div className="flex gap-2 flex-wrap">
                       {selected.status === "PENDING" && (
                         <button onClick={() => updateStatus(selected.id, "CONFIRMED")}
                           className="flex-1 py-2 text-xs font-semibold bg-green-600/15 hover:bg-green-600/25 text-green-700 dark:text-green-400 border border-green-500/30 rounded-lg transition-colors">
-                          ✓ Confirm
+                          ✓ {t("confirmAction")}
                         </button>
                       )}
                       <button onClick={() => { setRescheduling(v => !v); setRescheduleTime(toLocalDatetimeInput(new Date(selected.scheduledAt))); }}
                         className="flex-1 py-2 text-xs font-semibold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-400 border border-blue-500/30 rounded-lg transition-colors">
-                        ⏰ Reschedule
+                        ⏰ {t("reschedule")}
                       </button>
                       <button onClick={() => updateStatus(selected.id, "CANCELLED")}
                         className="flex-1 py-2 text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-400/30 rounded-lg transition-colors">
-                        ✕ Cancel
+                        ✕ {t("cancelAction")}
                       </button>
                     </div>
 
                     {/* Reschedule inline picker */}
                     {rescheduling && (
                       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl p-3 space-y-2">
-                        <label className="text-xs text-blue-700 dark:text-blue-300 font-medium">New date & time</label>
+                        <label className="text-xs text-blue-700 dark:text-blue-300 font-medium">{t("newDateTime")}</label>
                         <input type="datetime-local" className={INPUT} value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)} />
                         <div className="flex gap-2">
                           <button onClick={doReschedule} disabled={savingReschedule || !rescheduleTime}
                             className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
-                            {savingReschedule ? "Saving…" : "Confirm Reschedule"}
+                            {savingReschedule ? t("savingLabel") : t("confirmReschedule")}
                           </button>
                           <button onClick={() => setRescheduling(false)}
                             className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg transition-colors">
-                            Cancel
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>
@@ -765,7 +767,7 @@ export default function AppointmentsPage() {
                       return (
                         <a href={buildWaUrl(selected.customerPhone, msg)} target="_blank" rel="noopener noreferrer"
                           className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-green-600/15 hover:bg-green-600/25 text-green-700 dark:text-green-400 border border-green-500/30 rounded-lg transition-colors">
-                          💬 Send WhatsApp Confirmation
+                          💬 {t("sendWhatsApp")}
                         </a>
                       );
                     })()}
@@ -778,7 +780,7 @@ export default function AppointmentsPage() {
                       className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
                       {converting
                         ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Creating…</>
-                        : <><span>📋</span> Convert to Work Order</>}
+                        : <><span>📋</span> {t("convertToWorkOrder")}</>}
                     </button>
                   </div>
                 )}

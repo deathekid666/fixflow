@@ -4,6 +4,7 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { formatCurrency } from "@/lib/currency";
 import { REFERRAL_SOURCES, REFERRAL_LABELS } from "@/lib/referralSources";
 import type { ImeiResult } from "@/lib/imei";
@@ -30,6 +31,7 @@ const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dar
 
 export default function NewWorkOrderPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const currency = user?.shop?.currency ?? "MAD";
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState({ limit: 50, current: 50 });
@@ -223,7 +225,7 @@ export default function NewWorkOrderPage() {
       return;
     }
     if (!form.deviceBrand || !form.deviceModel || !form.customerName || !form.customerPhone || !form.faultDescription) {
-      setError("Please fill in all required fields."); return;
+      setError(t("fillRequiredFields")); return;
     }
     setLoading(true);
 
@@ -316,13 +318,13 @@ export default function NewWorkOrderPage() {
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">New Work Order</h1>
+          <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← {t("back")}</button>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("newWorkOrderTitle")}</h1>
         </div>
         <button onClick={() => setShowTemplates(!showTemplates)}
           className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm rounded-lg transition-colors flex items-center gap-2">
           <span>🗂️</span>
-          {showTemplates ? "Hide Templates" : "Use Template"}
+          {showTemplates ? t("hideTemplates") : t("useTemplate")}
           {templates.length > 0 && <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">{templates.length}</span>}
         </button>
       </div>
@@ -330,7 +332,7 @@ export default function NewWorkOrderPage() {
       {selectedTemplate && (
         <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-800/50 rounded-xl px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Template applied: {selectedTemplate.name}</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{t("templateApplied")}: {selectedTemplate.name}</p>
             <p className="text-xs text-slate-500 mt-0.5">
               {Array.isArray(selectedTemplate.defaultParts) && selectedTemplate.defaultParts.length > 0 && `${selectedTemplate.defaultParts.length} parts · `}
               {Array.isArray(selectedTemplate.defaultLineItems) && selectedTemplate.defaultLineItems.length > 0 && `${selectedTemplate.defaultLineItems.length} services · `}
@@ -353,7 +355,7 @@ export default function NewWorkOrderPage() {
             </div>
           )}
           {filteredTemplates.length === 0 ? (
-            <p className="text-xs text-slate-500">No templates yet.</p>
+            <p className="text-xs text-slate-500">{t("noTemplatesYet")}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {filteredTemplates.map(t => (
@@ -377,9 +379,9 @@ export default function NewWorkOrderPage() {
       {/* Step progress indicator */}
       <div className="flex items-center justify-between">
         {[
-          { n: 1, label: "Device Info" },
-          { n: 2, label: "Customer" },
-          { n: 3, label: "Fault & Photos" },
+          { n: 1, label: t("step1DeviceInfo") },
+          { n: 2, label: t("step2Customer") },
+          { n: 3, label: t("step3FaultPhotos") },
         ].map((step, i, arr) => (
           <div key={step.n} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -397,13 +399,13 @@ export default function NewWorkOrderPage() {
 
       {/* Device Info */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Device Information</h2>
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("deviceInformation")}</h2>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} placeholder="e.g. Samsung, Apple" />
-          <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} placeholder="e.g. Galaxy S22" />
-          <Field label="Serial Number" value={form.serialNumber} onChange={v => set("serialNumber", v)} placeholder="SN" />
+          <Field label={`${t("brand")} *`} value={form.deviceBrand} onChange={v => set("deviceBrand", v)} placeholder="e.g. Samsung, Apple" />
+          <Field label={`${t("model")} *`} value={form.deviceModel} onChange={v => set("deviceModel", v)} placeholder="e.g. Galaxy S22" />
+          <Field label={t("serialNumber")} value={form.serialNumber} onChange={v => set("serialNumber", v)} placeholder="SN" />
           <div className="col-span-2">
-            <label className="text-xs text-slate-500 mb-1 block">IMEI</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("imei")}</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
@@ -441,12 +443,12 @@ export default function NewWorkOrderPage() {
             )}
             {imeiCheckResult && <ImeiResultBadge result={imeiCheckResult} />}
           </div>
-          <Field label="Warranty Start" type="date" value={form.warrantyStart} onChange={v => set("warrantyStart", v)} />
-          <Field label="Warranty End" type="date" value={form.warrantyEnd} onChange={v => set("warrantyEnd", v)} />
+          <Field label={t("warrantyStart")} type="date" value={form.warrantyStart} onChange={v => set("warrantyStart", v)} />
+          <Field label={t("warrantyEnd")} type="date" value={form.warrantyEnd} onChange={v => set("warrantyEnd", v)} />
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer">
           <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded border-slate-300 dark:border-slate-600" />
-          Device is under warranty
+          {t("deviceIsUnderWarranty")}
         </label>
       </section>
 
@@ -455,13 +457,13 @@ export default function NewWorkOrderPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
-              Device Photos <span className="text-red-500">*</span>
+              {t("devicePhotos")} <span className="text-red-500">*</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">Document device condition on intake — protects against disputes</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t("devicePhotosDesc")}</p>
           </div>
           <button onClick={() => photoRef.current?.click()}
             className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-1.5">
-            📷 Add Photos
+            📷 {t("addPhotos")}
           </button>
           <input ref={photoRef} type="file" className="hidden" accept="image/*" multiple onChange={onPhotoSelected} />
         </div>
@@ -474,13 +476,13 @@ export default function NewWorkOrderPage() {
                   : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"
               }`}>
               <p className="text-3xl mb-2">📷</p>
-              <p className={`text-sm ${photoError ? "text-red-600 dark:text-red-400 font-medium" : "text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"}`}>Click to add device photos</p>
-              <p className="text-xs text-slate-400 mt-1">Front, back, sides, any existing damage</p>
+              <p className={`text-sm ${photoError ? "text-red-600 dark:text-red-400 font-medium" : "text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"}`}>{t("clickToAddPhotos")}</p>
+              <p className="text-xs text-slate-400 mt-1">{t("photoFrontBack")}</p>
             </button>
             {photoError && (
               <>
-                <p className="text-sm font-medium text-red-500 dark:text-red-400">⚠ Device photo is required</p>
-                <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>At least one device photo is required</p>
+                <p className="text-sm font-medium text-red-500 dark:text-red-400">{t("photoRequired")}</p>
+                <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{t("atLeastOnePhoto")}</p>
               </>
             )}
           </>
@@ -501,7 +503,7 @@ export default function NewWorkOrderPage() {
               <button onClick={() => photoRef.current?.click()}
                 className="aspect-square border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors group">
                 <span className="text-2xl text-slate-400">+</span>
-                <span className="text-xs text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">Add more</span>
+                <span className="text-xs text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">{t("addMore")}</span>
               </button>
             </div>
             <p className="text-xs text-slate-500">{intakePhotos.length} photo{intakePhotos.length !== 1 ? "s" : ""} added</p>
@@ -511,10 +513,10 @@ export default function NewWorkOrderPage() {
 
       {/* Customer Info */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Customer Information</h2>
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("customerInformation")}</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Phone *</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("phone")} *</label>
             <div className="relative">
               <input type="text" placeholder="+212..."
                 className={INPUT}
@@ -522,24 +524,24 @@ export default function NewWorkOrderPage() {
               {lookingUp && <span className="absolute right-3 top-2.5 text-xs text-slate-400">🔍</span>}
             </div>
           </div>
-          <Field label="Name *" value={form.customerName} onChange={v => set("customerName", v)} placeholder="Full name" />
+          <Field label={`${t("name")} *`} value={form.customerName} onChange={v => set("customerName", v)} placeholder="Full name" />
           <div className="col-span-2">
-            <Field label="Email" value={form.customerEmail} onChange={v => set("customerEmail", v)} placeholder="customer@email.com" />
+            <Field label={t("email")} value={form.customerEmail} onChange={v => set("customerEmail", v)} placeholder="customer@email.com" />
           </div>
         </div>
         {customerHistory && (
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-800/50 rounded-lg p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">👤 Returning Customer</p>
+              <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">{t("returningCustomer")}</p>
               <button onClick={() => { set("customerName", customerHistory.name); set("customerEmail", customerHistory.email || ""); }}
                 className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
-                Use this customer
+                {t("useThisCustomer")}
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3 text-xs">
-              <div><p className="text-slate-500">Name</p><p className="text-slate-800 dark:text-slate-200 font-medium">{customerHistory.name}</p></div>
-              <div><p className="text-slate-500">Total Orders</p><p className="text-slate-800 dark:text-slate-200 font-medium">{customerHistory.totalOrders}</p></div>
-              <div><p className="text-slate-500">Last Visit</p><p className="text-slate-800 dark:text-slate-200 font-medium">{new Date(customerHistory.lastVisit).toLocaleDateString()}</p></div>
+              <div><p className="text-slate-500">{t("name")}</p><p className="text-slate-800 dark:text-slate-200 font-medium">{customerHistory.name}</p></div>
+              <div><p className="text-slate-500">{t("totalOrdersLabel")}</p><p className="text-slate-800 dark:text-slate-200 font-medium">{customerHistory.totalOrders}</p></div>
+              <div><p className="text-slate-500">{t("lastVisitLabel")}</p><p className="text-slate-800 dark:text-slate-200 font-medium">{new Date(customerHistory.lastVisit).toLocaleDateString()}</p></div>
             </div>
           </div>
         )}
@@ -547,10 +549,10 @@ export default function NewWorkOrderPage() {
 
       {/* Fault Info */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Fault & Service</h2>
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("faultService")}</h2>
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">Fault Description *</label>
-          <textarea rows={3} placeholder="Describe the fault..."
+          <label className="text-xs text-slate-500 mb-1 block">{t("faultDescriptionLabel")}</label>
+          <textarea rows={3} placeholder={t("describeFault")}
             className={INPUT + " resize-none"}
             value={form.faultDescription} onChange={e => set("faultDescription", e.target.value)} />
         </div>
@@ -561,7 +563,7 @@ export default function NewWorkOrderPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-base">✨</span>
-                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">AI Repair Estimate</span>
+                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{t("aiRepairEstimate")}</span>
               </div>
               <span className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-500 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">beta</span>
             </div>
@@ -580,17 +582,17 @@ export default function NewWorkOrderPage() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Est. Duration</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">{t("estDuration")}</p>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">⏱ {aiEstimate.duration}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Cost Range</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">{t("costRange")}</p>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">💰 {aiEstimate.costRange}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Likely Parts</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t("likelyParts")}</p>
                     {aiEstimate.parts.length === 0 ? (
-                      <p className="text-xs text-slate-400">None expected</p>
+                      <p className="text-xs text-slate-400">{t("noneExpected")}</p>
                     ) : (
                       <ul className="space-y-0.5">
                         {aiEstimate.parts.map((p, i) => (
@@ -600,7 +602,7 @@ export default function NewWorkOrderPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">Success Rate</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">{t("successRate")}</p>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 rounded-full bg-blue-200 dark:bg-blue-900/60 overflow-hidden">
                         <div
@@ -616,7 +618,7 @@ export default function NewWorkOrderPage() {
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/30">
-                  AI estimates are indicative only and may vary based on actual device condition.
+                  {t("aiDisclaimer")}
                 </p>
               </>
             ) : null}
@@ -624,9 +626,9 @@ export default function NewWorkOrderPage() {
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Appearance" value={form.appearance} onChange={v => set("appearance", v)} placeholder="e.g. Good, Scratched" />
+          <Field label={t("appearanceLabel")} value={form.appearance} onChange={v => set("appearance", v)} placeholder="e.g. Good, Scratched" />
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Repair Type</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("repairTypeLabel")}</label>
             <div className="flex gap-2">
               <input type="text" placeholder="e.g. Screen Replacement" value={form.repairType} onChange={e => set("repairType", e.target.value)}
                 className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
@@ -640,7 +642,7 @@ export default function NewWorkOrderPage() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Service Type</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("serviceTypeLabel")}</label>
             <select className={INPUT}
               value={form.serviceType} onChange={e => set("serviceType", e.target.value)}>
               <option value="IN_STORE">In Store</option>
@@ -649,7 +651,7 @@ export default function NewWorkOrderPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Fault Level</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("faultLevelLabel")}</label>
             <select className={INPUT}
               value={form.faultLevel} onChange={e => set("faultLevel", e.target.value)}>
               <option value="LOW">Low</option>
@@ -659,23 +661,23 @@ export default function NewWorkOrderPage() {
           </div>
           {branches.length > 0 && (
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Branch</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("branchLabel")}</label>
               <select className={INPUT} value={form.branchId} onChange={e => set("branchId", e.target.value)}>
-                <option value="">— No Branch —</option>
+                <option value="">{t("noBranch")}</option>
                 {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">How did they find us?</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("howDidTheyFind")}</label>
             <select className={INPUT} value={form.referralSource} onChange={e => set("referralSource", e.target.value)}>
-              <option value="">— Select source —</option>
+              <option value="">{t("selectSource")}</option>
               {REFERRAL_SOURCES.map(s => <option key={s} value={s}>{REFERRAL_LABELS[s]}</option>)}
             </select>
           </div>
           {form.referralSource === "REFERRAL" && (
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Referred by (customer name)</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("referredBy")}</label>
               <input type="text" placeholder="Who referred them?"
                 className={INPUT}
                 value={form.referredBy} onChange={e => set("referredBy", e.target.value)} />
@@ -745,8 +747,8 @@ export default function NewWorkOrderPage() {
         )}
 
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">Remarks</label>
-          <textarea rows={2} placeholder="Any additional remarks..."
+          <label className="text-xs text-slate-500 mb-1 block">{t("remarksLabel")}</label>
+          <textarea rows={2} placeholder={t("additionalRemarks")}
             className={INPUT + " resize-none"}
             value={form.remarks} onChange={e => set("remarks", e.target.value)} />
         </div>
@@ -754,7 +756,7 @@ export default function NewWorkOrderPage() {
 
       <button onClick={handleSubmit} disabled={loading}
         className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors">
-        {loading ? "Creating..." : "Create Work Order"}
+        {loading ? t("creating") : t("createWorkOrderBtn")}
       </button>
     </div>
   );

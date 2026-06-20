@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Conversation = {
   id: string;
@@ -39,6 +40,7 @@ function timeAgo(date: string) {
 }
 
 export default function MessagesPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,8 +55,8 @@ export default function MessagesPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Messages</h1>
-        <p className="text-sm text-slate-400 mt-1">Customer conversations across all work orders</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("messagesTitle")}</h1>
+        <p className="text-sm text-slate-400 mt-1">{t("messagesSubtitle")}</p>
       </div>
 
       {loading ? (
@@ -66,9 +68,9 @@ export default function MessagesPage() {
       ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-4xl mb-4">💬</p>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">No messages yet.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{t("noMessagesYet")}</p>
           <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
-            Messages from customers will appear here.
+            {t("messagesWillAppear")}
           </p>
         </div>
       ) : (
@@ -103,8 +105,8 @@ export default function MessagesPage() {
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
                     {isFromCustomer
-                      ? <span className="text-blue-500 dark:text-blue-400 font-medium">Customer: </span>
-                      : <span className="text-slate-400">You: </span>}
+                      ? <span className="text-blue-500 dark:text-blue-400 font-medium">{t("customerLabel")} </span>
+                      : <span className="text-slate-400">{t("youLabel")} </span>}
                     {conv.message}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">

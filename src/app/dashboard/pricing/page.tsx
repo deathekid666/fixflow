@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { useLanguage } from "@/context/LanguageContext";
 
 type PriceStat = {
   repairType: string;
@@ -34,6 +35,7 @@ const CONFIDENCE_COLORS: Record<string, string> = {
 const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
 
 export default function PricingPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -119,13 +121,13 @@ export default function PricingPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Pricing Engine</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Track, analyze, and optimize your repair pricing</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("pricingEngine")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("pricingSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowForm(!showForm)}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors">
-            + Add Historical Price
+            {t("addHistoricalPrice")}
           </button>
         </div>
       </div>
@@ -133,7 +135,7 @@ export default function PricingPage() {
       {/* Manual entry form */}
       {showForm && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Add Historical Pricing Entry</h2>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">{t("addHistoricalPricingEntry")}</h2>
           <form onSubmit={handleManualEntry} className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Device Brand</label>
@@ -148,24 +150,24 @@ export default function PricingPage() {
               <input className={INPUT} placeholder="e.g. Screen Replacement" required value={form.repairType} onChange={e => setForm(f => ({ ...f, repairType: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Price Charged ({currency}) *</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("priceCharged")} ({currency}) *</label>
               <input type="number" min="0" step="0.01" required className={INPUT} placeholder="0.00" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Parts Cost ({currency})</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("partsCost")} ({currency})</label>
               <input type="number" min="0" step="0.01" className={INPUT} placeholder="0.00" value={form.partsCost} onChange={e => setForm(f => ({ ...f, partsCost: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Customer Accepted?</label>
+              <label className="text-xs text-slate-500 mb-1 block">{t("customerAccepted")}</label>
               <select className={INPUT} value={form.acceptedByCustomer} onChange={e => setForm(f => ({ ...f, acceptedByCustomer: e.target.value }))}>
-                <option value="true">Yes</option>
-                <option value="false">No (rejected / walked away)</option>
+                <option value="true">{t("yesOption")}</option>
+                <option value="false">{t("noRejected")}</option>
               </select>
             </div>
             <div className="col-span-2 sm:col-span-3 flex items-center gap-3">
               <button type="submit" disabled={saving}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors">
-                {saving ? "Saving…" : "Save Entry"}
+                {saving ? "Saving…" : t("saveEntry")}
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Cancel</button>
               {saveMsg && <span className={`text-sm ${saveMsg.startsWith("F") ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>{saveMsg}</span>}
@@ -189,10 +191,10 @@ export default function PricingPage() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: "Repair Types Tracked", value: data.stats.length, icon: "🔧" },
-              { label: "Total Entries", value: data.total, icon: "📊" },
-              { label: "Most Done", value: data.stats[0]?.repairType ?? "—", icon: "🏆", small: true },
-              { label: "Underpriced Repairs", value: data.underpriced.length, icon: "⚠", warn: data.underpriced.length > 0 },
+              { label: t("repairTypesTracked"), value: data.stats.length, icon: "🔧" },
+              { label: t("totalEntries"), value: data.total, icon: "📊" },
+              { label: t("mostDone"), value: data.stats[0]?.repairType ?? "—", icon: "🏆", small: true },
+              { label: t("underpricedRepairs"), value: data.underpriced.length, icon: "⚠", warn: data.underpriced.length > 0 },
             ].map((card, i) => (
               <div key={i} className={`bg-white dark:bg-slate-900 border rounded-xl p-4 ${card.warn ? "border-amber-300 dark:border-amber-700/50" : "border-slate-200 dark:border-slate-800"}`}>
                 <p className="text-xs text-slate-500 mb-1">{card.label}</p>
@@ -213,7 +215,7 @@ export default function PricingPage() {
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                   view === v ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}>
-                {v === "overview" ? "All Repair Types" : "Analytics"}
+                {v === "overview" ? t("allRepairTypes") : t("analyticsTab")}
               </button>
             ))}
           </div>
@@ -223,15 +225,15 @@ export default function PricingPage() {
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
                 <input className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                  placeholder="Search repair type…" value={search} onChange={e => setSearch(e.target.value)} />
-                <span className="text-xs text-slate-400 flex-shrink-0">{filtered.length} types</span>
+                  placeholder={t("searchRepairType")} value={search} onChange={e => setSearch(e.target.value)} />
+                <span className="text-xs text-slate-400 flex-shrink-0">{filtered.length} {t("typesLabel")}</span>
               </div>
 
               {filtered.length === 0 ? (
                 <div className="py-16 text-center">
                   <p className="text-3xl mb-2">💰</p>
-                  <p className="text-sm text-slate-500">No pricing data yet.</p>
-                  <p className="text-xs text-slate-400 mt-1">Prices are saved automatically when work orders are delivered, or add them manually above.</p>
+                  <p className="text-sm text-slate-500">{t("noPricingDataYet")}</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("pricingAutoSaved")}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -246,19 +248,19 @@ export default function PricingPage() {
                           </div>
                           <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 text-xs">
                             <div>
-                              <p className="text-slate-400 mb-0.5">Min</p>
+                              <p className="text-slate-400 mb-0.5">{t("minLabel")}</p>
                               <p className="font-medium text-slate-700 dark:text-slate-300">{fmt(s.minPrice)}</p>
                             </div>
                             <div>
-                              <p className="text-slate-400 mb-0.5">Average</p>
+                              <p className="text-slate-400 mb-0.5">{t("averageLabel")}</p>
                               <p className="font-bold text-slate-900 dark:text-white">{fmt(s.avgPrice)}</p>
                             </div>
                             <div>
-                              <p className="text-slate-400 mb-0.5">Max</p>
+                              <p className="text-slate-400 mb-0.5">{t("maxLabel")}</p>
                               <p className="font-medium text-slate-700 dark:text-slate-300">{fmt(s.maxPrice)}</p>
                             </div>
                             <div className="col-span-2">
-                              <p className="text-slate-400 mb-1">Margin</p>
+                              <p className="text-slate-400 mb-1">{t("marginLabel")}</p>
                               <MarginBar margin={s.avgMargin} />
                             </div>
                           </div>
@@ -294,9 +296,9 @@ export default function PricingPage() {
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-xl">🏆</span>
-                  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Most Profitable Repairs</h2>
+                  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("mostProfitable")}</h2>
                 </div>
-                {data.mostProfitable.length === 0 ? <p className="text-sm text-slate-400">Not enough data yet.</p> : (
+                {data.mostProfitable.length === 0 ? <p className="text-sm text-slate-400">{t("notEnoughData")}</p> : (
                   <div className="space-y-3">
                     {data.mostProfitable.map(s => (
                       <div key={s.repairType} className="flex items-center gap-4">
@@ -317,10 +319,10 @@ export default function PricingPage() {
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">📉</span>
-                  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Least Profitable — Consider Raising Prices</h2>
+                  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("leastProfitable")}</h2>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">Repairs where your margin is lowest. Consider raising prices or reducing parts cost.</p>
-                {data.leastProfitable.length === 0 ? <p className="text-sm text-slate-400">Not enough data yet.</p> : (
+                <p className="text-xs text-slate-400 mb-4">{t("leastProfitableHint")}</p>
+                {data.leastProfitable.length === 0 ? <p className="text-sm text-slate-400">{t("notEnoughData")}</p> : (
                   <div className="space-y-3">
                     {data.leastProfitable.map(s => (
                       <div key={s.repairType} className="flex items-center gap-4">
@@ -342,9 +344,9 @@ export default function PricingPage() {
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl">⚠</span>
-                    <h2 className="text-sm font-semibold text-amber-700 dark:text-amber-300">Underpriced Repairs</h2>
+                    <h2 className="text-sm font-semibold text-amber-700 dark:text-amber-300">{t("underpricedTitle")}</h2>
                   </div>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-4">These repairs have under 20% margin — you may be losing money after parts + labor.</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-4">{t("underpricedHint")}</p>
                   <div className="space-y-2">
                     {data.underpriced.map(s => (
                       <div key={s.repairType} className="flex items-center justify-between">
@@ -364,9 +366,9 @@ export default function PricingPage() {
                 <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl">📈</span>
-                    <h2 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Opportunity — Consider Raising Prices</h2>
+                    <h2 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{t("raiseTitle")}</h2>
                   </div>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-4">These repairs have &ge;90% customer acceptance rate — the market can bear a higher price.</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-4">{t("raiseHint")}</p>
                   <div className="space-y-2">
                     {data.raiseRecommended.map(s => (
                       <div key={s.repairType} className="flex items-center justify-between">
@@ -386,9 +388,9 @@ export default function PricingPage() {
                 <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl">🚫</span>
-                    <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">Low Acceptance — Review or Drop</h2>
+                    <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">{t("dropTitle")}</h2>
                   </div>
-                  <p className="text-xs text-red-600 dark:text-red-400 mb-4">Low acceptance rate means customers are rejecting quotes. Consider lowering price or discontinuing.</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mb-4">{t("dropHint")}</p>
                   <div className="space-y-2">
                     {data.dropConsider.map(s => (
                       <div key={s.repairType} className="flex items-center justify-between">
@@ -406,8 +408,8 @@ export default function PricingPage() {
               {data.mostProfitable.length === 0 && data.underpriced.length === 0 && data.raiseRecommended.length === 0 && (
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-16 text-center">
                   <p className="text-3xl mb-3">📊</p>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Not enough data yet</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Deliver more work orders or add historical entries to unlock pricing analytics.</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("notEnoughDataFull")}</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">{t("notEnoughDataDesc")}</p>
                 </div>
               )}
             </div>

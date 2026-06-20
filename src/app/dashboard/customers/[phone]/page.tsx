@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Note = {
   id: string; message: string; createdAt: string;
@@ -40,6 +41,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function CustomerDetailPage({ params }: { params: { phone: string } }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user } = useAuth();
   const phone = decodeURIComponent(params.phone);
@@ -96,13 +98,13 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
+        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← {t("back")}</button>
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
           {loading
             ? <span className="inline-block h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
             : customer?.customerName ?? phone}
         </h1>
-        {orders.length > 1 && <span className="text-xs bg-blue-500/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">Repeat Customer</span>}
+        {orders.length > 1 && <span className="text-xs bg-blue-500/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">{t("repeatCustomer")}</span>}
       </div>
 
       {loading && (
@@ -128,19 +130,19 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
       {!loading && customer && (
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Customer Info</h2>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("customerInfo")}</h2>
             <div className="space-y-2 text-sm">
-              <div><p className="text-xs text-slate-500">Phone</p><p className="text-slate-900 dark:text-white">{phone}</p></div>
-              <div><p className="text-xs text-slate-500">Email</p><p className="text-slate-900 dark:text-white">{customer.customerEmail || "—"}</p></div>
+              <div><p className="text-xs text-slate-500">{t("phone")}</p><p className="text-slate-900 dark:text-white">{phone}</p></div>
+              <div><p className="text-xs text-slate-500">{t("email")}</p><p className="text-slate-900 dark:text-white">{customer.customerEmail || "—"}</p></div>
             </div>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Summary</h2>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("summary")}</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><p className="text-xs text-slate-500">Total Orders</p><p className="text-slate-900 dark:text-white text-xl font-semibold">{orders.length}</p></div>
-              <div><p className="text-xs text-slate-500">Total Spent</p><p className="text-slate-900 dark:text-white text-xl font-semibold">{totalSpent.toFixed(2)}</p></div>
-              <div><p className="text-xs text-slate-500">Collected</p><p className="text-green-600 dark:text-green-400 font-semibold">{totalCollected.toFixed(2)}</p></div>
-              <div><p className="text-xs text-slate-500">Outstanding</p><p className="text-red-600 dark:text-red-400 font-semibold">{(totalSpent - totalCollected).toFixed(2)}</p></div>
+              <div><p className="text-xs text-slate-500">{t("totalOrders")}</p><p className="text-slate-900 dark:text-white text-xl font-semibold">{orders.length}</p></div>
+              <div><p className="text-xs text-slate-500">{t("totalSpent")}</p><p className="text-slate-900 dark:text-white text-xl font-semibold">{totalSpent.toFixed(2)}</p></div>
+              <div><p className="text-xs text-slate-500">{t("collectedLabel2")}</p><p className="text-green-600 dark:text-green-400 font-semibold">{totalCollected.toFixed(2)}</p></div>
+              <div><p className="text-xs text-slate-500">{t("outstanding2")}</p><p className="text-red-600 dark:text-red-400 font-semibold">{(totalSpent - totalCollected).toFixed(2)}</p></div>
             </div>
           </div>
         </div>
@@ -149,8 +151,8 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
       {/* Team Notes */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Team Notes</h2>
-          <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">Internal only</span>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("teamNotes")}</h2>
+          <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">{t("internalOnly")}</span>
         </div>
 
         {/* Add note */}
@@ -160,21 +162,21 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
             value={noteText}
             onChange={e => setNoteText(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) addNote(); }}
-            placeholder="Add a note about this customer... (Ctrl+Enter to save)"
+            placeholder={t("addNoteHint")}
             rows={3}
             className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
           />
           <div className="flex justify-end">
             <button onClick={addNote} disabled={savingNote || !noteText.trim()}
               className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors">
-              {savingNote ? "Saving..." : "Add Note"}
+              {savingNote ? t("saving") : t("addNote")}
             </button>
           </div>
         </div>
 
         {/* Notes list */}
         {notes.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-3">No notes yet. Add one above.</p>
+          <p className="text-xs text-slate-400 text-center py-3">{t("noNotesYet")}</p>
         ) : (
           <div className="space-y-2">
             {notes.map(n => (
@@ -203,12 +205,12 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Repair History</h2>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("repairHistory")}</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
-              {["Device", "SN", "Status", "Parts", "Total", "Date", ""].map(h => (
+              {[t("device"), t("snCol"), t("status"), t("partsCol"), t("total"), t("date"), ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
@@ -228,7 +230,7 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
                 <td className="px-4 py-3"><div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" /></td>
               </tr>
             ))}
-            {!loading && orders.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No orders found.</td></tr>}
+            {!loading && orders.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">{t("noOrdersFound")}</td></tr>}
             {orders.map(o => (
               <tr key={o.id} className="border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                 <td className="px-4 py-3">
@@ -243,7 +245,7 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
                 <td className="px-4 py-3 text-slate-900 dark:text-white">{o.total.toFixed(2)}</td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">View →</Link>
+                  <Link href={`/dashboard/workorders/${o.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">{t("view")} →</Link>
                 </td>
               </tr>
             ))}

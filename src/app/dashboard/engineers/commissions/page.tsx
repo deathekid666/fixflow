@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
+import { useLanguage } from "@/context/LanguageContext";
 
 type CommissionRow = {
   userId: string;
@@ -37,6 +38,7 @@ function monthOptions() {
 }
 
 export default function CommissionsPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -98,7 +100,7 @@ export default function CommissionsPage() {
       credentials: "include",
       body: JSON.stringify({ month, rows: payload }),
     });
-    setLockMsg(res.ok ? "Commission snapshot saved." : "Failed to save.");
+    setLockMsg(res.ok ? t("commissionSaved") : t("commissionFailed"));
     setLocking(false);
     await load();
   }
@@ -113,10 +115,10 @@ export default function CommissionsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Link href="/dashboard/engineers" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-sm">← Engineers</Link>
+            <Link href="/dashboard/engineers" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-sm">← {t("engineers")}</Link>
           </div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Engineer Commissions</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Monthly commission tracking per engineer</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("engineerCommissions")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("commissionsSubtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
           <select
@@ -130,7 +132,7 @@ export default function CommissionsPage() {
           </select>
           <button onClick={lockMonth} disabled={locking || rows.length === 0}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
-            {locking ? "Saving..." : "💾 Save Snapshot"}
+            {locking ? t("saving") : t("saveSnapshot")}
           </button>
         </div>
       </div>
@@ -144,9 +146,9 @@ export default function CommissionsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Orders", value: totalOrders, color: "text-slate-900 dark:text-white", icon: "📋" },
-          { label: "Total Revenue", value: fmt(totalRevenue), color: "text-emerald-600 dark:text-emerald-400", icon: "💰" },
-          { label: "Total Commissions", value: fmt(totalCommission), color: "text-blue-600 dark:text-blue-400", icon: "💸" },
+          { label: t("kpiTotalOrders"), value: totalOrders, color: "text-slate-900 dark:text-white", icon: "📋" },
+          { label: t("totalRevenue"), value: fmt(totalRevenue), color: "text-emerald-600 dark:text-emerald-400", icon: "💰" },
+          { label: t("totalCommissions"), value: fmt(totalCommission), color: "text-blue-600 dark:text-blue-400", icon: "💸" },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
@@ -164,7 +166,7 @@ export default function CommissionsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
-              {["Engineer", "Role", "Orders", "Revenue", "Commission Rate", "Commission Amount", "Locked?"].map(h => (
+              {[t("engineerCol"), t("roleCol"), t("ordersCol"), t("revenueCol"), t("commissionRate"), t("commissionAmount"), t("lockedCol")].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 font-medium">{h}</th>
               ))}
             </tr>
@@ -178,7 +180,7 @@ export default function CommissionsPage() {
               </tr>
             ))}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400 text-sm">No engineers found.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400 text-sm">{t("noEngineersFoundComm")}</td></tr>
             )}
             {!loading && rows.map(r => (
               <tr key={r.userId} className="border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
@@ -223,7 +225,7 @@ export default function CommissionsPage() {
                 <td className="px-4 py-3.5">
                   {r.locked ? (
                     <div>
-                      <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">Saved</span>
+                      <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">{t("savedLabel")}</span>
                       <p className="text-xs text-slate-400 mt-0.5">{fmt(r.locked.commissionAmount)} @ {r.locked.commissionRate}%</p>
                     </div>
                   ) : (
@@ -236,7 +238,7 @@ export default function CommissionsPage() {
           {!loading && rows.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white text-sm" colSpan={2}>Total</td>
+                <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white text-sm" colSpan={2}>{t("totalRow")}</td>
                 <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">{totalOrders}</td>
                 <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmt(totalRevenue)}</td>
                 <td className="px-4 py-3" />
@@ -249,8 +251,8 @@ export default function CommissionsPage() {
       </div>
 
       <p className="text-xs text-slate-400">
-        Commission is calculated as: <span className="font-mono">revenue × rate ÷ 100</span> for orders with status DONE or DELIVERED, updated in {monthLabel(month)}.
-        Use "Save Snapshot" to lock the current figures.
+        {t("commissionFormula")} <span className="font-mono">revenue × rate ÷ 100</span> {t("commissionFormulaDetail")} {monthLabel(month)}.{" "}
+        {t("useSnapshotHint")}
       </p>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type WorkOrder = {
   id: string;
@@ -29,6 +30,7 @@ const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dar
 export default function EditWorkOrderPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.role === "ADMIN";
   const [form, setForm] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
       router.push(`/dashboard/workorders/${params.id}`);
     } else {
       const d = await res.json();
-      setError(d.error || "Failed to save");
+      setError(d.error || t("failedToSave"));
       setSaving(false);
     }
   }
@@ -80,8 +82,8 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← Back</button>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Edit Work Order</h1>
+        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm">← {t("back")}</button>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("editWorkOrderTitle")}</h1>
       </div>
 
       {error && <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
@@ -90,28 +92,28 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
       {isAdmin && (
         <>
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Device Information <span className="text-blue-600 dark:text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("deviceInformation")} <span className="text-blue-600 dark:text-blue-400 normal-case text-xs ml-1">{t("adminOnly")}</span></h2>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Brand *" value={form.deviceBrand} onChange={v => set("deviceBrand", v)} />
-              <Field label="Model *" value={form.deviceModel} onChange={v => set("deviceModel", v)} />
-              <Field label="Serial Number" value={form.serialNumber} onChange={v => set("serialNumber", v)} />
-              <Field label="IMEI" value={form.imei} onChange={v => set("imei", v)} />
-              <Field label="Warranty Start" type="date" value={form.warrantyStart ? form.warrantyStart.slice(0, 10) : ""} onChange={v => set("warrantyStart", v)} />
-              <Field label="Warranty End" type="date" value={form.warrantyEnd ? form.warrantyEnd.slice(0, 10) : ""} onChange={v => set("warrantyEnd", v)} />
+              <Field label={`${t("brand")} *`} value={form.deviceBrand} onChange={v => set("deviceBrand", v)} />
+              <Field label={`${t("model")} *`} value={form.deviceModel} onChange={v => set("deviceModel", v)} />
+              <Field label={t("serialNumber")} value={form.serialNumber} onChange={v => set("serialNumber", v)} />
+              <Field label={t("imei")} value={form.imei} onChange={v => set("imei", v)} />
+              <Field label={t("warrantyStart")} type="date" value={form.warrantyStart ? form.warrantyStart.slice(0, 10) : ""} onChange={v => set("warrantyStart", v)} />
+              <Field label={t("warrantyEnd")} type="date" value={form.warrantyEnd ? form.warrantyEnd.slice(0, 10) : ""} onChange={v => set("warrantyEnd", v)} />
             </div>
             <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer">
               <input type="checkbox" checked={form.isUnderWarranty} onChange={e => set("isUnderWarranty", e.target.checked)} className="rounded" />
-              Under warranty
+              {t("underWarranty")}
             </label>
           </section>
 
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Customer Information <span className="text-blue-600 dark:text-blue-400 normal-case text-xs ml-1">(Admin only)</span></h2>
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("customerInformation")} <span className="text-blue-600 dark:text-blue-400 normal-case text-xs ml-1">{t("adminOnly")}</span></h2>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Name *" value={form.customerName} onChange={v => set("customerName", v)} />
-              <Field label="Phone *" value={form.customerPhone} onChange={v => set("customerPhone", v)} />
+              <Field label={`${t("name")} *`} value={form.customerName} onChange={v => set("customerName", v)} />
+              <Field label={`${t("phone")} *`} value={form.customerPhone} onChange={v => set("customerPhone", v)} />
               <div className="col-span-2">
-                <Field label="Email" value={form.customerEmail} onChange={v => set("customerEmail", v)} />
+                <Field label={t("email")} value={form.customerEmail} onChange={v => set("customerEmail", v)} />
               </div>
             </div>
           </section>
@@ -120,19 +122,19 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
 
       {/* Everyone can edit fault & service */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Fault & Service</h2>
+        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("faultAndService")}</h2>
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">Fault Description *</label>
+          <label className="text-xs text-slate-500 mb-1 block">{t("faultDescriptionLabel")}</label>
           <textarea rows={3}
             className={INPUT + " resize-none"}
             value={form.faultDescription}
             onChange={e => set("faultDescription", e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Appearance" value={form.appearance} onChange={v => set("appearance", v)} />
-          <Field label="Repair Type" value={form.repairType} onChange={v => set("repairType", v)} />
+          <Field label={t("appearanceLabel")} value={form.appearance} onChange={v => set("appearance", v)} />
+          <Field label={t("repairTypeLabel")} value={form.repairType} onChange={v => set("repairType", v)} />
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Service Type</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("serviceTypeLabel")}</label>
             <select className={INPUT}
               value={form.serviceType} onChange={e => set("serviceType", e.target.value)}>
               <option value="IN_STORE">In Store</option>
@@ -141,7 +143,7 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
             </select>
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Fault Level</label>
+            <label className="text-xs text-slate-500 mb-1 block">{t("faultLevelLabel")}</label>
             <select className={INPUT}
               value={form.faultLevel} onChange={e => set("faultLevel", e.target.value)}>
               <option value="LOW">Low</option>
@@ -151,7 +153,7 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
           </div>
         </div>
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">Remarks</label>
+          <label className="text-xs text-slate-500 mb-1 block">{t("remarksLabel")}</label>
           <textarea rows={2}
             className={INPUT + " resize-none"}
             value={form.remarks}
@@ -161,7 +163,7 @@ export default function EditWorkOrderPage({ params }: { params: { id: string } }
 
       <button onClick={handleSave} disabled={saving}
         className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors">
-        {saving ? "Saving..." : "Save Changes"}
+        {saving ? t("saving") : t("saveChanges")}
       </button>
     </div>
   );

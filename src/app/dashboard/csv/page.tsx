@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useMemo } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Step = 1 | 2 | 3;
 type ImportType = "spareparts" | "customers";
@@ -126,6 +127,7 @@ function downloadErrorsCSV(errors: RowError[]) {
 const STEP_LABELS = ["Upload", "Map Columns", "Results"];
 
 export default function CsvPage() {
+  const { t } = useLanguage();
   const [step, setStep] = useState<Step>(1);
   const [importType, setImportType] = useState<ImportType>("spareparts");
   const [file, setFile] = useState<File | null>(null);
@@ -216,8 +218,8 @@ export default function CsvPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">CSV Import</h1>
-        <p className="text-sm text-slate-400 mt-1">Bulk import spare parts or customers from a spreadsheet</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("csvImportTitle")}</h1>
+        <p className="text-sm text-slate-400 mt-1">{t("csvImportSubtitle")}</p>
       </div>
 
       {/* Step indicator */}
@@ -248,7 +250,7 @@ export default function CsvPage() {
       {step === 1 && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">What are you importing?</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("whatAreYouImporting")}</p>
             <div className="flex gap-3 flex-wrap">
               {(["spareparts", "customers"] as ImportType[]).map(t => (
                 <button key={t} onClick={() => setImportType(t)}
@@ -262,17 +264,17 @@ export default function CsvPage() {
               ))}
             </div>
             <div className="flex items-center gap-2 pt-1">
-              <span className="text-xs text-slate-400">Need a template?</span>
+              <span className="text-xs text-slate-400">{t("needTemplate")}</span>
               <button
                 onClick={() => window.open(`/api/csv/template?type=${importType}`, "_blank")}
                 className="text-xs text-blue-500 hover:text-blue-400 underline transition">
-                Download {importType === "spareparts" ? "spare parts" : "customers"} template
+                {t("downloadTemplate")} {importType === "spareparts" ? "spare parts" : "customers"} template
               </button>
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Upload CSV file</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("uploadCsvFile")}</p>
             <div
               onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -288,12 +290,12 @@ export default function CsvPage() {
               {file ? (
                 <div className="text-center">
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{file.name}</p>
-                  <p className="text-xs text-slate-400 mt-1">{(file.size / 1024).toFixed(1)} KB · Click to change</p>
+                  <p className="text-xs text-slate-400 mt-1">{(file.size / 1024).toFixed(1)} {t("clickToChange")}</p>
                 </div>
               ) : (
                 <div className="text-center">
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Drop your CSV here, or click to browse</p>
-                  <p className="text-xs text-slate-400 mt-1">.csv files only</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("dropCsvHere")}</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("csvFilesOnly")}</p>
                 </div>
               )}
             </div>
@@ -304,7 +306,7 @@ export default function CsvPage() {
             <div className="flex justify-end pt-1">
               <button onClick={goToStep2} disabled={!file}
                 className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-40">
-                Next: Map Columns →
+                {t("nextMapColumns")}
               </button>
             </div>
           </div>
@@ -317,11 +319,11 @@ export default function CsvPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Map columns</p>
-                <p className="text-xs text-slate-400 mt-0.5">Match your CSV columns to the expected fields. Auto-mapped where possible.</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("mapColumns")}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{t("mapColumnsHint")}</p>
               </div>
               <span className="text-xs text-slate-400 pt-0.5">
-                <span className="text-slate-600 dark:text-slate-300 font-medium">{csvRows.length}</span> rows detected
+                <span className="text-slate-600 dark:text-slate-300 font-medium">{csvRows.length}</span> {t("rowsDetected")}
               </span>
             </div>
 
@@ -329,9 +331,9 @@ export default function CsvPage() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
                   <tr>
-                    <th className="px-4 py-3 text-left w-1/3">Field</th>
-                    <th className="px-4 py-3 text-left w-1/3">CSV Column</th>
-                    <th className="px-4 py-3 text-left">Sample value</th>
+                    <th className="px-4 py-3 text-left w-1/3">{t("fieldCol")}</th>
+                    <th className="px-4 py-3 text-left w-1/3">{t("csvColumn")}</th>
+                    <th className="px-4 py-3 text-left">{t("sampleValue")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -344,7 +346,7 @@ export default function CsvPage() {
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-slate-700 dark:text-slate-200">{field.label}</span>
-                            {field.required && <span className="text-xs text-red-500 font-semibold">required</span>}
+                            {field.required && <span className="text-xs text-red-500 font-semibold">{t("requiredField")}</span>}
                             {field.hint && <span className="text-xs text-slate-400">({field.hint})</span>}
                           </div>
                         </td>
@@ -354,7 +356,7 @@ export default function CsvPage() {
                             onChange={e => setMapping(m => ({ ...m, [field.key]: e.target.value }))}
                             className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition
                               ${isMissing ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-600"}`}>
-                            <option value="">— skip —</option>
+                            <option value="">{t("skipOption")}</option>
                             {csvHeaders.map(h => (
                               <option key={h} value={h}>{h}</option>
                             ))}
@@ -375,13 +377,13 @@ export default function CsvPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Preview{" "}
-                <span className="text-slate-400 font-normal text-xs">(first {previewRows.length} of {csvRows.length} rows)</span>
+                {t("preview")}{" "}
+                <span className="text-slate-400 font-normal text-xs">({t("firstRows")} {previewRows.length} {t("ofLabel")} {csvRows.length} {t("rowsLabel")})</span>
               </p>
               <div className="flex gap-3 text-xs">
-                <span className="text-green-600 dark:text-green-400 font-medium">✓ {validCount} ready</span>
+                <span className="text-green-600 dark:text-green-400 font-medium">✓ {validCount} {t("readyLabel")}</span>
                 {invalidCount > 0 && (
-                  <span className="text-red-500 dark:text-red-400 font-medium">✗ {invalidCount} will be skipped</span>
+                  <span className="text-red-500 dark:text-red-400 font-medium">✗ {invalidCount} {t("willBeSkipped")}</span>
                 )}
               </div>
             </div>
@@ -438,10 +440,10 @@ export default function CsvPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Importing…
+                  {t("importingLabel")}
                 </>
               ) : (
-                `Import ${validCount} row${validCount !== 1 ? "s" : ""}`
+                `${t("importRows")} ${validCount} ${t("rowsLabel")}${validCount !== 1 ? "" : ""}`
               )}
             </button>
           </div>
@@ -456,43 +458,43 @@ export default function CsvPage() {
             <div className="grid grid-cols-3 gap-4">
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 text-center">
                 <p className="text-2xl font-bold text-slate-700 dark:text-slate-200">{result.totalRows}</p>
-                <p className="text-xs text-slate-400 mt-1">Total rows</p>
+                <p className="text-xs text-slate-400 mt-1">{t("totalRowsLabel")}</p>
               </div>
               <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-4 text-center">
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">{result.imported}</p>
-                <p className="text-xs text-slate-400 mt-1">Imported</p>
+                <p className="text-xs text-slate-400 mt-1">{t("importedLabel")}</p>
               </div>
               <div className={`rounded-xl p-4 text-center border ${result.skipped > 0 ? "border-red-500/30 bg-red-500/5" : "border-slate-200 dark:border-slate-700"}`}>
                 <p className={`text-2xl font-bold ${result.skipped > 0 ? "text-red-500 dark:text-red-400" : "text-slate-400"}`}>
                   {result.skipped}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">Skipped</p>
+                <p className="text-xs text-slate-400 mt-1">{t("skippedLabel")}</p>
               </div>
             </div>
 
             {result.errors.length === 0 ? (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
                 <span className="text-2xl select-none">🎉</span>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400">All rows imported successfully!</p>
+                <p className="text-sm font-medium text-green-600 dark:text-green-400">{t("allRowsImported")}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Errors <span className="text-red-500">({result.errors.length} rows skipped)</span>
+                    {t("errorsLabel")} <span className="text-red-500">({result.errors.length} {t("rowsSkipped")})</span>
                   </p>
                   <button onClick={() => downloadErrorsCSV(result.errors)}
                     className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 transition flex items-center gap-1.5">
-                    ⬇ Download error report
+                    {t("downloadErrorReport")}
                   </button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                   <table className="w-full text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400">
                       <tr>
-                        <th className="px-4 py-2.5 text-left w-12 font-medium">Row</th>
-                        <th className="px-4 py-2.5 text-left font-medium">Reason</th>
-                        <th className="px-4 py-2.5 text-left font-medium">Data</th>
+                        <th className="px-4 py-2.5 text-left w-12 font-medium">{t("rowCol")}</th>
+                        <th className="px-4 py-2.5 text-left font-medium">{t("reasonLabel")}</th>
+                        <th className="px-4 py-2.5 text-left font-medium">{t("dataLabel")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -515,7 +517,7 @@ export default function CsvPage() {
           <div className="flex justify-end">
             <button onClick={reset}
               className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-              Import another file
+              {t("importAnotherFile")}
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { CERT_CRITERIA, CERT_META } from "@/lib/certification";
 import CertBadge from "@/components/CertBadge";
+import { useLanguage } from "@/context/LanguageContext";
 
 const CERT_CELEBRATED_KEY = "fixflow_cert_celebrated_";
 
@@ -35,6 +36,7 @@ function CriteriaRow({ met, label }: { met: boolean; label: string }) {
 }
 
 export default function CertificationPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,8 +126,8 @@ export default function CertificationPage() {
   return (
     <div className="p-6 space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Shop Certification</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Automatically awarded based on repairs, ratings, and quality.</p>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("shopCertification")}</h1>
+        <p className="text-sm text-slate-500 mt-0.5">{t("certSubtitle")}</p>
       </div>
 
       {loading ? (
@@ -135,7 +137,7 @@ export default function CertificationPage() {
           ))}
         </div>
       ) : !stats ? (
-        <p className="text-sm text-slate-500">Could not load certification data.</p>
+        <p className="text-sm text-slate-500">{t("couldNotLoadCert")}</p>
       ) : (
         <>
           {/* Current status */}
@@ -151,14 +153,14 @@ export default function CertificationPage() {
                     <CertBadge level={stats.currentLevel} size="md" />
                   </div>
                   <p className="text-sm text-slate-500 mt-1">
-                    {stats.earnedAt ? `Earned ${new Date(stats.earnedAt).toLocaleDateString()}` : "Active certification"}
-                    {stats.currentLevel !== "GOLD" && nextLevel && ` · Work toward ${CERT_META[nextLevel].label} next`}
+                    {stats.earnedAt ? `${t("earnedDate")} ${new Date(stats.earnedAt).toLocaleDateString()}` : t("activeCertification")}
+                    {stats.currentLevel !== "GOLD" && nextLevel && ` · ${t("workToward")} ${CERT_META[nextLevel].label} ${t("certNext")}`}
                   </p>
                   <button
                     onClick={downloadBadge}
                     className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-colors"
                   >
-                    ⬇ Download Badge
+                    ⬇ {t("downloadBadge")}
                   </button>
                   <canvas ref={canvasRef} className="hidden" />
                 </div>
@@ -166,8 +168,8 @@ export default function CertificationPage() {
             ) : (
               <div className="text-center py-4">
                 <div className="text-5xl mb-3">🏆</div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">No certification yet</h2>
-                <p className="text-sm text-slate-500">Complete 10+ repairs with a 3.5+ avg rating to earn Bronze.</p>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">{t("noCertYet")}</h2>
+                <p className="text-sm text-slate-500">{t("noCertDesc")}</p>
               </div>
             )}
           </div>
@@ -175,9 +177,9 @@ export default function CertificationPage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Completed Repairs", value: stats.totalCompleted.toLocaleString(), icon: "✅" },
-              { label: "Avg Rating", value: stats.avgRating > 0 ? `${stats.avgRating.toFixed(2)} ★` : "—", icon: "⭐" },
-              { label: "Bounce Rate", value: `${stats.bounceRate.toFixed(1)}%`, icon: "↩" },
+              { label: t("completedRepairs"), value: stats.totalCompleted.toLocaleString(), icon: "✅" },
+              { label: t("avgRating"), value: stats.avgRating > 0 ? `${stats.avgRating.toFixed(2)} ★` : "—", icon: "⭐" },
+              { label: t("bounceRate"), value: `${stats.bounceRate.toFixed(1)}%`, icon: "↩" },
             ].map((s) => (
               <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
                 <div className="text-2xl mb-1">{s.icon}</div>
@@ -210,25 +212,25 @@ export default function CertificationPage() {
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-slate-900 dark:text-white">{meta.label}</h3>
                           {isEarned && <CertBadge level={lvl} size="xs" showLabel={false} />}
-                          {isNext && <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">Next goal</span>}
+                          {isNext && <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">{t("nextGoal")}</span>}
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">{crit.minOrders}+ repairs · {crit.minRating}+ rating{crit.maxBounceRate !== null ? ` · ≤${crit.maxBounceRate}% bounces` : ""}</p>
                       </div>
                     </div>
-                    {isEarned && <span className="text-emerald-500 font-semibold text-sm">✓ Achieved</span>}
+                    {isEarned && <span className="text-emerald-500 font-semibold text-sm">{t("achieved")}</span>}
                   </div>
 
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Completed repairs</span>
+                        <span>{t("completedRepairsLabel")}</span>
                         <span className={ordersOk ? "text-emerald-600 dark:text-emerald-400 font-medium" : ""}>{stats.totalCompleted} / {crit.minOrders}</span>
                       </div>
                       <ProgressBar value={stats.totalCompleted} max={crit.minOrders} color={ordersOk ? "#10b981" : meta.border} />
                     </div>
                     <div>
                       <div className="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Avg rating</span>
+                        <span>{t("avgRatingLabel")}</span>
                         <span className={ratingOk ? "text-emerald-600 dark:text-emerald-400 font-medium" : ""}>{stats.avgRating > 0 ? stats.avgRating.toFixed(2) : "—"} / {crit.minRating}</span>
                       </div>
                       <ProgressBar value={stats.avgRating} max={5} color={ratingOk ? "#10b981" : meta.border} />
@@ -236,7 +238,7 @@ export default function CertificationPage() {
                     {crit.maxBounceRate !== null && (
                       <div>
                         <div className="flex justify-between text-xs text-slate-500 mb-1">
-                          <span>Bounce rate (lower is better)</span>
+                          <span>{t("bounceRateLower")}</span>
                           <span className={bounceOk ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-red-500"}>{stats.bounceRate.toFixed(1)}% / ≤{crit.maxBounceRate}%</span>
                         </div>
                         <ProgressBar value={Math.max(0, crit.maxBounceRate - stats.bounceRate)} max={crit.maxBounceRate} color={bounceOk ? "#10b981" : "#ef4444"} />
@@ -257,8 +259,8 @@ export default function CertificationPage() {
 
           <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
             <p className="text-xs text-slate-500">
-              Certifications are calculated automatically every time a work order is marked as <strong className="text-slate-700 dark:text-slate-300">Done</strong> or <strong className="text-slate-700 dark:text-slate-300">Delivered</strong>.
-              All certifications are free and permanent as long as your shop meets the criteria.
+              {t("certAutoCalc")} <strong className="text-slate-700 dark:text-slate-300">Done</strong> or <strong className="text-slate-700 dark:text-slate-300">Delivered</strong>.
+              {t("certFree")}
             </p>
           </div>
         </>
