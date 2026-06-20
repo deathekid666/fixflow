@@ -658,7 +658,7 @@ export default function AppointmentsPage() {
                   </div>
                   <div>
                     <label className="text-xs text-slate-500 mb-1 block">{t("remarks")}</label>
-                    <input className={INPUT} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={t("save")} />
+                    <input className={INPUT} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
                   </div>
                 </div>
                 <button onClick={createAppointment}
@@ -788,7 +788,7 @@ export default function AppointmentsPage() {
                 {/* Footer */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <p className="text-xs text-slate-400">
-                    Booked {fmt(new Date(selected.createdAt), { day: "numeric", month: "short", year: "numeric" })}
+                    {t("bookedOn")} {fmt(new Date(selected.createdAt), { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                   <button onClick={() => deleteAppt(selected.id)}
                     className="text-xs text-red-500 hover:text-red-400 transition-colors">
@@ -803,49 +803,49 @@ export default function AppointmentsPage() {
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <label className="text-xs text-slate-500 mb-1 block">Customer Name</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("customerName")}</label>
                     <input className={INPUT} value={editForm.customerName ?? ""} onChange={e => setEditForm(p => ({ ...p, customerName: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Phone</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("phone")}</label>
                     <input className={INPUT} value={editForm.customerPhone ?? ""} onChange={e => setEditForm(p => ({ ...p, customerPhone: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Date & Time</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("dateAndTime")}</label>
                     <input type="datetime-local" className={INPUT} value={editForm.scheduledAt ?? ""} onChange={e => setEditForm(p => ({ ...p, scheduledAt: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Brand</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("brand")}</label>
                     <input className={INPUT} value={editForm.deviceBrand ?? ""} onChange={e => setEditForm(p => ({ ...p, deviceBrand: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Model</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("model")}</label>
                     <input className={INPUT} value={editForm.deviceModel ?? ""} onChange={e => setEditForm(p => ({ ...p, deviceModel: e.target.value }))} />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs text-slate-500 mb-1 block">Issue</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("issueLabel")}</label>
                     <input className={INPUT} value={editForm.faultDescription ?? ""} onChange={e => setEditForm(p => ({ ...p, faultDescription: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Duration</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("duration")}</label>
                     <select className={INPUT} value={editForm.duration ?? "60"} onChange={e => setEditForm(p => ({ ...p, duration: e.target.value }))}>
                       {[15, 30, 45, 60, 90, 120].map(d => <option key={d} value={d}>{d} min</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500 mb-1 block">Status</label>
+                    <label className="text-xs text-slate-500 mb-1 block">{t("status")}</label>
                     <select className={INPUT} value={editForm.status ?? selected.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))}>
                       {["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"].map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs text-slate-500 mb-1 block">Notes</label>
-                    <input className={INPUT} value={editForm.notes ?? ""} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional" />
+                    <label className="text-xs text-slate-500 mb-1 block">{t("notes")}</label>
+                    <input className={INPUT} value={editForm.notes ?? ""} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
                   </div>
                 </div>
                 <button onClick={saveEdit} disabled={savingEdit}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
-                  {savingEdit ? "Saving…" : "Save Changes"}
+                  {savingEdit ? t("savingLabel") : t("saveChanges")}
                 </button>
               </div>
             )}
@@ -865,17 +865,17 @@ export default function AppointmentsPage() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm text-slate-500 dark:text-slate-400">Live · refreshes every 30s</span>
-              {checkinLoading && <span className="text-xs text-slate-400">updating…</span>}
+              <span className="text-sm text-slate-500 dark:text-slate-400">{t("liveRefreshes")}</span>
+              {checkinLoading && <span className="text-xs text-slate-400">{t("updating")}</span>}
             </div>
             <div className="flex gap-2">
               <button onClick={loadCheckins}
                 className="px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">
-                ↻ Refresh
+                ↻ {t("refreshBtn")}
               </button>
               <button onClick={() => setShowQR(true)}
                 className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
-                📲 QR Code
+                📲 {t("qrCode")}
               </button>
             </div>
           </div>
@@ -883,9 +883,9 @@ export default function AppointmentsPage() {
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Appointments", count: checkinAppts.length, color: "text-blue-600 dark:text-blue-400" },
-              { label: "Walk-ins", count: checkinWalkIns.length, color: "text-purple-600 dark:text-purple-400" },
-              { label: "Total", count: checkinAppts.length + checkinWalkIns.length, color: "text-slate-900 dark:text-white" },
+              { label: t("appointmentsCheckedIn"), count: checkinAppts.length, color: "text-blue-600 dark:text-blue-400" },
+              { label: t("walkInsLabel"), count: checkinWalkIns.length, color: "text-purple-600 dark:text-purple-400" },
+              { label: t("totalCheckins"), count: checkinAppts.length + checkinWalkIns.length, color: "text-slate-900 dark:text-white" },
             ].map(({ label, count, color }) => (
               <div key={label} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
                 <p className={`text-2xl font-bold ${color}`}>{count}</p>
@@ -897,7 +897,7 @@ export default function AppointmentsPage() {
           {/* Appointment check-ins */}
           {checkinAppts.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Appointments Checked In</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t("appointmentsCheckedIn")}</p>
               <div className="space-y-2">
                 {checkinAppts.map(appt => (
                   <div key={appt.id} className="bg-white dark:bg-slate-900 border border-green-200 dark:border-green-800/40 rounded-xl p-3 flex items-center gap-3">
@@ -925,7 +925,7 @@ export default function AppointmentsPage() {
           {/* Walk-in check-ins */}
           {checkinWalkIns.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Walk-ins</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t("walkInsLabel")}</p>
               <div className="space-y-2">
                 {checkinWalkIns.map(w => (
                   <div key={w.id} className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/40 rounded-xl p-3 flex items-center gap-3">
@@ -934,7 +934,7 @@ export default function AppointmentsPage() {
                       <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{w.customerName}</p>
                       <p className="text-xs text-slate-500">{w.customerPhone}</p>
                       <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
-                        {w.workOrderId ? "✓ Work order created" : `Arrived ${new Date(w.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                        {w.workOrderId ? t("workOrderCreated") : `${new Date(w.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                       </p>
                     </div>
                     {!w.workOrderId
@@ -956,11 +956,11 @@ export default function AppointmentsPage() {
           {!checkinLoading && checkinAppts.length === 0 && checkinWalkIns.length === 0 && (
             <div className="text-center py-16">
               <p className="text-4xl mb-3">🚪</p>
-              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">No check-ins today yet</p>
-              <p className="text-slate-400 text-xs mt-1">Share the QR code with customers to start receiving check-ins</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t("noCheckinsToday")}</p>
+              <p className="text-slate-400 text-xs mt-1">{t("shareQrCode")}</p>
               <button onClick={() => setShowQR(true)}
                 className="mt-4 px-4 py-2 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
-                📲 Show QR Code
+                📲 {t("showQrCode")}
               </button>
             </div>
           )}
@@ -972,7 +972,7 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowQR(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Customer Check-in QR</h3>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">{t("customerCheckinQr")}</h3>
               <button onClick={() => setShowQR(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none">✕</button>
             </div>
             <div className="bg-white p-4 rounded-xl flex items-center justify-center mb-4">
@@ -984,7 +984,7 @@ export default function AppointmentsPage() {
             <button
               onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/checkin/${user.shopId}`)}
               className="w-full py-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors">
-              📋 Copy Link
+              📋 {t("copyLink")}
             </button>
           </div>
         </div>
@@ -995,7 +995,7 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setConvertingWalkIn(null)}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Create Work Order</h3>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">{t("createWorkOrderModal")}</h3>
               <button onClick={() => setConvertingWalkIn(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none">✕</button>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 mb-4">
@@ -1004,11 +1004,11 @@ export default function AppointmentsPage() {
             </div>
             <div className="space-y-3 mb-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Device Brand</label>
+                <label className="text-xs text-slate-500 mb-1 block">{t("deviceBrandLabel")}</label>
                 <input className={INPUT} value={walkInForm.deviceBrand} onChange={e => setWalkInForm(p => ({ ...p, deviceBrand: e.target.value }))} placeholder="Apple, Samsung…" />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Device Model</label>
+                <label className="text-xs text-slate-500 mb-1 block">{t("deviceModelLabel")}</label>
                 <input className={INPUT} value={walkInForm.deviceModel} onChange={e => setWalkInForm(p => ({ ...p, deviceModel: e.target.value }))} placeholder="iPhone 15…" />
               </div>
               <div>
@@ -1018,7 +1018,7 @@ export default function AppointmentsPage() {
             </div>
             <button onClick={convertWalkIn} disabled={!!convertingWalkInId}
               className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-              {convertingWalkInId ? "Creating…" : "📋 Create Work Order"}
+              {convertingWalkInId ? t("creating") : `📋 ${t("createWorkOrderModal")}`}
             </button>
           </div>
         </div>
