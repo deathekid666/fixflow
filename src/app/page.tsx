@@ -29,7 +29,7 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section className="min-h-screen flex items-center pt-16 pb-20 px-6">
+      <section className="flex items-center px-6" style={{height:"100vh",paddingTop:60,boxSizing:"border-box"}}>
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
