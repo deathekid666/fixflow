@@ -201,7 +201,7 @@ export default function LandingPage() {
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
           <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">Sign in</Link>
-          <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-md transition-colors">
+          <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded transition-colors">
             Get started
           </Link>
         </div>
