@@ -226,34 +226,36 @@ export default function LandingPage() {
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <section className="flex items-center min-h-screen">
-        <div className="max-w-6xl mx-auto px-6 w-full grid md:grid-cols-2 gap-12 items-center py-8">
+        <div className="max-w-7xl mx-auto px-16 w-full grid grid-cols-2 gap-16 items-center">
 
           {/* Left */}
-          <div style={{ paddingLeft: "0px" }}>
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 border border-blue-500/20 text-blue-400 text-xs rounded-full px-3 py-1 mb-6" style={{ background: "rgba(59,130,246,0.1)" }}>
-              ✦ Now with AI Repair Assistant
-            </div>
-
-            <h1 className="text-5xl font-bold text-white leading-tight mb-5" style={{ letterSpacing: "-2px" }}>
-              Run your repair shop<br />
-              <span style={{ color: "#60a5fa" }}>like a pro.</span>
-            </h1>
-
-            <p className="text-lg text-slate-400 max-w-md leading-relaxed mb-8">
-              Work orders, customer tracking, inventory, payments — one platform that finally replaces WhatsApp and spreadsheets.
+          <div>
+            <p className="text-xs font-semibold tracking-widest uppercase text-blue-400 mb-4">
+              All-in-One Repair Shop Platform
             </p>
 
-            <div className="flex flex-wrap gap-3">
-              <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3 rounded-lg transition-colors">
-                Start Free Trial <ArrowRight className="w-4 h-4" />
+            <h1 className="text-5xl font-bold text-white leading-tight mb-6" style={{ letterSpacing: "-1px" }}>
+              Run Your Whole Repair Shop<br />
+              From One Platform
+            </h1>
+
+            <p className="text-lg text-slate-400 leading-relaxed mb-8 max-w-lg">
+              Work orders, AI diagnostics, customer tracking, inventory, and payments — built for the way repair shops actually run.
+            </p>
+
+            <div className="flex gap-4">
+              <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3 rounded-full transition-colors">
+                Start My Free Trial
               </Link>
-              <Link href="#pricing" className="px-6 py-3 rounded-lg text-white font-medium" style={{ border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.05)" }}>
-                See pricing
+              <Link href="#pricing" className="border-2 border-white/20 hover:border-white/40 text-white font-semibold px-8 py-3 rounded-full transition-colors">
+                See Pricing
               </Link>
             </div>
 
-            <p className="text-sm text-slate-500 mt-6">★★★★★ Trusted by 500+ repair shops worldwide</p>
+            <div className="flex items-center gap-3 mt-8">
+              <span className="text-yellow-400">★★★★★</span>
+              <span className="text-sm text-slate-400">1,000+ repair shops worldwide</span>
+            </div>
           </div>
 
           {/* Right — dashboard mockup */}
