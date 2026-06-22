@@ -182,16 +182,17 @@ export default function LandingPage() {
     <div style={{ background: "#0a0f1e", minHeight: "100vh", color: "white" }}>
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-6 border-b border-white/5" style={{ backdropFilter: "blur(12px)", background: "rgba(10,15,30,0.8)" }}>
-        <div style={{display:"flex",alignItems:"center",gap:8}} className="mr-10">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-14 px-6 border-b border-white/5" style={{ backdropFilter: "blur(12px)", background: "rgba(10,15,30,0.8)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Logo */}
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{width:32,height:32,background:"#2563eb",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <Wrench size={16} color="white" />
           </div>
           <span style={{fontWeight:700,fontSize:17,color:"white"}}>FixFlow</span>
         </div>
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-6 flex-1">
+        {/* Desktop nav — absolutely centered */}
+        <div className="hidden md:flex items-center gap-6" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
           {NAV_LINKS.map(l => (
             <Link key={l.label} href={l.href} className="text-sm text-slate-400 hover:text-white transition-colors">
               {l.label}
@@ -199,7 +200,8 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-3 ml-auto">
+        {/* Right actions */}
+        <div className="hidden md:flex items-center gap-3">
           <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">Sign in</Link>
           <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded transition-colors">
             Get started
