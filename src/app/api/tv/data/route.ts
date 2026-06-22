@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
   // Active repairs
   const activeOrders = await prisma.workOrder.findMany({
-    where: { shopId, status: { in: ["RECEIVED", "IN_PROGRESS"] }, deletedAt: null },
+    where: { shopId, status: { in: ["RECEIVED", "DIAGNOSING", "REPAIRING"] }, deletedAt: null },
     orderBy: [{ slaDeadline: "asc" }, { createdAt: "asc" }],
     take: 20,
     select: {
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
 
   // Total active + done
   const [totalActive, totalReady] = await Promise.all([
-    prisma.workOrder.count({ where: { shopId, status: { in: ["RECEIVED", "IN_PROGRESS"] }, deletedAt: null } }),
+    prisma.workOrder.count({ where: { shopId, status: { in: ["RECEIVED", "DIAGNOSING", "REPAIRING"] }, deletedAt: null } }),
     prisma.workOrder.count({ where: { shopId, status: "DONE", deletedAt: null } }),
   ]);
 

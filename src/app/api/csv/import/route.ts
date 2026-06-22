@@ -168,8 +168,13 @@ async function importCustomers(
     }
 
     try {
+      const year = new Date().getFullYear();
+      const count = await prisma.workOrder.count({ where: { shopId } });
+      const orderNumber = `wo-${year}-${String(count + 1).padStart(4, "0")}-${shopId.slice(0, 4)}`;
+      const slaDeadline = new Date(Date.now() + 24 * 3600000);
       await prisma.workOrder.create({
         data: {
+          orderNumber,
           customerName: name,
           customerPhone: phone,
           customerEmail: (row["email"] || row["customer_email"])?.trim() || null,
@@ -179,6 +184,7 @@ async function importCustomers(
           shopId,
           userId: admin.id,
           status: "RECEIVED",
+          slaDeadline,
         },
       });
       result.imported++;

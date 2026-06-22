@@ -186,7 +186,7 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
             </div>
           )}
 
-          <p style={{ textAlign: "center", fontSize: 11, color: "#1e293b", margin: 0 }}>
+          <p style={{ textAlign: "center", fontSize: 11, color: "#64748b", margin: 0 }}>
             Powered by <strong style={{ color: "#334155" }}>FixFlow</strong>
           </p>
         </div>
@@ -261,7 +261,7 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
           </button>
         </form>
 
-        <p style={{ textAlign: "center", fontSize: 11, color: "#1e293b", margin: "20px 0 0" }}>
+        <p style={{ textAlign: "center", fontSize: 11, color: "#64748b", margin: "20px 0 0" }}>
           Powered by <strong style={{ color: "#334155" }}>FixFlow</strong>
         </p>
       </div>

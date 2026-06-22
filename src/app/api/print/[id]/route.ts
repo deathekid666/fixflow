@@ -27,8 +27,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       lineItems: { orderBy: { createdAt: "asc" } },
       payments: {
         select: { amount: true, method: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-        take: 1,
+        orderBy: { createdAt: "asc" },
       },
     },
   });

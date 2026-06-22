@@ -31,7 +31,9 @@ export async function POST(req: Request) {
     nextDate.setMonth(nextDate.getMonth() + 1);
 
     // Create work order for this billing cycle
-    const orderNumber = `contract-${contract.id.slice(0, 6)}-${Date.now()}`;
+    const year = new Date().getFullYear();
+    const woCount = await prisma.workOrder.count({ where: { shopId: contract.shopId } });
+    const orderNumber = `wo-${year}-${String(woCount + 1).padStart(4, "0")}-${contract.shopId.slice(0, 4)}`;
     const workOrder = await prisma.workOrder.create({
       data: {
         shopId: contract.shopId,
