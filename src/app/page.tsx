@@ -225,7 +225,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="flex items-center min-h-screen" style={{ paddingTop: "64px" }}>
+      <section style={{ height: "100vh", display: "flex", alignItems: "center", paddingTop: "64px", boxSizing: "border-box" }}>
         <div className="max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center py-12 md:py-0">
 
           {/* Left */}
