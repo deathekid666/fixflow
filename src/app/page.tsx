@@ -225,7 +225,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="min-h-screen flex items-center pt-24">
+      <section className="flex items-center min-h-screen">
         <div className="max-w-6xl mx-auto px-6 w-full grid md:grid-cols-2 gap-12 items-center py-8">
 
           {/* Left */}
