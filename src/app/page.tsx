@@ -1,337 +1,118 @@
-"use client";
-import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { Wrench, ArrowRight, Check, Zap, Users, BarChart3, Calendar } from "lucide-react";
-
-// ── CountUp ──────────────────────────────────────────────────────────────────
-function CountUp({ to, started }: { to: number; started: boolean }) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!started) return;
-    let current = 0;
-    const duration = 1400;
-    const step = 16;
-    const increment = to / (duration / step);
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= to) { setCount(to); clearInterval(timer); }
-      else setCount(Math.floor(current));
-    }, step);
-    return () => clearInterval(timer);
-  }, [started, to]);
-  return <>{count}</>;
-}
-
-const NAV_LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "AI", href: "#ai" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
-  { label: "Track Repair", href: "/track" },
-];
-
-const FEATURES = [
-  {
-    span: "col-span-2",
-    icon: <Wrench className="w-5 h-5 text-blue-400" />,
-    accent: "text-blue-400",
-    title: "Work Orders",
-    desc: "Create, assign, and track every repair job from intake to delivery. Status updates, notes, parts, and photos — all in one place.",
-    preview: (
-      <div className="mt-4 rounded-lg border border-white/5 overflow-hidden text-xs">
-        <div className="bg-slate-900/60 px-3 py-2 flex items-center gap-2 border-b border-white/5">
-          <span className="text-slate-500">Order</span>
-          <span className="ml-auto text-slate-500">Customer</span>
-          <span className="ml-8 text-slate-500">Status</span>
-          <span className="ml-8 text-slate-500">Total</span>
-        </div>
-        {[
-          { num: "#1042", name: "Ahmed K.", model: "iPhone 14 Pro", status: "REPAIRING", color: "text-yellow-400", total: "$89" },
-          { num: "#1041", name: "Sofia M.", model: "Samsung S23", status: "DONE", color: "text-green-400", total: "$120" },
-          { num: "#1040", name: "Omar B.", model: "MacBook Air", status: "DIAGNOSING", color: "text-blue-400", total: "$240" },
-        ].map(r => (
-          <div key={r.num} className="flex items-center gap-2 px-3 py-2 border-b border-white/5 last:border-0">
-            <span className="text-slate-400 w-12">{r.num}</span>
-            <div className="flex-1">
-              <div className="text-white font-medium">{r.name}</div>
-              <div className="text-slate-500">{r.model}</div>
-            </div>
-            <span className={`text-xs font-medium ${r.color}`}>{r.status}</span>
-            <span className="text-slate-300 w-12 text-right">{r.total}</span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    span: "col-span-1",
-    icon: <Zap className="w-5 h-5 text-purple-400" />,
-    accent: "text-purple-400",
-    title: "AI Assistant",
-    badge: "Only on FixFlow",
-    desc: "Diagnose devices, generate repair quotes, and draft customer messages — all powered by Claude AI.",
-    preview: (
-      <div className="mt-4 space-y-2 text-xs">
-        <div className="bg-slate-800/60 rounded-lg px-3 py-2 text-slate-300">iPhone 14 black screen after drop</div>
-        <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-2 text-slate-200 leading-relaxed">
-          Likely broken LCD panel. Estimated repair: $80–$120. Timeline: 1–2 hours.
-          <div className="mt-2 text-purple-400 text-xs cursor-pointer hover:text-purple-300">→ Draft customer message</div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    span: "col-span-1",
-    icon: <BarChart3 className="w-5 h-5 text-blue-400" />,
-    accent: "text-blue-400",
-    title: "Analytics",
-    desc: "Revenue charts, repair volumes, engineer performance, and bounce rates — updated in real time.",
-    preview: (
-      <div className="mt-4 flex items-end gap-1 h-16">
-        {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-          <div key={i} className="flex-1 bg-blue-500/20 rounded-sm" style={{ height: `${h}%` }} />
-        ))}
-      </div>
-    ),
-  },
-  {
-    span: "col-span-2",
-    icon: <Users className="w-5 h-5 text-blue-400" />,
-    accent: "text-blue-400",
-    title: "Customer Portal",
-    desc: "Customers track their repair live via a public link — no app download needed. Reduces \"where's my phone?\" calls by 80%.",
-    preview: (
-      <div className="mt-4 space-y-2 text-xs">
-        {["Received", "Diagnosing", "Repairing", "Done", "Delivered"].map((s, i) => (
-          <div key={s} className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${i <= 2 ? "bg-blue-500" : "bg-slate-700"}`} />
-            <span className={i <= 2 ? "text-white" : "text-slate-600"}>{s}</span>
-            {i === 2 && <span className="ml-auto text-blue-400 font-medium">← Now</span>}
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    span: "col-span-1",
-    icon: <Calendar className="w-5 h-5 text-blue-400" />,
-    accent: "text-blue-400",
-    title: "Appointments",
-    desc: "Let customers book online. QR code check-in at the counter. Walk-ins auto-converted to work orders.",
-    preview: (
-      <div className="mt-4 grid grid-cols-3 gap-1 text-xs">
-        {["9:00", "10:00", "11:00", "13:00", "14:00", "15:00"].map((t, i) => (
-          <div key={t} className={`px-2 py-1 rounded text-center ${i === 1 || i === 3 ? "bg-blue-600/30 text-blue-300 border border-blue-500/30" : "bg-slate-800/60 text-slate-500"}`}>{t}</div>
-        ))}
-      </div>
-    ),
-  },
-];
-
-const PRICING_PLANS = [
-  {
-    name: "Starter",
-    price: 29,
-    desc: "Perfect for a single-technician shop",
-    cta: "Start free trial",
-    popular: false,
-    features: ["Up to 100 work orders/mo", "Customer portal", "SMS notifications", "Basic analytics", "Email support"],
-  },
-  {
-    name: "Pro",
-    price: 59,
-    desc: "For growing shops with a team",
-    cta: "Start free trial",
-    popular: true,
-    features: ["Unlimited work orders", "AI repair assistant", "Multi-engineer management", "Advanced analytics", "Appointments & QR check-in", "Priority support"],
-  },
-  {
-    name: "Business",
-    price: 99,
-    desc: "Multi-branch operations at scale",
-    cta: "Contact sales",
-    popular: false,
-    features: ["Everything in Pro", "Multi-branch dashboard", "Custom branding", "API access", "Dedicated account manager", "SLA guarantee"],
-  },
-];
-
-const FAQ_ITEMS = [
-  { q: "Do I need a credit card to start?", a: "No. Your 14-day free trial starts immediately with no credit card required." },
-  { q: "Can I import my existing customer data?", a: "Yes — we support CSV import for customers, work orders, and inventory." },
-  { q: "Does it work on mobile?", a: "FixFlow is fully responsive. Technicians can update work orders from their phones." },
-  { q: "What languages does the AI support?", a: "The AI assistant supports English, French, and Arabic for customer messages." },
-  { q: "How do SMS notifications work?", a: "We integrate with your existing SMS provider (Twilio, etc.) or you can use our built-in service." },
-  { q: "Can I cancel anytime?", a: "Yes. No lock-in contracts. Cancel or downgrade at any time from your settings." },
-];
+"use client"
+import Link from "next/link"
+import { Wrench, ArrowRight, Check, Zap, Users, BarChart3, Calendar, Package, Star, Shield, Clock, Globe } from "lucide-react"
 
 export default function LandingPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [statsVisible, setStatsVisible] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = statsRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStatsVisible(true); }, { threshold: 0.3 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
   return (
-    <div style={{ background: "#0a0f1e", minHeight: "100vh", color: "white" }}>
+    <div className="bg-[#060912] text-white min-h-screen" style={{fontFamily:"Inter,system-ui,sans-serif"}}>
 
-      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 h-14 px-6 border-b border-white/5" style={{ backdropFilter: "blur(12px)", background: "rgba(10,15,30,0.8)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:32,height:32,background:"#2563eb",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <Wrench size={16} color="white" />
+      {/* NAVBAR */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5" style={{background:"rgba(6,9,18,0.85)",backdropFilter:"blur(20px)",height:60}}>
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Wrench size={15} color="white" />
+            </div>
+            <span className="font-bold text-lg text-white">FixFlow</span>
           </div>
-          <span style={{fontWeight:700,fontSize:17,color:"white"}}>FixFlow</span>
-        </div>
-
-        {/* Desktop nav — absolutely centered */}
-        <div className="hidden md:flex items-center gap-6" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
-          {NAV_LINKS.map(l => (
-            <Link key={l.label} href={l.href} className="text-sm text-slate-400 hover:text-white transition-colors">
-              {l.label}
-            </Link>
-          ))}
-        </div>
-
-        {/* Right actions */}
-        <div className="hidden md:flex items-center gap-3">
-          <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">Sign in</Link>
-          <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded transition-colors">
-            Get started
-          </Link>
-        </div>
-
-        {/* Mobile hamburger */}
-        <button className="md:hidden ml-auto text-slate-400" onClick={() => setMenuOpen(v => !v)}>
-          {menuOpen ? "✕" : "☰"}
-        </button>
-
-        {menuOpen && (
-          <div className="absolute top-14 left-0 right-0 border-b border-white/5 py-4 px-6 flex flex-col gap-4" style={{ background: "#0a0f1e" }}>
-            {NAV_LINKS.map(l => (
-              <Link key={l.label} href={l.href} className="text-sm text-slate-400 hover:text-white" onClick={() => setMenuOpen(false)}>
-                {l.label}
-              </Link>
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+            {["Features","AI","Pricing","FAQ"].map(l=>(
+              <a key={l} href={`#${l.toLowerCase()}`} className="text-sm text-slate-400 hover:text-white transition-colors no-underline">{l}</a>
             ))}
-            <Link href="/login" className="text-sm text-slate-400 hover:text-white">Sign in</Link>
-            <Link href="/register" className="text-sm font-semibold text-white bg-blue-600 px-4 py-2 rounded-lg text-center">Get started</Link>
+            <a href="/track" className="text-sm text-blue-400 hover:text-blue-300 transition-colors no-underline">Track Repair</a>
           </div>
-        )}
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors no-underline">Sign in</Link>
+            <Link href="/register" className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors no-underline">Get started free</Link>
+          </div>
+        </div>
       </nav>
 
-      {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section style={{ height: "100vh", display: "flex", alignItems: "center", paddingTop: "64px", boxSizing: "border-box" }}>
-        <div className="max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center py-12 md:py-0">
-
+      {/* HERO */}
+      <section className="min-h-screen flex items-center pt-16 pb-20 px-6">
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase text-blue-400 mb-4">
-              All-in-One Repair Shop Platform
-            </p>
-
-            <h1 className="text-5xl font-bold text-white leading-tight mb-6" style={{ letterSpacing: "-1px" }}>
-              Run Your Whole<br />
-              Repair Shop From<br />
-              One Platform
-            </h1>
-
-            <p className="text-lg text-slate-400 leading-relaxed mb-8 max-w-lg">
-              Work orders, AI diagnostics, customer tracking, inventory, and payments — built for the way repair shops actually run.
-            </p>
-
-            <div className="flex gap-4">
-              <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3 rounded-full transition-colors">
-                Start My Free Trial
-              </Link>
-              <Link href="#pricing" className="border-2 border-white/20 hover:border-white/40 text-white font-semibold px-8 py-3 rounded-full transition-colors">
-                See Pricing
-              </Link>
+            <div className="inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/8 rounded-full px-3 py-1.5 mb-6">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
+              <span className="text-xs text-blue-400 font-medium">AI-Powered Repair Shop Platform</span>
             </div>
-
-            <div className="flex items-center gap-3 mt-8">
-              <span className="text-yellow-400">★★★★★</span>
-              <span className="text-sm text-slate-400">1,000+ repair shops worldwide</span>
+            <h1 className="text-5xl lg:text-6xl font-bold leading-tight mb-6" style={{letterSpacing:"-2px"}}>
+              Run your repair shop<br/>
+              <span className="text-blue-400">like a pro.</span>
+            </h1>
+            <p className="text-lg text-slate-400 leading-relaxed mb-8 max-w-lg">
+              Work orders, AI diagnostics, customer tracking, inventory, and payments — one platform that finally replaces WhatsApp and spreadsheets.
+            </p>
+            <div className="flex flex-wrap gap-3 mb-8">
+              <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all no-underline" style={{boxShadow:"0 0 40px rgba(37,99,235,0.3)"}}>
+                Start free — 14 days <ArrowRight size={16}/>
+              </Link>
+              <a href="#features" className="inline-flex items-center gap-2 text-slate-300 hover:text-white font-medium px-6 py-3.5 rounded-xl transition-all border border-white/10 hover:border-white/20 no-underline">
+                See features
+              </a>
+            </div>
+            <div className="flex flex-wrap gap-5">
+              {["No credit card","Cancel anytime","Free for 14 days"].map(t=>(
+                <span key={t} className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <Check size={13} color="#22c55e"/>{t}
+                </span>
+              ))}
+            </div>
+            {/* Social proof */}
+            <div className="flex items-center gap-3 mt-8 pt-8 border-t border-white/5">
+              <div className="flex">
+                {[1,2,3,4,5].map(i=><Star key={i} size={14} className="text-yellow-400" fill="#facc15"/>)}
+              </div>
+              <span className="text-sm text-slate-400">Trusted by <span className="text-white font-medium">1,000+</span> repair shops worldwide</span>
             </div>
           </div>
-
-          {/* Right — dashboard mockup */}
-          <div>
-            <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "#111827", boxShadow: "0 0 80px rgba(59,130,246,0.18), 0 25px 60px rgba(0,0,0,0.5)" }}>
-              {/* Browser chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5" style={{ background: "#0d1321" }}>
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                </div>
-                <div className="flex-1 mx-4 bg-slate-800/60 rounded px-3 py-1 text-xs text-slate-500 text-center">
-                  app.fixflow.io/dashboard
-                </div>
+          {/* Right - Dashboard mockup */}
+          <div className="hidden lg:block">
+            <div className="rounded-2xl overflow-hidden border border-white/8" style={{boxShadow:"0 40px 120px rgba(0,0,0,0.6), 0 0 60px rgba(37,99,235,0.08)",background:"#0d1117"}}>
+              {/* Browser bar */}
+              <div className="flex items-center gap-2 px-4 border-b border-white/5" style={{height:38,background:"#161b22"}}>
+                <div className="w-3 h-3 rounded-full bg-[#ff5f57]"/>
+                <div className="w-3 h-3 rounded-full bg-[#febc2e]"/>
+                <div className="w-3 h-3 rounded-full bg-[#28c840]"/>
+                <div className="flex-1 text-center text-xs text-slate-600 font-mono">app.fixflow.io/dashboard</div>
               </div>
-
-              {/* App interior */}
-              <div className="flex" style={{ minHeight: "320px" }}>
+              {/* Dashboard */}
+              <div className="flex" style={{height:400}}>
                 {/* Sidebar */}
-                <div className="w-44 border-r border-white/5 p-3 flex flex-col gap-1" style={{ background: "#0d1321" }}>
-                  {[
-                    { label: "Dashboard", active: false },
-                    { label: "Work Orders", active: true },
-                    { label: "Customers", active: false },
-                    { label: "Inventory", active: false },
-                    { label: "Analytics", active: false },
-                    { label: "Appointments", active: false },
-                  ].map(item => (
-                    <div key={item.label} className={`text-xs px-3 py-2 rounded-md ${item.active ? "bg-blue-600/20 text-blue-400 font-medium" : "text-slate-500"}`}>
-                      {item.label}
+                <div className="w-44 border-r border-white/5 p-4">
+                  <div className="flex items-center gap-2 mb-5">
+                    <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center"><Wrench size={12} color="white"/></div>
+                    <span className="text-sm font-semibold">FixFlow</span>
+                  </div>
+                  {[{icon:<Wrench size={13}/>,label:"Work Orders",active:true},{icon:<Users size={13}/>,label:"Customers"},{icon:<Package size={13}/>,label:"Parts"},{icon:<BarChart3 size={13}/>,label:"Analytics"},{icon:<Calendar size={13}/>,label:"Appointments"}].map(item=>(
+                    <div key={item.label} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-1 text-xs" style={{background:item.active?"rgba(37,99,235,0.15)":"transparent",color:item.active?"#60a5fa":"rgba(255,255,255,0.3)"}}>
+                      {item.icon}{item.label}
                     </div>
                   ))}
                 </div>
-
-                {/* Main content */}
-                <div className="flex-1 p-4">
-                  {/* Stats row */}
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {[
-                      { label: "Revenue (MTD)", value: "$4,820" },
-                      { label: "Open Orders", value: "12" },
-                      { label: "Completed", value: "38" },
-                      { label: "Avg. Repair", value: "$127" },
-                    ].map(s => (
-                      <div key={s.label} className="rounded-lg border border-white/5 px-3 py-2" style={{ background: "#111827" }}>
-                        <div className="text-xs text-slate-500">{s.label}</div>
-                        <div className="text-base font-bold text-white">{s.value}</div>
+                {/* Main */}
+                <div className="flex-1 p-5 overflow-hidden">
+                  {/* Stats */}
+                  <div className="grid grid-cols-4 gap-3 mb-4">
+                    {[{l:"Revenue",v:"$8,420",c:"#34d399"},{l:"Active",v:"24",c:"#60a5fa"},{l:"Done",v:"38",c:"#a78bfa"},{l:"Rating",v:"4.9★",c:"#fbbf24"}].map(s=>(
+                      <div key={s.l} className="rounded-lg p-3" style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                        <div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.3)"}}>{s.l}</div>
+                        <div className="text-base font-bold" style={{color:s.c}}>{s.v}</div>
                       </div>
                     ))}
                   </div>
-
                   {/* Table */}
-                  <div className="rounded-lg border border-white/5 overflow-hidden text-xs">
-                    <div className="flex gap-2 px-3 py-2 border-b border-white/5 text-slate-600">
-                      <span className="w-12">Order</span>
-                      <span className="flex-1">Customer</span>
-                      <span className="w-20">Status</span>
-                      <span className="w-12 text-right">Total</span>
+                  <div className="rounded-xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.06)"}}>
+                    <div className="grid px-4 py-2 text-xs" style={{gridTemplateColumns:"80px 1fr 120px 90px",borderBottom:"1px solid rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.2)"}}>
+                      <span>ORDER</span><span>CUSTOMER</span><span>DEVICE</span><span>STATUS</span>
                     </div>
-                    {[
-                      { num: "#1042", name: "Ahmed K.", model: "iPhone 14 Pro", status: "REPAIRING", color: "text-yellow-400", total: "$89" },
-                      { num: "#1041", name: "Sofia M.", model: "Samsung S23", status: "DONE", color: "text-green-400", total: "$120" },
-                      { num: "#1040", name: "Omar B.", model: "MacBook Air", status: "DIAGNOSING", color: "text-blue-400", total: "$240" },
-                    ].map(r => (
-                      <div key={r.num} className="flex items-center gap-2 px-3 py-2 border-b border-white/5 last:border-0">
-                        <span className="text-slate-500 w-12">{r.num}</span>
-                        <div className="flex-1">
-                          <div className="text-slate-200 font-medium">{r.name}</div>
-                          <div className="text-slate-600">{r.model}</div>
-                        </div>
-                        <span className={`w-20 text-xs font-medium ${r.color}`}>{r.status}</span>
-                        <span className="text-slate-300 w-12 text-right">{r.total}</span>
+                    {[{id:"#1042",name:"Ahmed K.",device:"iPhone 14 Pro",status:"REPAIRING",color:"#f97316"},{id:"#1041",name:"Sara M.",device:"Samsung S23",status:"DONE",color:"#22c55e"},{id:"#1040",name:"Omar B.",device:"MacBook Air",status:"DIAGNOSING",color:"#eab308"},{id:"#1039",name:"Nadia R.",device:"iPhone 13",status:"DELIVERED",color:"#64748b"}].map(r=>(
+                      <div key={r.id} className="grid px-4 py-2.5 text-xs items-center" style={{gridTemplateColumns:"80px 1fr 120px 90px",borderBottom:"1px solid rgba(255,255,255,0.03)"}}>
+                        <span style={{color:"rgba(255,255,255,0.25)",fontFamily:"monospace"}}>{r.id}</span>
+                        <span className="font-medium">{r.name}</span>
+                        <span style={{color:"rgba(255,255,255,0.4)"}}>{r.device}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" style={{background:`${r.color}18`,color:r.color}}>{r.status}</span>
                       </div>
                     ))}
                   </div>
@@ -342,151 +123,169 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── THIN BAR ───────────────────────────────────────────────────────── */}
-      <div className="border-y border-white/5 py-4 text-center text-sm text-slate-500">
-        Used by repair shops across Europe, Middle East, and Americas
+      {/* SOCIAL PROOF BAR */}
+      <div className="border-y border-white/5 py-5 px-6 text-center">
+        <p className="text-sm text-slate-500">Used by repair shops across <span className="text-slate-300">Europe</span>, <span className="text-slate-300">Middle East</span>, and <span className="text-slate-300">Americas</span> — available in English, French & Arabic</p>
       </div>
 
-      {/* ── FEATURES ───────────────────────────────────────────────────────── */}
-      <section className="py-24 max-w-6xl mx-auto px-6" id="features">
-        <div className="text-center mb-14">
-          <h2 className="text-4xl font-bold text-white" style={{ letterSpacing: "-1px" }}>Everything your shop needs</h2>
-          <p className="text-slate-400 mt-3 text-lg">Built for repair shops. Not adapted from something else.</p>
+      {/* PROBLEM SECTION */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4" style={{letterSpacing:"-1px"}}>Still running your shop on WhatsApp?</h2>
+          <p className="text-lg text-slate-400">Most repair shops lose 2+ hours daily to manual work. FixFlow fixes that.</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {FEATURES.map((f, i) => (
-            <div
-              key={i}
-              className={`${f.span} rounded-xl border border-white/7 p-6`}
-              style={{ background: "#111827" }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center" style={{ background: "#1e293b" }}>
-                  {f.icon}
-                </div>
-                <span className={`text-base font-semibold ${f.accent}`}>{f.title}</span>
-                {f.badge && (
-                  <span className="ml-2 text-xs bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-full px-2 py-0.5">{f.badge}</span>
-                )}
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed mt-2">{f.desc}</p>
-              {f.preview}
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[{icon:"😤",title:"Lost repair history",desc:"Customer brings back a device. You have no idea what you did last time or who worked on it."},{icon:"💸",title:"Missed payments",desc:"Someone owes you money but you forgot to chase. No system to track outstanding balances."},{icon:"📱",title:"Customers calling non-stop",desc:"They want updates. You're busy repairing. WhatsApp is chaos. Customers get frustrated."}].map(p=>(
+            <div key={p.title} className="p-6 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="text-3xl mb-4">{p.icon}</div>
+              <h3 className="font-semibold text-white mb-2">{p.title}</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">{p.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── STATS ──────────────────────────────────────────────────────────── */}
-      <div ref={statsRef} className="border-y border-white/5 py-20">
-        <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { value: 122, suffix: "+", label: "Features" },
-            { value: 30, suffix: "+", label: "Countries" },
-            { value: 0, prefix: "$", label: "Setup cost" },
-            { value: 14, suffix: "", label: "Day free trial" },
-          ].map((s, i) => (
-            <div key={i}>
-              <div className="text-5xl font-bold text-white mb-1">
-                {s.prefix}{statsVisible ? <CountUp to={s.value} started={statsVisible} /> : 0}{s.suffix}
-              </div>
-              <div className="text-sm text-slate-400">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── PRICING ────────────────────────────────────────────────────────── */}
-      <section className="py-24 max-w-4xl mx-auto px-6" id="pricing">
-        <div className="text-center mb-14">
-          <h2 className="text-4xl font-bold text-white" style={{ letterSpacing: "-1px" }}>Simple pricing</h2>
-          <p className="text-slate-400 mt-3 text-lg">No hidden fees. Cancel anytime.</p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {PRICING_PLANS.map(plan => (
-            <div
-              key={plan.name}
-              className="rounded-xl p-6 flex flex-col"
-              style={{
-                background: plan.popular ? "#0f1e3a" : "#111827",
-                border: plan.popular ? "1px solid rgba(59,130,246,0.5)" : "1px solid rgba(255,255,255,0.07)",
-                boxShadow: plan.popular ? "0 0 32px rgba(59,130,246,0.15)" : "none",
-              }}
-            >
-              {plan.popular && (
-                <div className="text-xs text-blue-400 font-semibold bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 self-start mb-4">
-                  Most Popular
-                </div>
-              )}
-              <div className="text-lg font-bold text-white mb-1">{plan.name}</div>
-              <div className="text-4xl font-bold text-white mb-1">${plan.price}<span className="text-lg text-slate-400 font-normal">/mo</span></div>
-              <div className="text-sm text-slate-400 mb-6">{plan.desc}</div>
-
-              <Link
-                href="/register"
-                className={`text-center text-sm font-semibold px-4 py-2.5 rounded-lg mb-6 transition-colors ${
-                  plan.popular ? "bg-blue-600 hover:bg-blue-500 text-white" : "border border-slate-700 text-slate-300 hover:border-slate-500"
-                }`}
-              >
-                {plan.cta}
-              </Link>
-
-              <ul className="space-y-3 mt-auto">
-                {plan.features.map(f => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-slate-300">
-                    <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.popular ? "text-blue-400" : "text-slate-500"}`} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FAQ ────────────────────────────────────────────────────────────── */}
-      <section className="py-24 max-w-2xl mx-auto px-6" id="faq">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white" style={{ letterSpacing: "-1px" }}>FAQ</h2>
-        </div>
-        <div className="space-y-3">
-          {FAQ_ITEMS.map((item, i) => (
-            <div key={i} className="rounded-xl border border-white/7 overflow-hidden" style={{ background: "#111827" }}>
-              <button
-                className="w-full flex items-center justify-between px-5 py-4 text-left"
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              >
-                <span className="text-sm font-medium text-white">{item.q}</span>
-                <span className={`text-slate-400 text-lg transition-transform ${openFaq === i ? "rotate-180" : ""}`}>⌄</span>
-              </button>
-              {openFaq === i && (
-                <div className="px-5 pb-4 text-sm text-slate-400 leading-relaxed">{item.a}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ──────────────────────────────────────────────────────── */}
-      <section className="py-24 text-center border-t border-white/5 px-6">
-        <h2 className="text-4xl font-bold text-white mb-3" style={{ letterSpacing: "-1px" }}>Ready to run a better shop?</h2>
-        <p className="text-slate-400 text-lg mb-8">14-day free trial. No credit card.</p>
-        <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3.5 rounded-lg transition-all hover:scale-105">
-          Start free trial <ArrowRight className="w-4 h-4" />
-        </Link>
-      </section>
-
-      {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 py-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-            <Wrench className="w-3.5 h-3.5 text-white" />
+      {/* FEATURES */}
+      <section id="features" className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold text-blue-400 tracking-widest uppercase mb-3">FEATURES</p>
+            <h2 className="text-4xl font-bold mb-4" style={{letterSpacing:"-1px"}}>Everything your shop needs</h2>
+            <p className="text-lg text-slate-400 max-w-lg mx-auto">Replace the chaos of multiple tools with one platform built specifically for repair shops.</p>
           </div>
-          <span className="font-bold text-white text-sm">FixFlow</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Big card */}
+            <div className="md:col-span-2 p-8 rounded-2xl border border-white/6 relative overflow-hidden" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full" style={{background:"radial-gradient(circle,rgba(37,99,235,0.08) 0%,transparent 70%)"}}/>
+              <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center mb-4"><Wrench size={20} color="#60a5fa"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Smart Work Orders</h3>
+              <p className="text-slate-400 leading-relaxed">Full lifecycle from intake to delivery. Photos, checklists, parts, payments, customer chat, repair timer, and SLA tracking — all in one place.</p>
+            </div>
+            {/* AI card */}
+            <div className="p-8 rounded-2xl border border-purple-500/15 relative overflow-hidden" style={{background:"linear-gradient(135deg,rgba(124,58,237,0.08),rgba(37,99,235,0.05))"}}>
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4"><Zap size={20} color="#a78bfa"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>AI Repair Assistant</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">Describe the fault. Get repair steps, parts list, time estimate, and price suggestion instantly.</p>
+              <span className="text-xs font-semibold text-purple-400 bg-purple-500/15 px-3 py-1 rounded-full">Only on FixFlow</span>
+            </div>
+            {/* Analytics */}
+            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-4"><BarChart3 size={20} color="#34d399"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Analytics</h3>
+              <p className="text-slate-400 leading-relaxed">Revenue charts, engineer leaderboards, parts profitability, and industry benchmarks.</p>
+            </div>
+            {/* Customer portal - big */}
+            <div className="md:col-span-2 p-8 rounded-2xl border border-white/6 relative overflow-hidden" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full" style={{background:"radial-gradient(circle,rgba(16,185,129,0.06) 0%,transparent 70%)"}}/>
+              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-4"><Users size={20} color="#34d399"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Customer Portal</h3>
+              <p className="text-slate-400 leading-relaxed">Customers track repairs in real time, chat with your shop, see completion photos, and rate the service. No app download. No login.</p>
+            </div>
+            {/* Appointments */}
+            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/15 flex items-center justify-center mb-4"><Calendar size={20} color="#fbbf24"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Appointments</h3>
+              <p className="text-slate-400 leading-relaxed">Smart capacity-based booking. Customers book online, you confirm.</p>
+            </div>
+            {/* Inventory */}
+            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center mb-4"><Package size={20} color="#f97316"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Inventory</h3>
+              <p className="text-slate-400 leading-relaxed">Parts catalog, stock tracking, low stock alerts, and supplier management.</p>
+            </div>
+            {/* Multi-language */}
+            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center mb-4"><Globe size={20} color="#22d3ee"/></div>
+              <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Arabic & French</h3>
+              <p className="text-slate-400 leading-relaxed">Full RTL Arabic support, French, and English. The only repair CRM built for MENA markets.</p>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-slate-500">© 2026 FixFlow. Built for repair shops. Made for growth.</p>
+      </section>
+
+      {/* STATS */}
+      <section className="border-y border-white/5 py-20 px-6">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[{n:"122+",l:"Features"},{n:"30+",l:"Countries"},{n:"$0",l:"Setup cost"},{n:"14",l:"Day free trial"}].map(s=>(
+            <div key={s.l}>
+              <div className="text-5xl font-bold mb-2" style={{letterSpacing:"-2px"}}>{s.n}</div>
+              <div className="text-sm text-slate-500">{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* WHY FIXFLOW */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4" style={{letterSpacing:"-1px"}}>Why repair shops choose FixFlow</h2>
+            <p className="text-lg text-slate-400">Not just another CRM. A complete operating system for repair shops.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[{icon:<Zap size={22} color="#a78bfa"/>,bg:"rgba(124,58,237,0.15)",title:"AI built in",desc:"The only repair CRM with a built-in AI assistant. Get repair guidance, price suggestions, and customer message drafts instantly."},{icon:<Shield size={22} color="#34d399"/>,bg:"rgba(16,185,129,0.15)",title:"50% cheaper",desc:"RepairDesk charges $75-150/month. RepairShopr $50-150/month. FixFlow starts at $29/month with more features."},{icon:<Clock size={22} color="#60a5fa"/>,bg:"rgba(37,99,235,0.15)",title:"Setup in minutes",desc:"No training needed. Create your first work order in under 2 minutes. Import your parts catalog via CSV."}].map(w=>(
+              <div key={w.title} className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{background:w.bg}}>{w.icon}</div>
+                <h3 className="text-lg font-bold mb-3">{w.title}</h3>
+                <p className="text-slate-400 leading-relaxed text-sm">{w.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-4xl font-bold mb-3" style={{letterSpacing:"-1px"}}>Simple pricing</h2>
+            <p className="text-lg text-slate-400">Start free. No credit card required.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[{name:"Starter",price:"$29",desc:"For solo technicians",features:["50 work orders/month","Up to 3 engineers","Customer portal","Basic analytics","Email support"],popular:false},{name:"Pro",price:"$59",desc:"For growing shops",features:["Unlimited work orders","Unlimited engineers","AI Repair Assistant","Advanced analytics","Commission tracking","Priority support"],popular:true},{name:"Business",price:"$99",desc:"For multiple locations",features:["Everything in Pro","Multiple branches","Custom permissions","White label","API access","Dedicated support"],popular:false}].map(plan=>(
+              <div key={plan.name} className="rounded-2xl p-7 relative" style={{background:plan.popular?"rgba(37,99,235,0.08)":"rgba(255,255,255,0.02)",border:plan.popular?"1px solid rgba(37,99,235,0.4)":"1px solid rgba(255,255,255,0.07)",boxShadow:plan.popular?"0 0 60px rgba(37,99,235,0.1)":"none"}}>
+                {plan.popular&&<div className="absolute -top-px left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-b-lg tracking-wide">MOST POPULAR</div>}
+                <p className="text-sm text-slate-400 mb-2 mt-2">{plan.name}</p>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-4xl font-bold" style={{letterSpacing:"-2px"}}>{plan.price}</span>
+                  <span className="text-slate-500 text-sm">/month</span>
+                </div>
+                <p className="text-xs text-slate-500 mb-6">{plan.desc}</p>
+                <Link href="/register" className="block text-center font-semibold text-sm py-2.5 rounded-xl mb-6 no-underline transition-colors" style={{background:plan.popular?"#2563eb":"rgba(255,255,255,0.06)",color:"white",border:plan.popular?"none":"1px solid rgba(255,255,255,0.08)"}}>
+                  Start free trial
+                </Link>
+                <div className="flex flex-col gap-3">
+                  {plan.features.map(f=>(
+                    <div key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
+                      <Check size={13} color={plan.popular?"#60a5fa":"#34d399"}/>{f}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-24 px-6 text-center border-t border-white/5">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold mb-4" style={{letterSpacing:"-1px"}}>Ready to run a better shop?</h2>
+          <p className="text-lg text-slate-400 mb-10">Join 1,000+ repair shops already using FixFlow. 14-day free trial. No credit card.</p>
+          <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base px-10 py-4 rounded-xl transition-all no-underline" style={{boxShadow:"0 0 60px rgba(37,99,235,0.35)"}}>
+            Get started free <ArrowRight size={16}/>
+          </Link>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-white/5 py-10 px-6 text-center">
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center"><Wrench size={12} color="white"/></div>
+          <span className="font-bold text-base">FixFlow</span>
+        </div>
+        <p className="text-xs text-slate-600">© 2026 FixFlow. Built for repair shops worldwide.</p>
       </footer>
     </div>
-  );
+  )
 }
