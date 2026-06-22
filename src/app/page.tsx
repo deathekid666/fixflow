@@ -5,6 +5,18 @@ import { Wrench, ArrowRight, Check, Zap, Users, BarChart3, Calendar, Package, St
 export default function LandingPage() {
   return (
     <div className="bg-[#060912] text-white min-h-screen" style={{fontFamily:"Inter,system-ui,sans-serif"}}>
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-float { animation: float 4s ease-in-out infinite; }
+        .fade-up { opacity: 0; animation: fadeUp 0.6s ease forwards; }
+      `}</style>
 
       {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5" style={{background:"rgba(6,9,18,0.85)",backdropFilter:"blur(20px)",height:60}}>
@@ -29,22 +41,24 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section className="flex items-center px-6" style={{height:"100vh",paddingTop:60,boxSizing:"border-box"}}>
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="flex items-center px-6 relative" style={{height:"100vh",paddingTop:60,boxSizing:"border-box"}}>
+        {/* Blue radial glow */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",background:"radial-gradient(ellipse 80% 50% at 50% 0%, rgba(37,99,235,0.12) 0%, transparent 70%)"}}/>
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative">
           {/* Left */}
           <div>
-            <div className="inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/8 rounded-full px-3 py-1.5 mb-6">
+            <div className="fade-up inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/8 rounded-full px-3 py-1.5 mb-6" style={{animationDelay:"0s"}}>
               <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
               <span className="text-xs text-blue-400 font-medium">AI-Powered Repair Shop Platform</span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-bold leading-tight mb-6" style={{letterSpacing:"-2px"}}>
+            <h1 className="fade-up text-5xl lg:text-6xl font-bold leading-tight mb-6" style={{letterSpacing:"-2px",animationDelay:"0.1s"}}>
               Run your repair shop<br/>
               <span className="text-blue-400">like a pro.</span>
             </h1>
-            <p className="text-lg text-slate-400 leading-relaxed mb-8 max-w-lg">
+            <p className="fade-up text-lg text-slate-400 leading-relaxed mb-8 max-w-lg" style={{animationDelay:"0.2s"}}>
               Work orders, AI diagnostics, customer tracking, inventory, and payments — one platform that finally replaces WhatsApp and spreadsheets.
             </p>
-            <div className="flex flex-wrap gap-3 mb-8">
+            <div className="fade-up flex flex-wrap gap-3 mb-8" style={{animationDelay:"0.3s"}}>
               <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all no-underline" style={{boxShadow:"0 0 40px rgba(37,99,235,0.3)"}}>
                 Start free — 14 days <ArrowRight size={16}/>
               </Link>
@@ -52,7 +66,7 @@ export default function LandingPage() {
                 See features
               </a>
             </div>
-            <div className="flex flex-wrap gap-5">
+            <div className="fade-up flex flex-wrap gap-5" style={{animationDelay:"0.4s"}}>
               {["No credit card","Cancel anytime","Free for 14 days"].map(t=>(
                 <span key={t} className="flex items-center gap-1.5 text-sm text-slate-500">
                   <Check size={13} color="#22c55e"/>{t}
@@ -60,7 +74,7 @@ export default function LandingPage() {
               ))}
             </div>
             {/* Social proof */}
-            <div className="flex items-center gap-3 mt-8 pt-8 border-t border-white/5">
+            <div className="fade-up flex items-center gap-3 mt-8 pt-8 border-t border-white/5" style={{animationDelay:"0.4s"}}>
               <div className="flex">
                 {[1,2,3,4,5].map(i=><Star key={i} size={14} className="text-yellow-400" fill="#facc15"/>)}
               </div>
@@ -68,7 +82,7 @@ export default function LandingPage() {
             </div>
           </div>
           {/* Right - Dashboard mockup */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block anim-float">
             <div className="rounded-2xl overflow-hidden border border-white/8" style={{boxShadow:"0 40px 120px rgba(0,0,0,0.6), 0 0 60px rgba(37,99,235,0.08)",background:"#0d1117"}}>
               {/* Browser bar */}
               <div className="flex items-center gap-2 px-4 border-b border-white/5" style={{height:38,background:"#161b22"}}>
