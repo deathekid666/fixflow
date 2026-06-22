@@ -225,7 +225,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="flex items-center min-h-screen">
+      <section className="flex items-center min-h-screen" style={{ paddingTop: 56 }}>
         <div className="max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center py-12 md:py-0">
 
           {/* Left */}
@@ -235,8 +235,9 @@ export default function LandingPage() {
             </p>
 
             <h1 className="text-5xl font-bold text-white leading-tight mb-6" style={{ letterSpacing: "-1px" }}>
-              Run Your Whole Repair Shop<br />
-              From One Platform
+              Run Your Whole<br />
+              Repair Shop From<br />
+              One Platform
             </h1>
 
             <p className="text-lg text-slate-400 leading-relaxed mb-8 max-w-lg">
