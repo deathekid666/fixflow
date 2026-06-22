@@ -80,12 +80,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   const body = await req.json();
 
+  // Whitelist only safe fields — the full edit form uses /api/workorders/[id]/edit
   const updated = await prisma.workOrder.update({
     where: { id: params.id },
     data: {
-      ...body,
-      warrantyStart: body.warrantyStart ? new Date(body.warrantyStart) : undefined,
-      warrantyEnd: body.warrantyEnd ? new Date(body.warrantyEnd) : undefined,
+      ...(body.assignedTo !== undefined ? { assignedTo: body.assignedTo ?? null } : {}),
+      ...(body.warrantyStart !== undefined ? { warrantyStart: body.warrantyStart ? new Date(body.warrantyStart) : null } : {}),
+      ...(body.warrantyEnd !== undefined ? { warrantyEnd: body.warrantyEnd ? new Date(body.warrantyEnd) : null } : {}),
       updatedAt: new Date(),
     },
   });

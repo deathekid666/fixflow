@@ -65,7 +65,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   await prisma.workOrder.update({
     where: { id: params.id },
-    data: { subtotal, total: subtotal - order.discount },
+    data: { subtotal, total: subtotal + order.quotationItems - order.discount },
   });
 
   await prisma.operationLog.create({

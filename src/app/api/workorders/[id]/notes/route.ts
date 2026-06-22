@@ -7,6 +7,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+  const order = await prisma.workOrder.findFirst({
+    where: { id: params.id, shopId: user.shopId ?? undefined },
+    select: { id: true },
+  });
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
   const notes = await prisma.internalNote.findMany({
     where: { workOrderId: params.id },
     include: { user: { select: { id: true, name: true, role: true } } },

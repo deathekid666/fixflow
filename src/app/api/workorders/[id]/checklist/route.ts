@@ -16,9 +16,19 @@ const DEFAULT_CHECKLIST = [
   "Water damage indicators",
 ];
 
+async function getOwnedOrder(workOrderId: string, shopId: string | null) {
+  return prisma.workOrder.findFirst({
+    where: { id: workOrderId, shopId: shopId ?? undefined },
+    select: { id: true },
+  });
+}
+
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const order = await getOwnedOrder(params.id, user.shopId);
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
   let checks = await prisma.diagnosisCheck.findMany({
     where: { workOrderId: params.id },
@@ -46,8 +56,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+  const order = await getOwnedOrder(params.id, user.shopId);
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
   const { checkId, status, note } = await req.json();
   if (!checkId || !status) return Response.json({ error: "checkId and status required" }, { status: 400 });
+
+  // Verify the check belongs to this work order
+  const check = await prisma.diagnosisCheck.findFirst({ where: { id: checkId, workOrderId: params.id } });
+  if (!check) return Response.json({ error: "Check not found" }, { status: 404 });
 
   const updated = await prisma.diagnosisCheck.update({
     where: { id: checkId },
@@ -60,6 +77,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const order = await getOwnedOrder(params.id, user.shopId);
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
 
   const { item } = await req.json();
   if (!item) return Response.json({ error: "item required" }, { status: 400 });
@@ -75,7 +95,16 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+  const order = await getOwnedOrder(params.id, user.shopId);
+  if (!order) return Response.json({ error: "Not found" }, { status: 404 });
+
   const { checkId } = await req.json();
+  if (!checkId) return Response.json({ error: "checkId required" }, { status: 400 });
+
+  // Verify the check belongs to this work order before deleting
+  const check = await prisma.diagnosisCheck.findFirst({ where: { id: checkId, workOrderId: params.id } });
+  if (!check) return Response.json({ error: "Check not found" }, { status: 404 });
+
   await prisma.diagnosisCheck.delete({ where: { id: checkId } });
   return Response.json({ message: "Deleted" });
 }

@@ -26,8 +26,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!status || !VALID_STATUSES.includes(status))
     return Response.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
 
+  // Super-admins have no shopId and can update any shop's orders.
+  // Regular admins/engineers are always scoped to their own shop.
   const order = await prisma.workOrder.findFirst({
-    where: { id: params.id, shopId: user.role !== "ADMIN" ? (user.shopId ?? undefined) : undefined },
+    where: { id: params.id, shopId: user.shopId ? user.shopId : undefined },
     include: { shop: { select: { name: true } } },
   });
   if (!order) return Response.json({ error: "Not found" }, { status: 404 });
