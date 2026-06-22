@@ -201,7 +201,7 @@ export default function LandingPage() {
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
           <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">Sign in</Link>
-          <Link href="/register" className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors">
+          <Link href="/register" className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-md transition-colors">
             Get started
           </Link>
         </div>
@@ -226,7 +226,7 @@ export default function LandingPage() {
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <section className="min-h-screen flex items-center pt-14">
-        <div className="max-w-6xl mx-auto px-6 w-full grid md:grid-cols-2 gap-12 items-center py-20">
+        <div className="max-w-6xl mx-auto px-6 w-full grid md:grid-cols-2 gap-12 items-center py-8">
 
           {/* Left */}
           <div style={{ paddingLeft: "0px" }}>
@@ -248,7 +248,7 @@ export default function LandingPage() {
               <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3 rounded-lg transition-colors">
                 Start Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="#pricing" className="inline-flex items-center border border-slate-700 text-slate-300 px-6 py-3 rounded-lg hover:border-slate-500 transition-colors">
+              <Link href="#pricing" className="inline-flex items-center border border-white/20 text-white px-6 py-3 rounded-lg hover:border-white/40 transition-colors">
                 See pricing
               </Link>
             </div>
@@ -258,7 +258,7 @@ export default function LandingPage() {
 
           {/* Right — dashboard mockup */}
           <div className="hidden md:block">
-            <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl" style={{ background: "#111827" }}>
+            <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "#111827", boxShadow: "0 0 80px rgba(59,130,246,0.18), 0 25px 60px rgba(0,0,0,0.5)" }}>
               {/* Browser chrome */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5" style={{ background: "#0d1321" }}>
                 <div className="flex gap-1.5">
@@ -267,7 +267,7 @@ export default function LandingPage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
                 </div>
                 <div className="flex-1 mx-4 bg-slate-800/60 rounded px-3 py-1 text-xs text-slate-500 text-center">
-                  app.fixflow.ma/dashboard
+                  app.fixflow.io/dashboard
                 </div>
               </div>
 
