@@ -226,7 +226,7 @@ export default function LandingPage() {
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <section className="flex items-center min-h-screen">
-        <div className="max-w-7xl mx-auto px-16 w-full grid grid-cols-2 gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center py-12 md:py-0">
 
           {/* Left */}
           <div>
@@ -259,7 +259,7 @@ export default function LandingPage() {
           </div>
 
           {/* Right — dashboard mockup */}
-          <div className="hidden md:block">
+          <div>
             <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "#111827", boxShadow: "0 0 80px rgba(59,130,246,0.18), 0 25px 60px rgba(0,0,0,0.5)" }}>
               {/* Browser chrome */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5" style={{ background: "#0d1321" }}>
