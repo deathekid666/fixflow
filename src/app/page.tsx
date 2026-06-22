@@ -201,7 +201,7 @@ export default function LandingPage() {
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
           <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">Sign in</Link>
-          <Link href="/register" className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-md transition-colors">
+          <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-md transition-colors">
             Get started
           </Link>
         </div>
@@ -225,7 +225,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="min-h-screen flex items-center pt-14">
+      <section className="min-h-screen flex items-center pt-24">
         <div className="max-w-6xl mx-auto px-6 w-full grid md:grid-cols-2 gap-12 items-center py-8">
 
           {/* Left */}
@@ -248,7 +248,7 @@ export default function LandingPage() {
               <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3 rounded-lg transition-colors">
                 Start Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="#pricing" className="inline-flex items-center border border-white/20 text-white px-6 py-3 rounded-lg hover:border-white/40 transition-colors">
+              <Link href="#pricing" className="px-6 py-3 rounded-lg text-white font-medium" style={{ border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.05)" }}>
                 See pricing
               </Link>
             </div>
