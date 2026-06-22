@@ -184,8 +184,8 @@ export default function LandingPage() {
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-6 border-b border-white/5" style={{ backdropFilter: "blur(12px)", background: "rgba(10,15,30,0.8)" }}>
         <div className="flex items-center gap-2 mr-10">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Wrench className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <Wrench size={16} color="white" />
           </div>
           <span className="font-bold text-white text-sm">FixFlow</span>
         </div>
