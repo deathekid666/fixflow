@@ -88,7 +88,7 @@ priceSuggestion should be a number based on past similar orders, or null if insu
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5",
         max_tokens: 400,
         messages: [{ role: "user", content: prompt }],
       }),
