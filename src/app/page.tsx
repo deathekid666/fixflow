@@ -161,7 +161,7 @@ export default function LandingPage() {
               AI-Powered · Now available
             </div>
 
-            <h1 className="text-white mb-5" style={{ fontSize: 64, fontWeight: 700, lineHeight: 1.05, letterSpacing: "-3px" }}>
+            <h1 className="text-white mb-5" style={{ fontSize: "clamp(38px, 8vw, 64px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
               <span style={{ display: "block" }}>The repair shop</span>
               <span style={{ display: "block" }}>OS for <span className="text-blue-400">2026</span>.</span>
             </h1>
@@ -199,8 +199,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right column — dashboard mockup */}
-          <div className="anim-float">
+          {/* Right column — dashboard mockup (hidden on mobile: its fixed-width sidebar + table
+              need ~450px+ and would otherwise force horizontal page scroll on phones) */}
+          <div className="anim-float hidden md:block">
             <div className="rounded-2xl overflow-hidden border border-white/8" style={{ background: "#0d1117", boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 80px rgba(37,99,235,0.07)" }}>
               {/* Browser bar */}
               <div className="h-9 flex items-center px-3 gap-2 border-b border-white/5" style={{ background: "#161b22" }}>
