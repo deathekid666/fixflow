@@ -143,7 +143,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
               </div>
 
               {/* Action buttons */}
-              <div className="flex gap-3 mt-5">
+              <div className="flex flex-col sm:flex-row gap-3 mt-5">
                 <Link href={`/book/${shop.id}`}
                   className="flex-1 text-center py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20">
                   Book a Repair
