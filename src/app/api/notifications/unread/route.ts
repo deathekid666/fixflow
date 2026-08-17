@@ -3,9 +3,11 @@ import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
 import { pushToUser } from "@/lib/pushNotify";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ count: 0 });
 
@@ -104,4 +106,4 @@ export async function GET(req: Request) {
     pendingAppts,
     lowStockCount: lowStock.length,
   });
-}
+});

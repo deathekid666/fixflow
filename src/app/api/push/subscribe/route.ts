@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -19,9 +21,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -30,4 +32,4 @@ export async function DELETE(req: Request) {
 
   await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: user.id } });
   return Response.json({ ok: true });
-}
+});

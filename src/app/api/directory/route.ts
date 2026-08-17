@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = withApiError(async () => {
   const shops = await prisma.shop.findMany({
     where: { status: "ACTIVE" },
     select: {
@@ -62,4 +64,4 @@ export async function GET() {
   });
 
   return Response.json(result);
-}
+});

@@ -2,12 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // Called on contracts page load — finds ACTIVE contracts due for billing,
 // creates a work order for each, advances nextBillingDate by 1 month,
 // and sends an in-app notification to admins.
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -71,4 +73,4 @@ export async function POST(req: Request) {
   }
 
   return Response.json({ billed: created.length, orders: created });
-}
+});

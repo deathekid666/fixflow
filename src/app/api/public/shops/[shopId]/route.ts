@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { shopId: string } }) {
+export const GET = withApiError(async (_req: Request, { params }: { params: { shopId: string } }) => {
   const shop = await prisma.shop.findUnique({
     where: { id: params.shopId },
     select: { id: true, name: true, logoUrl: true, phone: true, address: true, googleMapsUrl: true },
@@ -40,4 +42,4 @@ export async function GET(_req: Request, { params }: { params: { shopId: string 
   });
 
   return Response.json({ ...shop, availability, closures });
-}
+});

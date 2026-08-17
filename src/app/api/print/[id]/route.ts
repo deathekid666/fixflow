@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // Public endpoint — no auth required. The cuid work order ID is unguessable.
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (_req: Request, { params }: { params: { id: string } }) => {
   const order = await prisma.workOrder.findUnique({
     where: { id: params.id },
     include: {
@@ -43,4 +45,4 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const tatDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
   return Response.json({ ...order, tatDays });
-}
+});

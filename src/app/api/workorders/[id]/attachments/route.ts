@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { put, del } from "@vercel/blob";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB now that we use Blob
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf", "text/plain"];
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: NextRequest, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -19,9 +21,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 
   return NextResponse.json(attachments);
-}
+});
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: NextRequest, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -78,9 +80,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     tag: attachment.tag,
     createdAt: attachment.createdAt,
   }, { status: 201 });
-}
+});
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export const DELETE = withApiError(async (req: NextRequest, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -109,4 +111,4 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   });
 
   return NextResponse.json({ message: "Deleted" });
-}
+});

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { checkPerm } from "@/lib/permissions";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // Fields requiring only EDIT_ORDERS permission
@@ -24,10 +26,7 @@ const ADMIN_ONLY_FIELDS = [
   "shopId", "userId",
 ] as const;
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -83,13 +82,10 @@ export async function PATCH(
   });
 
   return Response.json(updated);
-}
+});
 
 // DELETE — requires DELETE_ORDERS permission (admin always has it, engineers need it granted)
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!await checkPerm(user.shopId, user.role, "DELETE_ORDERS")) {
@@ -114,4 +110,4 @@ export async function DELETE(
   });
 
   return Response.json({ message: "Work order deleted" });
-}
+});

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 function timeToMinutes(time: string): number {
@@ -11,7 +13,7 @@ function minutesToTime(minutes: number): string {
   return `${Math.floor(minutes / 60).toString().padStart(2, "0")}:${(minutes % 60).toString().padStart(2, "0")}`;
 }
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const { searchParams } = new URL(req.url);
   const shopId = searchParams.get("shopId");
   const date = searchParams.get("date"); // expected: "2026-06-15"
@@ -80,4 +82,4 @@ export async function GET(req: Request) {
   }
 
   return Response.json({ closed: false, slots });
-}
+});

@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { checkPerm } from "@/lib/permissions";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -67,9 +69,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   };
 
   return Response.json({ ...responseOrder, tatDays, isOverdue, customerOrderCount, customerFirstVisit });
-}
+});
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export const PUT = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -101,4 +103,4 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   });
 
   return Response.json(updated);
-}
+});

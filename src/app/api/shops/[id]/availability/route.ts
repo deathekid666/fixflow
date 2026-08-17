@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 const DEFAULTS = Array.from({ length: 7 }, (_, i) => ({
@@ -12,7 +14,7 @@ const DEFAULTS = Array.from({ length: 7 }, (_, i) => ({
   maxConcurrent: 2,
 }));
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.shopId !== params.id && !user.isSuperAdmin)
@@ -28,9 +30,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   // Return defaults merged with any existing rows
   const byDay = Object.fromEntries(rows.map(r => [r.dayOfWeek, r]));
   return Response.json(DEFAULTS.map(d => byDay[d.dayOfWeek] ?? { ...d, id: null, shopId: params.id, createdAt: null }));
-}
+});
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -71,4 +73,4 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   );
 
   return Response.json({ ok: true });
-}
+});

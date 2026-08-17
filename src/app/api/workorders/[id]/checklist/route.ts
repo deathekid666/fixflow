@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 const DEFAULT_CHECKLIST = [
@@ -23,7 +25,7 @@ async function getOwnedOrder(workOrderId: string, shopId: string | null) {
   });
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -50,9 +52,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 
   return Response.json(checks);
-}
+});
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export const PATCH = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -72,9 +74,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 
   return Response.json(updated);
-}
+});
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -89,9 +91,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   });
 
   return Response.json(check, { status: 201 });
-}
+});
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -107,4 +109,4 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   await prisma.diagnosisCheck.delete({ where: { id: checkId } });
   return Response.json({ message: "Deleted" });
-}
+});

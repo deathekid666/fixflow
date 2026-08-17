@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // GET /api/tv/data?token=xxx — no session required, authenticated by shop TV token
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
 
@@ -156,4 +158,4 @@ export async function GET(req: Request) {
     activityLogs,
     generatedAt: now.toISOString(),
   });
-}
+});

@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -78,9 +80,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   });
 
   return Response.json(workOrderPart, { status: 201 });
-}
+});
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -101,4 +103,4 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   ]);
 
   return Response.json({ success: true });
-}
+});

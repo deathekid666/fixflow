@@ -3,6 +3,8 @@ import { requireAuth } from "@/lib/requireAuth";
 import { checkPerm } from "@/lib/permissions";
 import type { Prisma } from "@prisma/client";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 const PLAN_LIMITS = {
@@ -11,7 +13,7 @@ const PLAN_LIMITS = {
   ENTERPRISE: { workOrders: Infinity, engineers: Infinity, spareParts: Infinity },
 };
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -66,9 +68,9 @@ export async function GET(req: Request) {
   });
 
   return Response.json(orders);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!user.shopId) return Response.json({ error: "No shop assigned" }, { status: 400 });
@@ -160,4 +162,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json(order, { status: 201 });
-}
+});

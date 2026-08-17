@@ -2,13 +2,12 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // PATCH /api/shifts/[id] — clock out
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -39,17 +38,14 @@ export async function PATCH(
   });
 
   return Response.json(updated);
-}
+});
 
 // DELETE /api/shifts/[id] — admin only
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   await prisma.shift.delete({ where: { id: params.id } });
   return Response.json({ message: "Deleted" });
-}
+});

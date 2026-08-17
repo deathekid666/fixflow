@@ -49,39 +49,45 @@ export async function POST(req: Request) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object;
-      const shopId = session.metadata?.shopId as string | undefined;
-      const plan = session.metadata?.plan as string | undefined;
-      const customerId = session.customer as string | undefined;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const shopId = session.metadata?.shopId as string | undefined;
+        const plan = session.metadata?.plan as string | undefined;
+        const customerId = session.customer as string | undefined;
 
-      if (shopId && plan) {
-        await prisma.shop.update({ where: { id: shopId }, data: { plan, status: "ACTIVE" } });
-        if (customerId) {
-          await prisma.shopSettings.upsert({
-            where: { shopId },
-            update: { stripeCustomerId: customerId, stripePlanSelected: plan },
-            create: { shopId, stripeCustomerId: customerId, stripePlanSelected: plan },
-          });
+        if (shopId && plan) {
+          await prisma.shop.update({ where: { id: shopId }, data: { plan, status: "ACTIVE" } });
+          if (customerId) {
+            await prisma.shopSettings.upsert({
+              where: { shopId },
+              update: { stripeCustomerId: customerId, stripePlanSelected: plan },
+              create: { shopId, stripeCustomerId: customerId, stripePlanSelected: plan },
+            });
+          }
         }
+        break;
       }
-      break;
-    }
-    case "customer.subscription.deleted": {
-      const sub = event.data.object;
-      const shopId = sub.metadata?.shopId as string | undefined;
-      if (shopId) {
-        await prisma.shop.update({ where: { id: shopId }, data: { plan: "FREE" } });
+      case "customer.subscription.deleted": {
+        const sub = event.data.object;
+        const shopId = sub.metadata?.shopId as string | undefined;
+        if (shopId) {
+          await prisma.shop.update({ where: { id: shopId }, data: { plan: "FREE" } });
+        }
+        break;
       }
-      break;
+      case "invoice.payment_failed": {
+        console.warn("[BILLING] Payment failed for invoice", event.data.object.id);
+        break;
+      }
+      default:
+        break;
     }
-    case "invoice.payment_failed": {
-      console.warn("[BILLING] Payment failed for invoice", event.data.object.id);
-      break;
-    }
-    default:
-      break;
+  } catch (err) {
+    console.error("[BILLING] Webhook handling error:", event.type, err);
+    // Non-200 so Stripe retries delivery.
+    return new Response("Webhook handler error", { status: 500 });
   }
 
   return new Response("ok", { status: 200 });

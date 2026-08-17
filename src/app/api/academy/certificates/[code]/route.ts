@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { code: string } }) {
+export const GET = withApiError(async (_req: Request, { params }: { params: { code: string } }) => {
   const cert = await prisma.academyCertificate.findUnique({
     where: { certificateCode: params.code },
     include: {
@@ -21,4 +23,4 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
     courseLevel: cert.course.level,
     courseDuration: cert.course.duration,
   });
-}
+});

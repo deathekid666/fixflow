@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 function phoneVariants(phone: string): string[] {
@@ -30,7 +32,7 @@ function phoneVariants(phone: string): string[] {
   return Array.from(set).filter((v) => v.replace(/\D/g, "").length >= 6);
 }
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const url = new URL(req.url);
   const phone = url.searchParams.get("phone")?.trim();
 
@@ -80,4 +82,4 @@ export async function GET(req: Request) {
   }));
 
   return Response.json(result);
-}
+});

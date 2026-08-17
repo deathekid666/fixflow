@@ -3,9 +3,11 @@ import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
 import { pushToUser } from "@/lib/pushNotify";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
 
   const order = await prisma.workOrder.findFirst({
@@ -38,9 +40,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     orderBy: { createdAt: "asc" },
   });
   return Response.json(messages);
-}
+});
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
 
   const body = await req.json().catch(() => null);
@@ -84,4 +86,4 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   return Response.json(msg, { status: 201 });
-}
+});

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { shopId: string } }) {
+export const GET = withApiError(async (_req: Request, { params }: { params: { shopId: string } }) => {
   const shop = await prisma.shop.findFirst({
     where: { id: params.shopId, status: "ACTIVE" },
     select: {
@@ -68,4 +70,4 @@ export async function GET(_req: Request, { params }: { params: { shopId: string 
     ratingCount: rated.length,
     reviews,
   });
-}
+});

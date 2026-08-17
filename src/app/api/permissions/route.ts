@@ -2,20 +2,22 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { PERMISSIONS, ENGINEER_DEFAULTS, resolvePerms, bustPermCache, type Permission } from "@/lib/permissions";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // GET — return resolved permissions for every role in this shop
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Admins only" }, { status: 403 });
 
   const engineerPerms = await resolvePerms(user.shopId, "ENGINEER");
   return Response.json({ ENGINEER: engineerPerms });
-}
+});
 
 // PUT — upsert one permission toggle
-export async function PUT(req: Request) {
+export const PUT = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Admins only" }, { status: 403 });
@@ -37,4 +39,4 @@ export async function PUT(req: Request) {
 
   bustPermCache(user.shopId, role);
   return Response.json({ ok: true });
-}
+});

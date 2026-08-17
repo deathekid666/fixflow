@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const { email, token, password } = await req.json();
   if (!email || !token || !password) return Response.json({ error: "Missing fields" }, { status: 400 });
   if (password.length < 10) return Response.json({ error: "Password must be at least 10 characters" }, { status: 400 });
@@ -26,4 +28,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ success: true });
-}
+});

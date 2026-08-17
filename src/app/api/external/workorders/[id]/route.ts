@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireApiKey } from "@/lib/requireApiKey";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const apiKeyData = await requireApiKey(req);
   if (!apiKeyData) return Response.json({ error: "Invalid or missing API key" }, { status: 401 });
 
@@ -27,4 +29,4 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     ...order,
     trackingUrl: `https://fixflow-ruddy.vercel.app/track/${order.id}`,
   });
-}
+});

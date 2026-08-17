@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // Simple in-memory rate limiter
@@ -16,7 +18,7 @@ function checkRateLimit(ip: string, max = 20, windowMs = 60_000): boolean {
   return true;
 }
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
   if (!checkRateLimit(ip)) {
     return Response.json({ error: "Too many requests. Please try again later." }, { status: 429 });
@@ -59,4 +61,4 @@ export async function GET(req: Request) {
   if (!order) return Response.json({ error: "Order not found" }, { status: 404 });
 
   return Response.json(order);
-}
+});

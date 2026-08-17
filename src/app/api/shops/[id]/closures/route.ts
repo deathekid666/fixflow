@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.shopId !== params.id && !user.isSuperAdmin)
@@ -14,9 +16,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     orderBy: { date: "asc" },
   });
   return Response.json(closures);
-}
+});
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -35,9 +37,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     },
   });
   return Response.json(closure, { status: 201 });
-}
+});
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -53,4 +55,4 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   await prisma.shopClosure.delete({ where: { id: closureId } });
   return Response.json({ ok: true });
-}
+});

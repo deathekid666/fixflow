@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireApiKey } from "@/lib/requireApiKey";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 const PLAN_LIMITS = {
@@ -45,7 +47,7 @@ function buildDiagnosticsNote(d: Diagnostics): string {
   return lines.join("\n");
 }
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const apiKeyData = await requireApiKey(req);
   if (!apiKeyData) return Response.json({ error: "Invalid or missing API key" }, { status: 401 });
 
@@ -74,9 +76,9 @@ export async function GET(req: Request) {
   ]);
 
   return Response.json({ data: orders, total, limit, offset });
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const apiKeyData = await requireApiKey(req);
   if (!apiKeyData) return Response.json({ error: "Invalid or missing API key" }, { status: 401 });
 
@@ -197,4 +199,4 @@ export async function POST(req: Request) {
     status: order.status,
     createdAt: order.createdAt,
   }, { status: 201 });
-}
+});

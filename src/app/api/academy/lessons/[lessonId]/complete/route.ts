@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { randomBytes } from "crypto";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 function generateCertCode(): string {
@@ -9,7 +11,7 @@ function generateCertCode(): string {
   return `FF-${part()}-${part()}-${part()}`;
 }
 
-export async function POST(req: Request, { params }: { params: { lessonId: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { lessonId: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -69,4 +71,4 @@ export async function POST(req: Request, { params }: { params: { lessonId: strin
   const progress = Math.round((doneLessons / totalLessons) * 100);
 
   return Response.json({ completed: true, courseCompleted: allDone, progress, certificate });
-}
+});

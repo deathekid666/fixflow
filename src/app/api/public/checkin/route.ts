@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const { searchParams } = new URL(req.url);
   const shopId = searchParams.get("shopId");
   const phone  = searchParams.get("phone")?.trim().replace(/\s+/g, "");
@@ -24,9 +26,9 @@ export async function GET(req: Request) {
   });
 
   return Response.json({ appointment: appointment ?? null });
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const { shopId, phone, customerName } = await req.json().catch(() => ({}));
   if (!shopId || !phone) return Response.json({ error: "Missing required fields" }, { status: 400 });
 
@@ -60,4 +62,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ checked: true, appointment: null, walkIn: true, walkInId: walkIn.id, customerName: walkIn.customerName });
-}
+});

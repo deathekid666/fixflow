@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import bcrypt from "bcrypt";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: Request) {
+export const PATCH = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -40,4 +42,4 @@ export async function PATCH(req: Request) {
   });
 
   return Response.json(updated);
-}
+});

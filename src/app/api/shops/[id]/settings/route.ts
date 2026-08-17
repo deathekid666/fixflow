@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || user.shopId !== params.id) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -63,9 +65,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     resendConfigured: !!process.env.RESEND_API_KEY,
     stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
   });
-}
+});
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export const PUT = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN" || user.shopId !== params.id)
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -130,4 +132,4 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   });
 
   return Response.json(settings);
-}
+});

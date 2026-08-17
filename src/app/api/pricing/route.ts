@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 // GET /api/pricing — returns pricing stats grouped by repairType
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN") return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -73,10 +75,10 @@ export async function GET(req: Request) {
   const dropConsider = stats.filter(s => s.acceptanceRate < 50 && s.count >= 3);
 
   return Response.json({ stats, underpriced, mostProfitable, leastProfitable, raiseRecommended, dropConsider, total: prices.length });
-}
+});
 
 // POST /api/pricing — manual entry
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN") return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -97,10 +99,10 @@ export async function POST(req: Request) {
   });
 
   return Response.json(entry, { status: 201 });
-}
+});
 
 // DELETE /api/pricing?id=xxx
-export async function DELETE(req: Request) {
+export const DELETE = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN") return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -110,4 +112,4 @@ export async function DELETE(req: Request) {
 
   await prisma.repairPrice.deleteMany({ where: { id, shopId: user.shopId! } });
   return Response.json({ ok: true });
-}
+});

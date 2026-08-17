@@ -3,9 +3,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const body = await req.json().catch(() => ({}));
   const { email, password } = body;
 
@@ -61,4 +63,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ success: true });
-}
+});

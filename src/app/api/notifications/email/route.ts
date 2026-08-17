@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { withApiError } from "@/lib/apiError";
+
 import {
   welcomeEmail, orderStatusUpdateEmail, deviceReadyPickupEmail,
   appointmentConfirmationEmail, appointmentReminderEmail, passwordResetEmail,
@@ -41,7 +43,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ o
 
 // POST /api/notifications/email
 // Sends a specific email notification or a test/preview email.
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -101,4 +103,4 @@ export async function POST(req: Request) {
 
   const result = await sendEmail(to, template.subject, template.html);
   return Response.json(result);
-}
+});

@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { sendNotification, type SmsProvider } from "@/lib/smsService";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN" || user.shopId !== params.id)
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,4 +23,4 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const result = await sendNotification(phone, message, provider);
 
   return Response.json(result);
-}
+});

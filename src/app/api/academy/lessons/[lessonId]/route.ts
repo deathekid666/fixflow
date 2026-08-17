@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { lessonId: string } }) {
+export const GET = withApiError(async (req: Request, { params }: { params: { lessonId: string } }) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -48,4 +50,4 @@ export async function GET(req: Request, { params }: { params: { lessonId: string
     next: next ? { id: next.id, title: next.title } : null,
     courseOutline: sortedLessons.map(l => ({ id: l.id, title: l.title, order: l.order, completed: completedSet.has(l.id) })),
   });
-}
+});

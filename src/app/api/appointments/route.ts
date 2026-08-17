@@ -3,9 +3,11 @@ import { requireAuth } from "@/lib/requireAuth";
 import { createNotification, getShopAdminIds } from "@/lib/notifications";
 import { pushToUser } from "@/lib/pushNotify";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -22,9 +24,9 @@ export async function GET(req: Request) {
   });
 
   return Response.json(appointments);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
 
   const body = await req.json().catch(() => null);
@@ -88,4 +90,4 @@ export async function POST(req: Request) {
   );
 
   return Response.json(appointment, { status: 201 });
-}
+});

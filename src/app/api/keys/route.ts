@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { randomUUID } from "crypto";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -16,9 +18,9 @@ export async function GET(req: Request) {
   });
 
   return Response.json(keys);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -35,9 +37,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json(apiKey, { status: 201 });
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -51,4 +53,4 @@ export async function DELETE(req: Request) {
   });
 
   return Response.json({ ok: true });
-}
+});

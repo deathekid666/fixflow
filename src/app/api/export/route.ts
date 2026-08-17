@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { checkPerm } from "@/lib/permissions";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 function esc(v: string | number | null | undefined): string {
@@ -13,7 +15,7 @@ function fmtDate(d: Date | string) {
   return new Date(d).toISOString().slice(0, 10);
 }
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -173,4 +175,4 @@ export async function GET(req: Request) {
       "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
-}
+});

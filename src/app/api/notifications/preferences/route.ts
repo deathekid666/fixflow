@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
 const DEFAULTS = {
@@ -8,15 +10,15 @@ const DEFAULTS = {
   slaBreach: true, orderOverdue: true, certification: true, newRating: true,
 };
 
-export async function GET(req: Request) {
+export const GET = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const prefs = await prisma.notificationPreference.findUnique({ where: { userId: user.id } });
   return Response.json(prefs ?? { userId: user.id, ...DEFAULTS });
-}
+});
 
-export async function PUT(req: Request) {
+export const PUT = withApiError(async (req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -34,4 +36,4 @@ export async function PUT(req: Request) {
   });
 
   return Response.json(prefs);
-}
+});

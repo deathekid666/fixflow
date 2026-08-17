@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { withApiError } from "@/lib/apiError";
+
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export const POST = withApiError(async () => {
   const response = NextResponse.json({
     success: true,
   });
@@ -14,4 +16,4 @@ export async function POST() {
   });
 
   return response;
-}
+});
