@@ -66,7 +66,8 @@ function isOverdue(slaDeadline: string | null): boolean {
 function statusColor(status: string): string {
   switch (status) {
     case "RECEIVED":    return "bg-blue-500/20 text-blue-300 border-blue-500/40";
-    case "IN_PROGRESS": return "bg-amber-500/20 text-amber-300 border-amber-500/40";
+    case "DIAGNOSING":  return "bg-amber-500/20 text-amber-300 border-amber-500/40";
+    case "REPAIRING":   return "bg-orange-500/20 text-orange-300 border-orange-500/40";
     case "DONE":        return "bg-green-500/20 text-green-300 border-green-500/40";
     default:            return "bg-slate-600/30 text-slate-300 border-slate-500/40";
   }
@@ -75,7 +76,9 @@ function statusColor(status: string): string {
 function statusLabel(status: string): string {
   switch (status) {
     case "RECEIVED":    return "Received";
-    case "IN_PROGRESS": return "In Progress";
+    case "DIAGNOSING":  return "Diagnosing";
+    case "REPAIRING":   return "In Repair";
+    case "DONE":        return "Ready for Pickup";
     default:            return status;
   }
 }
@@ -234,7 +237,7 @@ function TvDashboardContent() {
 
   const pageOrders = activeOrders.slice(activePage * 8, activePage * 8 + 8);
 
-  const bookingUrl = `https://fixflow-ruddy.vercel.app/book/${shop.id}`;
+  const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://fixflow-ruddy.vercel.app"}/book/${shop.id}`;
 
   const tickerText = activityLogs.map(l =>
     `${l.workOrder.orderNumber} — ${l.workOrder.customerName} — ${l.description ?? l.action} (${timeAgo(l.createdAt)})`
