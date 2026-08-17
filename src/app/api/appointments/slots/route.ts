@@ -42,10 +42,20 @@ export const GET = withApiError(async (req: Request) => {
     return Response.json({ closed: true, reason: closure.reason ?? "Holiday", slots: [] });
   }
 
-  // Get availability for this day of week
-  const avail = await prisma.shopAvailability.findUnique({
-    where: { shopId_dayOfWeek: { shopId, dayOfWeek } },
-  });
+  // Get availability for this day of week. Shops that haven't configured
+  // hours yet have no ShopAvailability rows at all -- fall back to the same
+  // default (Mon-Fri open) that /api/public/shops/[shopId] advertises to the
+  // booking calendar, so dates shown as selectable there aren't rejected here.
+  const configuredCount = await prisma.shopAvailability.count({ where: { shopId } });
+  const avail = configuredCount > 0
+    ? await prisma.shopAvailability.findUnique({ where: { shopId_dayOfWeek: { shopId, dayOfWeek } } })
+    : {
+        openTime: "09:00",
+        closeTime: "18:00",
+        isOpen: dayOfWeek >= 1 && dayOfWeek <= 5,
+        slotDurationMinutes: 60,
+        maxConcurrent: 2,
+      };
   if (!avail || !avail.isOpen) {
     return Response.json({ closed: true, reason: "Shop is closed on this day", slots: [] });
   }
