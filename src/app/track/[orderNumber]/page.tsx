@@ -449,8 +449,8 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                   onClick={sendChat}
                   disabled={sendingMsg || !newMsg.trim()}
                   style={{
-                    width: 40,
-                    height: 40,
+                    width: 44,
+                    height: 44,
                     borderRadius: "50%",
                     background: sendingMsg || !newMsg.trim() ? "rgba(37,99,235,0.4)" : "#2563eb",
                     border: "none",
@@ -498,7 +498,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
           style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <button
             onClick={() => setLightboxUrl(null)}
-            style={{ position: "absolute", top: 16, right: 16, width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            style={{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             ×
           </button>
           <img
