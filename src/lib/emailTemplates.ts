@@ -41,6 +41,9 @@ function baseLayout(content: string, brand: ShopBrand): string {
   .status-done { background: #dcfce7; color: #15803d; }
   .status-delivered { background: #dbeafe; color: #1d4ed8; }
   .status-received { background: #fef9c3; color: #a16207; }
+  .status-diagnosing { background: #fef3c7; color: #b45309; }
+  .status-repairing { background: #ffedd5; color: #c2410c; }
+  .status-cancelled { background: #fee2e2; color: #b91c1c; }
   .status-default { background: #f1f5f9; color: #475569; }
   .cta-btn { display: inline-block; margin: 20px 0 8px; padding: 14px 28px; background: ${accentColor}; color: white; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 700; letter-spacing: 0.2px; }
   .footer { padding: 20px 32px 28px; text-align: center; }
@@ -75,12 +78,16 @@ function statusBadgeClass(status: string): string {
   if (status === "DONE") return "status-badge status-done";
   if (status === "DELIVERED") return "status-badge status-delivered";
   if (status === "RECEIVED") return "status-badge status-received";
+  if (status === "DIAGNOSING") return "status-badge status-diagnosing";
+  if (status === "REPAIRING") return "status-badge status-repairing";
+  if (status === "CANCELLED") return "status-badge status-cancelled";
   return "status-badge status-default";
 }
 
 const STATUS_LABELS: Record<string, string> = {
   RECEIVED: "Received",
-  IN_PROGRESS: "In Progress",
+  DIAGNOSING: "Diagnosing",
+  REPAIRING: "In Repair",
   DONE: "Ready for Pickup",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
@@ -309,7 +316,7 @@ export function getPreviewEmail(key: EmailTemplateKey, brand: ShopBrand): EmailT
     case "welcome":
       return welcomeEmail({ customerName: sampleCustomer, orderNumber: "WO-2026-ABC123", deviceBrand: "Apple", deviceModel: "iPhone 15 Pro", faultDescription: "Cracked screen replacement", trackingUrl: "https://fixflow.ma/track/WO-2026-ABC123", brand: sampleBrand });
     case "status":
-      return orderStatusUpdateEmail({ customerName: sampleCustomer, orderNumber: "WO-2026-ABC123", deviceBrand: "Apple", deviceModel: "iPhone 15 Pro", status: "IN_PROGRESS", trackingUrl: "https://fixflow.ma/track/WO-2026-ABC123", brand: sampleBrand });
+      return orderStatusUpdateEmail({ customerName: sampleCustomer, orderNumber: "WO-2026-ABC123", deviceBrand: "Apple", deviceModel: "iPhone 15 Pro", status: "REPAIRING", trackingUrl: "https://fixflow.ma/track/WO-2026-ABC123", brand: sampleBrand });
     case "pickup":
       return deviceReadyPickupEmail({ customerName: sampleCustomer, orderNumber: "WO-2026-ABC123", deviceBrand: "Apple", deviceModel: "iPhone 15 Pro", totalAmount: 350, currency: "MAD", trackingUrl: "https://fixflow.ma/track/WO-2026-ABC123", brand: sampleBrand });
     case "appointment":
