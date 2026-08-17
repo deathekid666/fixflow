@@ -163,6 +163,7 @@ export default function CommissionsPage() {
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -248,6 +249,7 @@ export default function CommissionsPage() {
             </tfoot>
           )}
         </table>
+        </div>
       </div>
 
       <p className="text-xs text-slate-400">

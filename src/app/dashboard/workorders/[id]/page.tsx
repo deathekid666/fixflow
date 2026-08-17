@@ -962,6 +962,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               </div>
             )}
             {order.parts.length === 0 ? <p className="text-sm text-slate-500">{t("noPartsAdded")}</p> : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-slate-200 dark:border-slate-800">
                   <th className="text-left pb-2 text-xs text-slate-500">{t("part")}</th>
@@ -982,6 +983,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </section>
 

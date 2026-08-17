@@ -563,7 +563,7 @@ export default function SuppliersPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-3 overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-slate-400">

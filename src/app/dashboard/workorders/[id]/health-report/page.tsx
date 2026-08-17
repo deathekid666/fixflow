@@ -137,6 +137,7 @@ export default function HealthReportPage({ params }: { params: { id: string } })
         {order.parts.length > 0 && (
           <div className="mb-6">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">{t("partsReplaced")}</h3>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-gray-200">
                 <th className="text-left py-2 text-xs text-gray-400 font-medium">{t("part")}</th>
@@ -155,6 +156,7 @@ export default function HealthReportPage({ params }: { params: { id: string } })
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 

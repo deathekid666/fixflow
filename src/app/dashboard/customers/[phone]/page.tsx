@@ -207,6 +207,7 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
         <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("repairHistory")}</h2>
         </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -251,6 +252,7 @@ export default function CustomerDetailPage({ params }: { params: { phone: string
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
