@@ -1,21 +1,122 @@
 "use client"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Wrench, ArrowRight, Check, Zap, Users, BarChart3, Calendar, Package, Star, Shield, Clock, Globe } from "lucide-react"
 
+function useCountUp(target: number, duration: number, started: boolean) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (!started) return
+    const start = performance.now()
+    function tick(now: number) {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(Math.floor(eased * target))
+      if (progress < 1) requestAnimationFrame(tick)
+      else setValue(target)
+    }
+    requestAnimationFrame(tick)
+  }, [started, target, duration])
+  return value
+}
+
 export default function LandingPage() {
+  const spotlightRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
+  const [typed, setTyped] = useState("")
+  const [cursorVisible, setCursorVisible] = useState(true)
+  const [statsStarted, setStatsStarted] = useState(false)
+  const statsRef = useRef<HTMLDivElement>(null)
+
+  const count122 = useCountUp(122, 1500, statsStarted)
+  const count30 = useCountUp(30, 1500, statsStarted)
+
+  // Typewriter effect
+  useEffect(() => {
+    const text = "like a pro."
+    let i = 0
+    const interval = setInterval(() => {
+      if (i <= text.length) {
+        setTyped(text.slice(0, i))
+        i++
+      } else {
+        clearInterval(interval)
+        // Blink cursor after typing
+        const blink = setInterval(() => setCursorVisible(v => !v), 530)
+        return () => clearInterval(blink)
+      }
+    }, 80)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Mouse spotlight
+  useEffect(() => {
+    const hero = heroRef.current
+    const spotlight = spotlightRef.current
+    if (!hero || !spotlight) return
+    function onMove(e: MouseEvent) {
+      const rect = hero!.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      spotlight!.style.transform = `translate(${x - 300}px, ${y - 300}px)`
+    }
+    hero.addEventListener("mousemove", onMove)
+    return () => hero.removeEventListener("mousemove", onMove)
+  }, [])
+
+  // Scroll-triggered animations + stats counter
+  useEffect(() => {
+    const els = document.querySelectorAll(".animate-on-scroll")
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible") })
+    }, { threshold: 0.12 })
+    els.forEach(el => obs.observe(el))
+
+    const statsEl = statsRef.current
+    const statsObs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) { setStatsStarted(true); statsObs.disconnect() }
+    }, { threshold: 0.3 })
+    if (statsEl) statsObs.observe(statsEl)
+
+    return () => { obs.disconnect(); statsObs.disconnect() }
+  }, [])
+
   return (
     <div className="bg-[#060912] text-white min-h-screen" style={{fontFamily:"Inter,system-ui,sans-serif"}}>
       <style>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
         }
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .anim-float { animation: float 4s ease-in-out infinite; }
-        .fade-up { opacity: 0; animation: fadeUp 0.6s ease forwards; }
+        @keyframes blob1 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50% { transform: translate(60px,40px) scale(1.15); }
+        }
+        @keyframes blob2 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50% { transform: translate(-50px,30px) scale(0.9); }
+        }
+        .anim-float { animation: float 5s ease-in-out infinite; }
+        .fade-up { opacity: 0; animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .animate-on-scroll {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+        }
+        .animate-on-scroll.visible { opacity: 1; transform: translateY(0); }
+        .feature-card {
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .feature-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(255,255,255,0.15) !important;
+        }
+        .cursor-blink { display: inline-block; width: 3px; height: 1em; background: #60a5fa; margin-left: 2px; vertical-align: text-bottom; }
       `}</style>
 
       {/* NAVBAR */}
@@ -27,7 +128,7 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-lg text-white">FixFlow</span>
           </div>
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+          <div className="hidden md:flex" style={{position:"absolute",left:"50%",transform:"translateX(-50%)",display:"flex",gap:32,alignItems:"center"}}>
             {["Features","AI","Pricing","FAQ"].map(l=>(
               <a key={l} href={`#${l.toLowerCase()}`} className="text-sm text-slate-400 hover:text-white transition-colors no-underline">{l}</a>
             ))}
@@ -35,30 +136,41 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors no-underline">Sign in</Link>
-            <Link href="/register" className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors no-underline">Get started free</Link>
+            <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors no-underline">Get started free</Link>
           </div>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="flex items-center px-6 relative" style={{height:"100vh",paddingTop:60,boxSizing:"border-box"}}>
-        {/* Blue radial glow */}
+      <section ref={heroRef} className="flex items-center px-6 relative overflow-hidden" style={{height:"100vh",paddingTop:60,boxSizing:"border-box"}}>
+        {/* Animated background blobs */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+          <div style={{position:"absolute",width:700,height:700,borderRadius:"50%",background:"rgba(37,99,235,0.08)",top:"-200px",left:"30%",animation:"blob1 10s ease-in-out infinite",filter:"blur(60px)"}}/>
+          <div style={{position:"absolute",width:500,height:500,borderRadius:"50%",background:"rgba(124,58,237,0.05)",top:"100px",right:"10%",animation:"blob2 12s ease-in-out infinite",filter:"blur(60px)"}}/>
+        </div>
+        {/* Static radial glow */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",background:"radial-gradient(ellipse 80% 50% at 50% 0%, rgba(37,99,235,0.12) 0%, transparent 70%)"}}/>
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative">
+        {/* Mouse spotlight */}
+        <div ref={spotlightRef} style={{position:"absolute",width:600,height:600,borderRadius:"50%",pointerEvents:"none",background:"radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)",top:0,left:0,transition:"transform 0.08s linear",zIndex:1}}/>
+
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative" style={{zIndex:2}}>
           {/* Left */}
           <div>
             <div className="fade-up inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/8 rounded-full px-3 py-1.5 mb-6" style={{animationDelay:"0s"}}>
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"/>
               <span className="text-xs text-blue-400 font-medium">AI-Powered Repair Shop Platform</span>
             </div>
-            <h1 className="fade-up text-5xl lg:text-6xl font-bold leading-tight mb-6" style={{letterSpacing:"-2px",animationDelay:"0.1s"}}>
+            <h1 className="fade-up text-5xl lg:text-6xl font-bold leading-tight mb-6" style={{letterSpacing:"-2px",animationDelay:"0.15s"}}>
               Run your repair shop<br/>
-              <span className="text-blue-400">like a pro.</span>
+              <span className="text-blue-400">
+                {typed}
+                <span className="cursor-blink" style={{opacity: cursorVisible ? 1 : 0}}/>
+              </span>
             </h1>
-            <p className="fade-up text-lg text-slate-400 leading-relaxed mb-8 max-w-lg" style={{animationDelay:"0.2s"}}>
+            <p className="fade-up text-lg text-slate-400 leading-relaxed mb-8 max-w-lg" style={{animationDelay:"0.3s"}}>
               Work orders, AI diagnostics, customer tracking, inventory, and payments — one platform that finally replaces WhatsApp and spreadsheets.
             </p>
-            <div className="fade-up flex flex-wrap gap-3 mb-8" style={{animationDelay:"0.3s"}}>
+            <div className="fade-up flex flex-wrap gap-3 mb-8" style={{animationDelay:"0.45s"}}>
               <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all no-underline" style={{boxShadow:"0 0 40px rgba(37,99,235,0.3)"}}>
                 Start free — 14 days <ArrowRight size={16}/>
               </Link>
@@ -66,34 +178,31 @@ export default function LandingPage() {
                 See features
               </a>
             </div>
-            <div className="fade-up flex flex-wrap gap-5" style={{animationDelay:"0.4s"}}>
+            <div className="fade-up flex flex-wrap gap-5" style={{animationDelay:"0.6s"}}>
               {["No credit card","Cancel anytime","Free for 14 days"].map(t=>(
                 <span key={t} className="flex items-center gap-1.5 text-sm text-slate-500">
                   <Check size={13} color="#22c55e"/>{t}
                 </span>
               ))}
             </div>
-            {/* Social proof */}
-            <div className="fade-up flex items-center gap-3 mt-8 pt-8 border-t border-white/5" style={{animationDelay:"0.4s"}}>
+            <div className="fade-up flex items-center gap-3 mt-8 pt-8 border-t border-white/5" style={{animationDelay:"0.75s"}}>
               <div className="flex">
                 {[1,2,3,4,5].map(i=><Star key={i} size={14} className="text-yellow-400" fill="#facc15"/>)}
               </div>
               <span className="text-sm text-slate-400">Trusted by <span className="text-white font-medium">1,000+</span> repair shops worldwide</span>
             </div>
           </div>
+
           {/* Right - Dashboard mockup */}
           <div className="hidden lg:block anim-float">
             <div className="rounded-2xl overflow-hidden border border-white/8" style={{boxShadow:"0 40px 120px rgba(0,0,0,0.6), 0 0 60px rgba(37,99,235,0.08)",background:"#0d1117"}}>
-              {/* Browser bar */}
               <div className="flex items-center gap-2 px-4 border-b border-white/5" style={{height:38,background:"#161b22"}}>
                 <div className="w-3 h-3 rounded-full bg-[#ff5f57]"/>
                 <div className="w-3 h-3 rounded-full bg-[#febc2e]"/>
                 <div className="w-3 h-3 rounded-full bg-[#28c840]"/>
                 <div className="flex-1 text-center text-xs text-slate-600 font-mono">app.fixflow.io/dashboard</div>
               </div>
-              {/* Dashboard */}
               <div className="flex" style={{height:400}}>
-                {/* Sidebar */}
                 <div className="w-44 border-r border-white/5 p-4">
                   <div className="flex items-center gap-2 mb-5">
                     <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center"><Wrench size={12} color="white"/></div>
@@ -105,9 +214,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                {/* Main */}
                 <div className="flex-1 p-5 overflow-hidden">
-                  {/* Stats */}
                   <div className="grid grid-cols-4 gap-3 mb-4">
                     {[{l:"Revenue",v:"$8,420",c:"#34d399"},{l:"Active",v:"24",c:"#60a5fa"},{l:"Done",v:"38",c:"#a78bfa"},{l:"Rating",v:"4.9★",c:"#fbbf24"}].map(s=>(
                       <div key={s.l} className="rounded-lg p-3" style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
@@ -116,7 +223,6 @@ export default function LandingPage() {
                       </div>
                     ))}
                   </div>
-                  {/* Table */}
                   <div className="rounded-xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.06)"}}>
                     <div className="grid px-4 py-2 text-xs" style={{gridTemplateColumns:"80px 1fr 120px 90px",borderBottom:"1px solid rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.2)"}}>
                       <span>ORDER</span><span>CUSTOMER</span><span>DEVICE</span><span>STATUS</span>
@@ -149,8 +255,8 @@ export default function LandingPage() {
           <p className="text-lg text-slate-400">Most repair shops lose 2+ hours daily to manual work. FixFlow fixes that.</p>
         </div>
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[{icon:"😤",title:"Lost repair history",desc:"Customer brings back a device. You have no idea what you did last time or who worked on it."},{icon:"💸",title:"Missed payments",desc:"Someone owes you money but you forgot to chase. No system to track outstanding balances."},{icon:"📱",title:"Customers calling non-stop",desc:"They want updates. You're busy repairing. WhatsApp is chaos. Customers get frustrated."}].map(p=>(
-            <div key={p.title} className="p-6 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+          {[{icon:"😤",title:"Lost repair history",desc:"Customer brings back a device. You have no idea what you did last time or who worked on it."},{icon:"💸",title:"Missed payments",desc:"Someone owes you money but you forgot to chase. No system to track outstanding balances."},{icon:"📱",title:"Customers calling non-stop",desc:"They want updates. You're busy repairing. WhatsApp is chaos. Customers get frustrated."}].map((p,i)=>(
+            <div key={p.title} className="animate-on-scroll feature-card p-6 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)",transitionDelay:`${i*100}ms`}}>
               <div className="text-3xl mb-4">{p.icon}</div>
               <h3 className="font-semibold text-white mb-2">{p.title}</h3>
               <p className="text-sm text-slate-400 leading-relaxed">{p.desc}</p>
@@ -168,47 +274,40 @@ export default function LandingPage() {
             <p className="text-lg text-slate-400 max-w-lg mx-auto">Replace the chaos of multiple tools with one platform built specifically for repair shops.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Big card */}
-            <div className="md:col-span-2 p-8 rounded-2xl border border-white/6 relative overflow-hidden" style={{background:"rgba(255,255,255,0.02)"}}>
+            <div className="animate-on-scroll feature-card md:col-span-2 p-8 rounded-2xl border border-white/6 relative overflow-hidden" style={{background:"rgba(255,255,255,0.02)",transitionDelay:"0ms"}}>
               <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full" style={{background:"radial-gradient(circle,rgba(37,99,235,0.08) 0%,transparent 70%)"}}/>
               <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center mb-4"><Wrench size={20} color="#60a5fa"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Smart Work Orders</h3>
               <p className="text-slate-400 leading-relaxed">Full lifecycle from intake to delivery. Photos, checklists, parts, payments, customer chat, repair timer, and SLA tracking — all in one place.</p>
             </div>
-            {/* AI card */}
-            <div className="p-8 rounded-2xl border border-purple-500/15 relative overflow-hidden" style={{background:"linear-gradient(135deg,rgba(124,58,237,0.08),rgba(37,99,235,0.05))"}}>
+            <div className="animate-on-scroll feature-card p-8 rounded-2xl border border-purple-500/15 relative overflow-hidden" style={{background:"linear-gradient(135deg,rgba(124,58,237,0.08),rgba(37,99,235,0.05))",transitionDelay:"100ms"}}>
               <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4"><Zap size={20} color="#a78bfa"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>AI Repair Assistant</h3>
               <p className="text-slate-400 leading-relaxed mb-4">Describe the fault. Get repair steps, parts list, time estimate, and price suggestion instantly.</p>
               <span className="text-xs font-semibold text-purple-400 bg-purple-500/15 px-3 py-1 rounded-full">Only on FixFlow</span>
             </div>
-            {/* Analytics */}
-            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+            <div className="animate-on-scroll feature-card p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)",transitionDelay:"0ms"}}>
               <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-4"><BarChart3 size={20} color="#34d399"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Analytics</h3>
               <p className="text-slate-400 leading-relaxed">Revenue charts, engineer leaderboards, parts profitability, and industry benchmarks.</p>
             </div>
-            {/* Customer portal - big */}
-            <div className="md:col-span-2 p-8 rounded-2xl border border-white/6 relative overflow-hidden" style={{background:"rgba(255,255,255,0.02)"}}>
+            <div className="animate-on-scroll feature-card md:col-span-2 p-8 rounded-2xl border border-white/6 relative overflow-hidden" style={{background:"rgba(255,255,255,0.02)",transitionDelay:"100ms"}}>
               <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full" style={{background:"radial-gradient(circle,rgba(16,185,129,0.06) 0%,transparent 70%)"}}/>
               <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-4"><Users size={20} color="#34d399"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Customer Portal</h3>
               <p className="text-slate-400 leading-relaxed">Customers track repairs in real time, chat with your shop, see completion photos, and rate the service. No app download. No login.</p>
             </div>
-            {/* Appointments */}
-            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+            <div className="animate-on-scroll feature-card p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)",transitionDelay:"0ms"}}>
               <div className="w-10 h-10 rounded-xl bg-yellow-500/15 flex items-center justify-center mb-4"><Calendar size={20} color="#fbbf24"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Appointments</h3>
               <p className="text-slate-400 leading-relaxed">Smart capacity-based booking. Customers book online, you confirm.</p>
             </div>
-            {/* Inventory */}
-            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+            <div className="animate-on-scroll feature-card p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)",transitionDelay:"100ms"}}>
               <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center mb-4"><Package size={20} color="#f97316"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Inventory</h3>
               <p className="text-slate-400 leading-relaxed">Parts catalog, stock tracking, low stock alerts, and supplier management.</p>
             </div>
-            {/* Multi-language */}
-            <div className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+            <div className="animate-on-scroll feature-card p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)",transitionDelay:"200ms"}}>
               <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center mb-4"><Globe size={20} color="#22d3ee"/></div>
               <h3 className="text-xl font-bold mb-3" style={{letterSpacing:"-0.5px"}}>Arabic & French</h3>
               <p className="text-slate-400 leading-relaxed">Full RTL Arabic support, French, and English. The only repair CRM built for MENA markets.</p>
@@ -219,13 +318,23 @@ export default function LandingPage() {
 
       {/* STATS */}
       <section className="border-y border-white/5 py-20 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[{n:"122+",l:"Features"},{n:"30+",l:"Countries"},{n:"$0",l:"Setup cost"},{n:"14",l:"Day free trial"}].map(s=>(
-            <div key={s.l}>
-              <div className="text-5xl font-bold mb-2" style={{letterSpacing:"-2px"}}>{s.n}</div>
-              <div className="text-sm text-slate-500">{s.l}</div>
-            </div>
-          ))}
+        <div ref={statsRef} className="animate-on-scroll max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div>
+            <div className="text-5xl font-bold mb-2" style={{letterSpacing:"-2px"}}>{count122}+</div>
+            <div className="text-sm text-slate-500">Features</div>
+          </div>
+          <div>
+            <div className="text-5xl font-bold mb-2" style={{letterSpacing:"-2px"}}>{count30}+</div>
+            <div className="text-sm text-slate-500">Countries</div>
+          </div>
+          <div>
+            <div className="text-5xl font-bold mb-2" style={{letterSpacing:"-2px"}}>$0</div>
+            <div className="text-sm text-slate-500">Setup cost</div>
+          </div>
+          <div>
+            <div className="text-5xl font-bold mb-2" style={{letterSpacing:"-2px"}}>14</div>
+            <div className="text-sm text-slate-500">Day free trial</div>
+          </div>
         </div>
       </section>
 
@@ -237,8 +346,8 @@ export default function LandingPage() {
             <p className="text-lg text-slate-400">Not just another CRM. A complete operating system for repair shops.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[{icon:<Zap size={22} color="#a78bfa"/>,bg:"rgba(124,58,237,0.15)",title:"AI built in",desc:"The only repair CRM with a built-in AI assistant. Get repair guidance, price suggestions, and customer message drafts instantly."},{icon:<Shield size={22} color="#34d399"/>,bg:"rgba(16,185,129,0.15)",title:"50% cheaper",desc:"RepairDesk charges $75-150/month. RepairShopr $50-150/month. FixFlow starts at $29/month with more features."},{icon:<Clock size={22} color="#60a5fa"/>,bg:"rgba(37,99,235,0.15)",title:"Setup in minutes",desc:"No training needed. Create your first work order in under 2 minutes. Import your parts catalog via CSV."}].map(w=>(
-              <div key={w.title} className="p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)"}}>
+            {[{icon:<Zap size={22} color="#a78bfa"/>,bg:"rgba(124,58,237,0.15)",title:"AI built in",desc:"The only repair CRM with a built-in AI assistant. Get repair guidance, price suggestions, and customer message drafts instantly."},{icon:<Shield size={22} color="#34d399"/>,bg:"rgba(16,185,129,0.15)",title:"50% cheaper",desc:"RepairDesk charges $75-150/month. RepairShopr $50-150/month. FixFlow starts at $29/month with more features."},{icon:<Clock size={22} color="#60a5fa"/>,bg:"rgba(37,99,235,0.15)",title:"Setup in minutes",desc:"No training needed. Create your first work order in under 2 minutes. Import your parts catalog via CSV."}].map((w,i)=>(
+              <div key={w.title} className="animate-on-scroll feature-card p-8 rounded-2xl border border-white/6" style={{background:"rgba(255,255,255,0.02)",transitionDelay:`${i*100}ms`}}>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{background:w.bg}}>{w.icon}</div>
                 <h3 className="text-lg font-bold mb-3">{w.title}</h3>
                 <p className="text-slate-400 leading-relaxed text-sm">{w.desc}</p>
@@ -256,8 +365,8 @@ export default function LandingPage() {
             <p className="text-lg text-slate-400">Start free. No credit card required.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[{name:"Starter",price:"$29",desc:"For solo technicians",features:["50 work orders/month","Up to 3 engineers","Customer portal","Basic analytics","Email support"],popular:false},{name:"Pro",price:"$59",desc:"For growing shops",features:["Unlimited work orders","Unlimited engineers","AI Repair Assistant","Advanced analytics","Commission tracking","Priority support"],popular:true},{name:"Business",price:"$99",desc:"For multiple locations",features:["Everything in Pro","Multiple branches","Custom permissions","White label","API access","Dedicated support"],popular:false}].map(plan=>(
-              <div key={plan.name} className="rounded-2xl p-7 relative" style={{background:plan.popular?"rgba(37,99,235,0.08)":"rgba(255,255,255,0.02)",border:plan.popular?"1px solid rgba(37,99,235,0.4)":"1px solid rgba(255,255,255,0.07)",boxShadow:plan.popular?"0 0 60px rgba(37,99,235,0.1)":"none"}}>
+            {[{name:"Starter",price:"$29",desc:"For solo technicians",features:["50 work orders/month","Up to 3 engineers","Customer portal","Basic analytics","Email support"],popular:false},{name:"Pro",price:"$59",desc:"For growing shops",features:["Unlimited work orders","Unlimited engineers","AI Repair Assistant","Advanced analytics","Commission tracking","Priority support"],popular:true},{name:"Business",price:"$99",desc:"For multiple locations",features:["Everything in Pro","Multiple branches","Custom permissions","White label","API access","Dedicated support"],popular:false}].map((plan,i)=>(
+              <div key={plan.name} className="animate-on-scroll rounded-2xl p-7 relative" style={{background:plan.popular?"rgba(37,99,235,0.08)":"rgba(255,255,255,0.02)",border:plan.popular?"1px solid rgba(37,99,235,0.4)":"1px solid rgba(255,255,255,0.07)",boxShadow:plan.popular?"0 0 60px rgba(37,99,235,0.1)":"none",transitionDelay:`${i*100}ms`}}>
                 {plan.popular&&<div className="absolute -top-px left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-b-lg tracking-wide">MOST POPULAR</div>}
                 <p className="text-sm text-slate-400 mb-2 mt-2">{plan.name}</p>
                 <div className="flex items-baseline gap-1 mb-1">
@@ -282,7 +391,7 @@ export default function LandingPage() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-24 px-6 text-center border-t border-white/5">
+      <section className="animate-on-scroll py-24 px-6 text-center border-t border-white/5">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold mb-4" style={{letterSpacing:"-1px"}}>Ready to run a better shop?</h2>
           <p className="text-lg text-slate-400 mb-10">Join 1,000+ repair shops already using FixFlow. 14-day free trial. No credit card.</p>

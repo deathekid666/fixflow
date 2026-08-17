@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 type WorkOrder = {
   id: string;
@@ -43,6 +44,8 @@ const METHOD_ICON: Record<string, string> = {
 
 export default function POSPage() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const currency = user?.shop?.currency ?? "MAD";
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<WorkOrder | null>(null);
@@ -155,7 +158,7 @@ export default function POSPage() {
         {summary && (
           <div className="text-right">
             <p className="text-[11px] text-slate-400 uppercase tracking-wide font-medium">{t("todayLabel")}</p>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.total.toFixed(2)} <span className="text-sm font-normal text-slate-400">MAD</span></p>
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.total.toFixed(2)} <span className="text-sm font-normal text-slate-400">{currency}</span></p>
           </div>
         )}
       </div>
@@ -220,7 +223,7 @@ export default function POSPage() {
                     <p className="text-xs text-slate-400 mt-0.5">#{order.orderNumber.slice(-8)}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-slate-900 dark:text-white text-[15px]">{order.total.toFixed(2)} <span className="text-xs font-normal text-slate-400">MAD</span></p>
+                    <p className="font-bold text-slate-900 dark:text-white text-[15px]">{order.total.toFixed(2)} <span className="text-xs font-normal text-slate-400">{currency}</span></p>
                     {isPaid
                       ? <span className="text-xs text-green-500 font-medium">Paid ✓</span>
                       : balance > 0
@@ -274,17 +277,17 @@ export default function POSPage() {
                   <div className="pt-3 mt-1 border-t border-slate-200 dark:border-slate-700 space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">{t("orderTotal")}</span>
-                      <span className="font-medium text-slate-900 dark:text-white">{selected.total.toFixed(2)} MAD</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{selected.total.toFixed(2)} {currency}</span>
                     </div>
                     {selected.collected > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">{t("alreadyCollected")}</span>
-                        <span className="text-green-600 dark:text-green-400">{selected.collected.toFixed(2)} MAD</span>
+                        <span className="text-green-600 dark:text-green-400">{selected.collected.toFixed(2)} {currency}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-base pt-1">
                       <span className="font-semibold text-slate-900 dark:text-white">{t("balanceDue")}</span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{balanceDue.toFixed(2)} MAD</span>
+                      <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{balanceDue.toFixed(2)} {currency}</span>
                     </div>
                   </div>
                 </div>
@@ -334,7 +337,7 @@ export default function POSPage() {
                           <>
                             <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide font-medium">{t("changeToGive")}</p>
                             <p className="text-4xl font-bold text-green-600 dark:text-green-400">{change.toFixed(2)}</p>
-                            <p className="text-sm text-slate-400 mt-0.5">MAD</p>
+                            <p className="text-sm text-slate-400 mt-0.5">{currency}</p>
                           </>
                         ) : (
                           <p className="text-sm text-slate-400 font-medium">{t("noChangeDue")}</p>
@@ -369,7 +372,7 @@ export default function POSPage() {
                     ? "Processing…"
                     : balanceDue === 0
                       ? t("markAsDelivered")
-                      : `✓ Collect ${balanceDue.toFixed(2)} MAD & Deliver`
+                      : `✓ Collect ${balanceDue.toFixed(2)} ${currency} & Deliver`
                   }
                 </button>
                 <a
@@ -407,7 +410,7 @@ export default function POSPage() {
             </div>
           ))}
           <div className="ml-auto pl-5 border-l border-slate-200 dark:border-slate-700 whitespace-nowrap flex-shrink-0">
-            <span className="text-sm font-bold text-green-600 dark:text-green-400">{summary.total.toFixed(2)} MAD</span>
+            <span className="text-sm font-bold text-green-600 dark:text-green-400">{summary.total.toFixed(2)} {currency}</span>
             <span className="text-xs text-slate-400 ml-1">total</span>
           </div>
         </div>

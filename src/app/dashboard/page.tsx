@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UpgradeModal from "@/components/UpgradeModal";
-import { RefreshCw, ClipboardList, Inbox, Wrench, CheckCircle2, DollarSign, PackageCheck, XCircle } from "lucide-react";
+import { RefreshCw, ClipboardList, Inbox, Wrench, CheckCircle2, DollarSign, PackageCheck, XCircle, Calendar } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
@@ -359,13 +359,13 @@ export default function DashboardPage() {
 
   const IC18 = "w-[18px] h-[18px]";
   const stats = [
-    { label: t("totalOrders"), value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", icon: <ClipboardList className={IC18} />, filter: "" },
-    { label: t("received"), value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", icon: <Inbox className={IC18} />, filter: "RECEIVED" },
-    { label: t("inProgress"), value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", icon: <Wrench className={IC18} />, filter: "DIAGNOSING" },
-    { label: t("ready"), value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", icon: <CheckCircle2 className={IC18} />, filter: "DONE" },
-    { label: t("revenue"), value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", icon: <DollarSign className={IC18} />, filter: null, href: "/dashboard/analytics" },
-    { label: t("delivered"), value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", icon: <PackageCheck className={IC18} />, filter: "DELIVERED" },
-    { label: t("cancelled"), value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", icon: <XCircle className={IC18} />, filter: "CANCELLED" },
+    { label: t("totalOrders"), value: sd?.total ?? "—", sub: sd ? `${sd.received + sd.diagnosing + sd.repairing + sd.done} active` : "loading", color: "text-slate-900 dark:text-white", topBorder: "border-t-blue-500", icon: <ClipboardList className={IC18} />, filter: "" },
+    { label: t("received"), value: sd?.received ?? "—", sub: "awaiting diagnosis", color: "text-blue-600 dark:text-blue-400", topBorder: "border-t-yellow-500", icon: <Inbox className={IC18} />, filter: "RECEIVED" },
+    { label: t("inProgress"), value: sd ? (sd.diagnosing + sd.repairing) : "—", sub: overdue > 0 ? `${overdue} overdue` : "on track", color: overdue > 0 ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400", topBorder: "border-t-orange-500", icon: <Wrench className={IC18} />, filter: "DIAGNOSING" },
+    { label: t("ready"), value: sd?.done ?? "—", sub: "awaiting pickup", color: "text-green-600 dark:text-green-400", topBorder: "border-t-green-500", icon: <CheckCircle2 className={IC18} />, filter: "DONE" },
+    { label: t("revenue"), value: sd ? formatCurrency(sd.revenue, currency, 0) : "—", sub: sd ? `${formatCurrency(pendingPayment, currency, 0)} pending` : "loading", color: "text-emerald-600 dark:text-emerald-400", topBorder: "border-t-emerald-500", icon: <DollarSign className={IC18} />, filter: null, href: "/dashboard/analytics" },
+    { label: t("delivered"), value: sd?.delivered ?? "—", sub: "total", color: "text-slate-500", topBorder: "border-t-gray-400", icon: <PackageCheck className={IC18} />, filter: "DELIVERED" },
+    { label: t("cancelled"), value: sd?.cancelled ?? "—", sub: "total", color: "text-red-600 dark:text-red-400", topBorder: "border-t-red-500", icon: <XCircle className={IC18} />, filter: "CANCELLED" },
   ];
 
   const emptyState = (colSpan: number) => (
@@ -443,7 +443,7 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
         {stats.map((s) => {
-          const cardClass = `bg-white dark:bg-slate-900 border rounded-xl p-3 md:p-4 space-y-1 text-left w-full cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-800/60 active:scale-[0.98] ${
+          const cardClass = `bg-white dark:bg-slate-900 border border-t-2 ${s.topBorder} rounded-xl p-3 md:p-4 space-y-1 text-left w-full cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-800/60 active:scale-[0.98] ${
             s.filter !== null && statusFilter === s.filter
               ? "border-blue-500/60 ring-1 ring-blue-500/30"
               : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
@@ -489,7 +489,13 @@ export default function DashboardPage() {
             <Link href="/dashboard/appointments" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500">{t("viewAll")} →</Link>
           </div>
           {todayAppts.length === 0 ? (
-            <p className="text-sm text-slate-400 py-3 text-center">{t("noAppointmentsToday")}</p>
+            <div className="py-4 text-center space-y-2">
+              <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+              <p className="text-sm text-slate-400">{t("noAppointmentsToday")}</p>
+              <Link href="/dashboard/appointments" className="inline-block text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium">
+                Book an appointment →
+              </Link>
+            </div>
           ) : (
             <div className="space-y-2">
               {todayAppts.map(a => (
@@ -510,7 +516,7 @@ export default function DashboardPage() {
           {recentActivity.length === 0 ? (
             <p className="text-sm text-slate-400 py-3 text-center">{t("noRecentActivity")}</p>
           ) : (
-            <div className="space-y-1 max-h-48 overflow-y-auto -mx-1 px-1">
+            <div className="space-y-1 h-auto -mx-1 px-1">
               {recentActivity.map(a => (
                 <div key={a.id} className="flex items-start gap-2.5 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mt-1.5 flex-shrink-0" />

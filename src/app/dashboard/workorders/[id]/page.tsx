@@ -656,6 +656,20 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
+      {/* SLA breach banner — full width, top of page */}
+      {order.slaDeadline && slaCountdown === "BREACHED" && !["DELIVERED", "CANCELLED"].includes(order.status) && (
+        <div className="w-full rounded-xl px-4 py-3 flex items-center gap-3 bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800/50">
+          <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+          </span>
+          <div>
+            <p className="text-xs font-semibold text-red-600 dark:text-red-400">SLA Deadline Breached</p>
+            <p className="text-xs text-slate-500">{new Date(order.slaDeadline).toLocaleString()}</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 flex-wrap">
@@ -677,6 +691,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={runAiAssist} className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors font-semibold" aria-label="AI Repair Assistant">
+            <span>🤖</span> AI Assist
+          </button>
           <a href={`/print/${params.id}`} target="_blank" className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition-colors">🖨 {t("print")}</a>
           {order.status === "DELIVERED" && order.attachments.some(a => a.tag === "intake") && order.attachments.some(a => a.tag === "completion") && (
             <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 {t("share")}</button>
@@ -775,19 +792,17 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
       )}
 
-      {/* SLA banner */}
-      {order.slaDeadline && !["DELIVERED", "CANCELLED"].includes(order.status) && (
-        <div className={`rounded-xl px-4 py-3 flex items-center justify-between gap-4 ${slaCountdown === "BREACHED" ? "bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800/50" : "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40"}`}>
+      {/* SLA banner (non-breached countdown only — breach state shown as full-width top banner above) */}
+      {order.slaDeadline && slaCountdown !== "BREACHED" && !["DELIVERED", "CANCELLED"].includes(order.status) && (
+        <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40">
           <div className="flex items-center gap-3">
-            <span className="text-lg">{slaCountdown === "BREACHED" ? "🔴" : "⏱"}</span>
+            <span className="text-lg">⏱</span>
             <div>
-              <p className={`text-xs font-semibold ${slaCountdown === "BREACHED" ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"}`}>
-                {slaCountdown === "BREACHED" ? "SLA Deadline Breached" : "SLA Deadline"}
-              </p>
+              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">SLA Deadline</p>
               <p className="text-xs text-slate-500">{new Date(order.slaDeadline).toLocaleString()}</p>
             </div>
           </div>
-          {slaCountdown && slaCountdown !== "BREACHED" && (
+          {slaCountdown && (
             <span className={`text-sm font-mono font-bold ${new Date(order.slaDeadline).getTime() - Date.now() < 2 * 60 * 60 * 1000 ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400"}`}>
               {slaCountdown}
             </span>
@@ -820,8 +835,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         <div className="lg:col-span-2 space-y-4">
 
           {/* Device info */}
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">{t("deviceInformation")}</h2>
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-l-4 border-l-blue-500 rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-4">{t("deviceInformation")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <Info label={t("brand")} value={order.deviceBrand} />
               <Info label={t("model")} value={order.deviceModel} />
@@ -834,7 +849,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                     <button
                       onClick={runImeiCheck}
                       disabled={checkingImei}
-                      className="text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-md transition-colors font-medium"
+                      className="text-xs px-2.5 py-1 border border-slate-600 text-slate-300 hover:bg-slate-800 disabled:opacity-50 rounded-md transition-colors font-medium"
                     >
                       {checkingImei ? "Checking…" : "Check IMEI"}
                     </button>
@@ -874,9 +889,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           {/* Customer info */}
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-l-4 border-l-purple-500 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("customerInformation")}</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{t("customerInformation")}</h2>
               <button
                 onClick={openDraftModal}
                 className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-800/40 text-violet-700 dark:text-violet-300 rounded-lg font-medium transition-colors"
@@ -913,8 +928,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           {/* Fault & service */}
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">{t("faultAndService")}</h2>
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-l-4 border-l-orange-500 rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-4">{t("faultAndService")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-3">
               <Info label={t("serviceType")} value={order.serviceType} />
               <Info label={t("repairType")} value={order.repairType || "—"} />
@@ -936,7 +951,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Spare parts */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("spareParts")}</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{t("spareParts")}</h2>
               <button onClick={() => setShowPartForm(!showPartForm)} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">+ {t("addPart")}</button>
             </div>
             {showPartForm && (
@@ -990,7 +1005,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           {/* Attachments */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("attachments")}</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{t("attachments")}</h2>
               <div className="flex items-center gap-2 ml-auto">
                 {order.attachments.length > 0 && (
                   <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
@@ -1104,7 +1119,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Diagnosis Checklist</h2>
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Diagnosis Checklist</h2>
                 {order.checklist.length > 0 && (
                   <p className="text-xs text-slate-400 mt-0.5">{order.checklist.filter(c => c.status !== "PENDING").length}/{order.checklist.length} checked</p>
                 )}
@@ -1382,9 +1397,9 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </div>
 
         {/* Right sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-4 relative pl-4 -ml-4 border-l-2 border-slate-200 dark:border-slate-800">
           <section className={`border rounded-xl p-5 ${order.isOverdue ? "bg-orange-50 dark:bg-orange-950/20 border-orange-300 dark:border-orange-800/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Turnaround Time</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Turnaround Time</h2>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between"><span className="text-slate-500">Received</span><span className="text-slate-900 dark:text-white">{new Date(order.receivedAt).toLocaleDateString()}</span></div>
               {order.doneAt && <div className="flex justify-between"><span className="text-slate-500">Done</span><span className="text-slate-900 dark:text-white">{new Date(order.doneAt).toLocaleDateString()}</span></div>}
@@ -1397,7 +1412,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           {/* Repair Timer */}
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Repair Timer</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Repair Timer</h2>
             {order.startedAt && order.completedAt ? (
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
@@ -1429,7 +1444,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           {order.status === "DELIVERED" && (
             <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Rating</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Customer Rating</h2>
               {order.rating ? (
                 <div>
                   <div className="text-yellow-500 dark:text-yellow-400 text-xl mb-1">{"★".repeat(order.rating.rating)}<span className="text-slate-300 dark:text-slate-600">{"★".repeat(5 - order.rating.rating)}</span></div>
@@ -1445,7 +1460,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           )}
 
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Assigned Engineer</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Assigned Engineer</h2>
             <select className={INPUT} value={order.assignee?.id ?? ""} onChange={(e) => assignEngineer(e.target.value)}>
               <option value="">Unassigned</option>
               {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -1454,7 +1469,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quotation</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Quotation</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={fetchPriceSuggestion}
@@ -1716,7 +1731,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Tracking</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Customer Tracking</h2>
             <p className="text-xs text-slate-500 mb-3">Share this link with the customer:</p>
             <div className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
               <span className="text-xs text-blue-600 dark:text-blue-400 font-mono truncate">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.orderNumber.slice(0, 6)}` : ""}</span>
@@ -1725,7 +1740,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Internal Notes</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-4">Internal Notes</h2>
             <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
               {(!order.notes || order.notes.length === 0) && <p className="text-xs text-slate-500">No notes yet.</p>}
               {order.notes?.map(note => (
@@ -1745,7 +1760,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           </section>
 
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Operation Log</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-4">Operation Log</h2>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {order.logs.map(log => {
                 const isStatusChange = log.action === "STATUS_CHANGED";
@@ -1877,20 +1892,6 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
         </button>
       )}
 
-      {/* AI Assist floating button */}
-      <button
-        onClick={runAiAssist}
-        style={{
-          position: "fixed", bottom: showBackToTop ? 80 : 24, right: 24, zIndex: 50,
-          transition: "bottom 0.2s",
-        }}
-        className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-full shadow-lg shadow-violet-500/30"
-        aria-label="AI Repair Assistant"
-      >
-        <span>🤖</span>
-        <span>AI Assist</span>
-      </button>
-
       {/* AI Repair Assistant slide-in panel */}
       {showAiPanel && (
         <div className="fixed inset-0 z-[60] flex" onClick={() => setShowAiPanel(false)}>
@@ -1952,7 +1953,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
 
                   {/* Repair steps */}
                   <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Repair Steps</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Repair Steps</p>
                     <ol className="space-y-2">
                       {aiResult.repairSteps.map((step, i) => (
                         <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
@@ -1966,7 +1967,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
                   {/* Parts needed */}
                   {aiResult.partsNeeded.length > 0 && (
                     <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Parts Needed</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Parts Needed</p>
                       <div className="space-y-2">
                         {aiResult.partsNeeded.map((p, i) => {
                           const matched = spareParts.find(sp =>

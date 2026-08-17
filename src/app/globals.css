@@ -83,6 +83,18 @@ body {
 :is(.dark) .row-hover:hover {
   background: rgba(255, 255, 255, 0.04);
 }
+/* ── Global button micro-interaction ────────────────────── */
+button:not(:disabled) {
+  transition-property: all;
+  transition-duration: 150ms;
+}
+button:not(:disabled):hover {
+  opacity: 0.9;
+}
+button:not(:disabled):active {
+  transform: scale(0.95);
+}
+
 /* ── PWA / Mobile touch optimisations ───────────────────── */
 /* Ensure all interactive elements meet 44px minimum touch target */
 button, a, [role="button"], input[type="checkbox"], input[type="radio"], select {

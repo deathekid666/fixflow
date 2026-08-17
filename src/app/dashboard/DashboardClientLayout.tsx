@@ -193,6 +193,18 @@ export default function DashboardClientLayout({ children }: { children: React.Re
     { href: "/dashboard/settings", label: t("settings"), icon: <Settings2 className={IC} /> },
   ];
 
+  const NAV_GROUPS: { label: string; hrefs: string[] }[] = [
+    { label: "MAIN", hrefs: ["/dashboard", "/dashboard/appointments"] },
+    { label: "INVENTORY", hrefs: ["/dashboard/spareparts", "/dashboard/suppliers"] },
+    { label: "CUSTOMERS", hrefs: ["/dashboard/customers", "/dashboard/warranties"] },
+    { label: "INSIGHTS", hrefs: ["/dashboard/analytics", "/dashboard/reports"] },
+  ];
+  const groupedHrefs = new Set(NAV_GROUPS.flatMap((g) => g.hrefs));
+  const navGroups = [
+    ...NAV_GROUPS.map((g) => ({ label: g.label, items: nav.filter((i) => g.hrefs.includes(i.href)) })),
+    { label: "MORE", items: nav.filter((i) => !groupedHrefs.has(i.href)) },
+  ].filter((g) => g.items.length > 0);
+
   const bottomNav = [
     { href: "/dashboard", label: t("orders"), icon: <ClipboardList className={IC} /> },
     { href: "/dashboard/spareparts", label: t("parts"), icon: <Wrench className={IC} /> },
@@ -254,7 +266,9 @@ export default function DashboardClientLayout({ children }: { children: React.Re
                 </div>
                 <div className="min-w-0">
                   <div className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-tight">FixFlow</div>
-                  {user.shop?.name && <div className="text-[11px] text-slate-500 truncate leading-tight">{user.shop.name}</div>}
+                  {user.shop?.name && user.shop.name.trim().toLowerCase() !== "fixflow" && (
+                    <div className="text-[11px] text-slate-500 truncate leading-tight">{user.shop.name}</div>
+                  )}
                 </div>
               </>
             )}
@@ -268,35 +282,45 @@ export default function DashboardClientLayout({ children }: { children: React.Re
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
-          {nav.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                id={TOUR_IDS[item.href]}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${collapsed ? "justify-center" : ""} ${
-                  active
-                    ? "bg-blue-600/10 text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}>
-                <span className="flex-shrink-0">{item.icon}</span>
-                {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
-                {!collapsed && item.href === "/dashboard/appointments" && pendingApptCount > 0 && (
-                  <span className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 bg-yellow-500 text-white">
-                    {pendingApptCount > 9 ? "9+" : pendingApptCount}
-                  </span>
-                )}
-                {!collapsed && item.href === "/dashboard/messages" && unreadMessages > 0 && (
-                  <span className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 bg-blue-500 text-white">
-                    {unreadMessages > 9 ? "9+" : unreadMessages}
-                  </span>
-                )}
-                {!collapsed && item.href === "/dashboard/spareparts" && lowStockCount > 0 && (
-                  <span className="w-2 h-2 rounded-full flex-shrink-0 bg-orange-500" title={`${lowStockCount} low stock`} />
-                )}
-              </Link>
-            );
-          })}
+          {navGroups.map((group, gi) => (
+            <div key={group.label}>
+              {gi > 0 && <div className="my-2 border-t border-slate-200 dark:border-slate-800" />}
+              {!collapsed && (
+                <div className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-wider">
+                  {group.label}
+                </div>
+              )}
+              {group.items.map((item) => {
+                const active = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    id={TOUR_IDS[item.href]}
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors border-l-2 ${collapsed ? "justify-center" : ""} ${
+                      active
+                        ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium"
+                        : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}>
+                    <span className="flex-shrink-0">{item.icon}</span>
+                    {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                    {!collapsed && item.href === "/dashboard/appointments" && pendingApptCount > 0 && (
+                      <span className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 bg-yellow-500 text-white">
+                        {pendingApptCount > 9 ? "9+" : pendingApptCount}
+                      </span>
+                    )}
+                    {!collapsed && item.href === "/dashboard/messages" && unreadMessages > 0 && (
+                      <span className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none flex-shrink-0 bg-blue-500 text-white">
+                        {unreadMessages > 9 ? "9+" : unreadMessages}
+                      </span>
+                    )}
+                    {!collapsed && item.href === "/dashboard/spareparts" && lowStockCount > 0 && (
+                      <span className="w-2 h-2 rounded-full flex-shrink-0 bg-orange-500" title={`${lowStockCount} low stock`} />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1 overflow-hidden">

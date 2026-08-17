@@ -33,6 +33,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 2, zIndex: 100, background: "linear-gradient(90deg, transparent, #3b82f6, transparent)", pointerEvents: "none" }} />
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>{children}</AuthProvider>
