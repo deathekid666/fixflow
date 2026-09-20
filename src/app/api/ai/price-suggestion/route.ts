@@ -1,9 +1,10 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -71,6 +72,7 @@ Respond ONLY with valid JSON, no markdown, no explanation:
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +80,7 @@ Respond ONLY with valid JSON, no markdown, no explanation:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 300,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -101,4 +103,4 @@ Respond ONLY with valid JSON, no markdown, no explanation:
     console.error("[price-suggestion] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI" }, { status: 500 });
   }
-}
+});

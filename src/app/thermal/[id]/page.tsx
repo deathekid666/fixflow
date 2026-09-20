@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatCurrency } from "@/lib/currency";
 
@@ -42,7 +42,8 @@ function lineRow(label: string, value: string, width: number) {
   return label + " ".repeat(Math.max(1, space)) + value;
 }
 
-export default function ThermalReceiptPage({ params }: { params: { id: string } }) {
+export default function ThermalReceiptPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const searchParams = useSearchParams();
   const widthParam = searchParams.get("width") ?? "80";
   const mmWidth = widthParam === "58" ? 58 : 80;

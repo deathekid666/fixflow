@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 
 type ShopInfo = {
   id: string;
@@ -8,7 +8,8 @@ type ShopInfo = {
   phone: string | null;
 };
 
-export default function WidgetPage({ params }: { params: { shopId: string } }) {
+export default function WidgetPage(props: { params: Promise<{ shopId: string }> }) {
+  const params = use(props.params);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [orderNumber, setOrderNumber] = useState("");
   const [origin, setOrigin] = useState("");
@@ -23,7 +24,7 @@ export default function WidgetPage({ params }: { params: { shopId: string } }) {
 
   function track() {
     if (!orderNumber.trim()) return;
-    window.open(`${origin}/track/${orderNumber.trim().toLowerCase()}`, "_blank");
+    window.open(`${origin}/track/${encodeURIComponent(orderNumber.trim().toLowerCase())}`, "_blank");
   }
 
   const bookingUrl = `${origin}/book/${params.shopId}`;

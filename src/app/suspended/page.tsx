@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -49,12 +50,12 @@ function SuspendedContent() {
           </div>
         )}
         <div className="flex gap-3 justify-center">
-          <a href="/login" className="px-4 py-2 border border-slate-700 text-slate-300 text-sm rounded-lg hover:bg-slate-800 transition-colors">
+          <Link href="/login" className="px-4 py-2 border border-slate-700 text-slate-300 text-sm rounded-lg hover:bg-slate-800 transition-colors">
             Sign in to another account
-          </a>
-          <a href="/" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
+          </Link>
+          <Link href="/" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors">
             Back to home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

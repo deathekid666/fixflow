@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 
 type ShopInfo = {
   id: string;
@@ -75,7 +75,8 @@ const s: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function CheckinPage({ params }: { params: { shopId: string } }) {
+export default function CheckinPage(props: { params: Promise<{ shopId: string }> }) {
+  const params = use(props.params);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -88,7 +89,8 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
   useEffect(() => {
     fetch(`/api/public/shops/${params.shopId}`)
       .then(r => { if (!r.ok) { setNotFound(true); return null; } return r.json(); })
-      .then(d => { if (d) setShop(d); });
+      .then(d => { if (d) setShop(d); })
+      .catch(() => setNotFound(true));
   }, []);
 
   async function handleCheckin(e: React.FormEvent) {
@@ -97,6 +99,7 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
     setSubmitting(true);
     setError("");
 
+    try {
     const res = await fetch("/api/public/checkin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,7 +112,8 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
       const d = await res.json().catch(() => ({}));
       setError(d.error ?? "Something went wrong. Please try again.");
     }
-    setSubmitting(false);
+    } catch { setError("Unable to check in right now. Please try again."); }
+    finally { setSubmitting(false); }
   }
 
   if (notFound) return (
@@ -141,7 +145,7 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
           {/* Success card */}
           <div style={{ background: "linear-gradient(135deg,#14532d,#166534)", border: "2px solid #22c55e", borderRadius: 20, padding: "28px 20px", textAlign: "center", boxShadow: "0 0 40px rgba(34,197,94,0.2)", marginBottom: 16 }}>
             <div style={{ fontSize: 52, marginBottom: 10 }}>✅</div>
-            <p style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 900, color: "#bbf7d0", letterSpacing: "-0.02em" }}>You're Checked In!</p>
+            <p style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 900, color: "#bbf7d0", letterSpacing: "-0.02em" }}>You&apos;re Checked In!</p>
             <p style={{ margin: 0, fontSize: 14, color: "#86efac" }}>
               {appt ? "Your appointment is confirmed. The team has been notified." : "Welcome! Please let the staff know you've arrived."}
             </p>
@@ -216,7 +220,7 @@ export default function CheckinPage({ params }: { params: { shopId: string } }) 
         <div style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 16, padding: "16px 20px", marginBottom: 20, textAlign: "center" }}>
           <p style={{ fontSize: 28, margin: "0 0 6px" }}>👋</p>
           <p style={{ color: "#93c5fd", fontWeight: 700, fontSize: 15, margin: "0 0 4px" }}>Welcome!</p>
-          <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Enter your details so the team knows you've arrived.</p>
+          <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Enter your details so the team knows you&apos;ve arrived.</p>
         </div>
 
         {/* Form */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/currency";
 import { useLanguage } from "@/context/LanguageContext";
@@ -18,7 +18,8 @@ type WorkOrder = {
   shop: { name: string; address: string | null; phone: string | null; email: string | null; logoUrl: string | null; currency?: string } | null;
 };
 
-export default function HealthReportPage({ params }: { params: { id: string } }) {
+export default function HealthReportPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const { t } = useLanguage();
   const [order, setOrder] = useState<WorkOrder | null>(null);

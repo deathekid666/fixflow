@@ -13,7 +13,8 @@ function formatDate(d: Date): string {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" }).format(d);
 }
 
-export default async function VerifyCertificatePage({ params }: { params: { code: string } }) {
+export default async function VerifyCertificatePage(props: { params: Promise<{ code: string }> }) {
+  const params = await props.params;
   const cert = await prisma.academyCertificate.findUnique({
     where: { certificateCode: params.code },
     include: {

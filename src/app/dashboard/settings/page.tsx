@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -108,7 +109,7 @@ function SocialSharingSettings() {
       <div className="flex items-center justify-between py-2">
         <div>
           <p className="text-sm text-slate-900 dark:text-white font-medium">Card background color</p>
-          <p className="text-xs text-slate-500 mt-0.5">Used when photos don't fill the full frame</p>
+          <p className="text-xs text-slate-500 mt-0.5">Used when photos don&apos;t fill the full frame</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-slate-400 font-mono">{s.bgColor}</span>
@@ -948,9 +949,9 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-            <a href="/pricing" target="_blank" className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">
+            <Link href="/pricing" target="_blank" className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">
               View full pricing page <ExternalLink className="w-3 h-3" />
-            </a>
+            </Link>
           </div>
         </div>
       )}
@@ -1274,9 +1275,9 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <a href="/api-docs" target="_blank" className="inline-flex items-center gap-1.5 text-xs text-blue-500 hover:underline font-medium">
+            <Link href="/api-docs" target="_blank" className="inline-flex items-center gap-1.5 text-xs text-blue-500 hover:underline font-medium">
               <ExternalLink className="w-3.5 h-3.5" /> View API Documentation
-            </a>
+            </Link>
           </div>
 
           {/* IMEI Services */}

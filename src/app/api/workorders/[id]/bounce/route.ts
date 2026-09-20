@@ -14,7 +14,8 @@ const BOUNCE_SCENARIOS = [
   "OTHER",
 ];
 
-export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -73,7 +74,8 @@ export const POST = withApiError(async (req: Request, { params }: { params: { id
   return Response.json(bounce, { status: 201 });
 });
 
-export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 

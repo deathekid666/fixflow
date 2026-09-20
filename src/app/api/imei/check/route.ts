@@ -1,10 +1,11 @@
+import { withApiError } from "@/lib/apiError";
 import { requireAuth } from "@/lib/requireAuth";
 import { prisma } from "@/lib/prisma";
 import { validateImei } from "@/lib/imei";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -61,4 +62,4 @@ export async function POST(req: Request) {
   }
 
   return Response.json({ ...local, blacklist, proError });
-}
+});

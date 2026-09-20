@@ -77,8 +77,8 @@ export default function DashboardPage() {
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
   const [orders, setOrders] = useState<WorkOrder[]>([]);
-  const [todayAppts, setTodayAppts] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [todayAppts, setTodayAppts] = useState<{ id: string; customerName: string; deviceBrand: string; deviceModel: string; scheduledAt: string; status: string }[]>([]);
+  const [recentActivity, setRecentActivity] = useState<{ id: string; action: string; description: string; createdAt: string; userName: string | null; orderNumber: string | null }[]>([]);
   const [sortKey, setSortKey] = useState<string>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [visibleCols, setVisibleCols] = useState({
@@ -241,8 +241,8 @@ export default function DashboardPage() {
       case "total": return o.total;
       case "createdAt": return new Date(o.createdAt).getTime();
       default: {
-        const v = (o as any)[key];
-        return v ?? "";
+        const v = o[key as keyof WorkOrder];
+        return typeof v === "number" || typeof v === "string" ? v : "";
       }
     }
   }

@@ -69,7 +69,7 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
   const { user } = useAuth();
   const router = useRouter();
 
-  if (!user || user.isSuperAdmin || user.role !== "ADMIN") return null;
+
   const [step, setStep] = useState(0);
   const [completing, setCompleting] = useState(false);
 
@@ -90,33 +90,28 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
   const [engineerAdded, setEngineerAdded] = useState(false);
   const [skipEngineer, setSkipEngineer] = useState(false);
 
+  const [aiError, setAiError] = useState("");
+  if (!user || user.isSuperAdmin || user.role !== "ADMIN") return null;
+
   async function extractWithAI() {
     if (!aiInput.trim()) return;
     setAiLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      setAiError("");
+      const res = await fetch("/api/ai/shop-setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 300,
-          messages: [{
-            role: "user",
-            content: `Extract shop information from this text and return ONLY a JSON object with these fields: name, phone, address, city. If a field is not mentioned, use empty string. Text: "${aiInput}"`
-          }]
-        })
+        body: JSON.stringify({ text: aiInput }),
       });
-      const data = await res.json();
-      const text = data.content?.[0]?.text ?? "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
+      const parsed = await res.json();
+      if (!res.ok) throw new Error(parsed.error || "AI autofill unavailable");
       setShopInfo({
         name: parsed.name || shopInfo.name,
         phone: parsed.phone || shopInfo.phone,
         address: parsed.address || shopInfo.address,
         city: parsed.city || shopInfo.city,
       });
-    } catch { /* ignore */ }
+    } catch (error) { setAiError(error instanceof Error ? error.message : "AI autofill unavailable"); }
     setAiLoading(false);
   }
 
@@ -204,7 +199,7 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
               <div>
                 <h1 className="text-2xl font-bold text-white mb-2">Welcome to FixFlow!</h1>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  Let's set up your repair shop in just a few steps. It takes less than 2 minutes.
+                  Let&apos;s set up your repair shop in just a few steps. It takes less than 2 minutes.
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
@@ -221,7 +216,7 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
               </div>
               <button onClick={() => setStep(1)}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors">
-                Let's get started →
+                Let&apos;s get started →
               </button>
             </div>
           )}
@@ -247,6 +242,7 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
                 />
+                {aiError && <p role="alert" className="text-sm text-red-400">{aiError}</p>}
                 <button onClick={extractWithAI} disabled={aiLoading || !aiInput.trim()}
                   className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
                   {aiLoading ? "✨ Extracting..." : "✨ Auto-fill with AI"}
@@ -296,7 +292,7 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
             <div className="p-8 space-y-5">
               <div>
                 <h2 className="text-xl font-bold text-white mb-1">What do you repair?</h2>
-                <p className="text-slate-400 text-sm">Select all that apply — we'll create templates for you automatically.</p>
+                <p className="text-slate-400 text-sm">Select all that apply — we&apos;ll create templates for you automatically.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -399,8 +395,8 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
             <div className="p-8 text-center space-y-6">
               <div className="text-6xl">🎉</div>
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">You're all set!</h2>
-                <p className="text-slate-400 text-sm">Your shop is ready. Here's a quick overview of what you can do:</p>
+                <h2 className="text-2xl font-bold text-white mb-2">You&apos;re all set!</h2>
+                <p className="text-slate-400 text-sm">Your shop is ready. Here&apos;s a quick overview of what you can do:</p>
               </div>
               <div className="space-y-3 text-left">
                 {[

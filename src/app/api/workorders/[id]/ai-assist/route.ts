@@ -1,9 +1,11 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withApiError(async(req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -59,6 +61,7 @@ Only include parts from the available inventory when relevant. If no inventory p
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,4 +98,4 @@ Only include parts from the available inventory when relevant. If no inventory p
     console.error("[ai-assist] Failed to reach Claude API:", err);
     return Response.json({ error: "AI service error" }, { status: 500 });
   }
-}
+});

@@ -11,7 +11,8 @@ function generateCertCode(): string {
   return `FF-${part()}-${part()}-${part()}`;
 }
 
-export const POST = withApiError(async (req: Request, { params }: { params: { lessonId: string } }) => {
+export const POST = withApiError(async (req: Request, context: { params: Promise<{ lessonId: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 

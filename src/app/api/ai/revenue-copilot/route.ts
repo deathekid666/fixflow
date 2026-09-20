@@ -1,9 +1,10 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN") return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -131,6 +132,7 @@ Keep it concise — 2-3 sentences per section. Be direct and data-driven. Curren
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -138,7 +140,7 @@ Keep it concise — 2-3 sentences per section. Be direct and data-driven. Curren
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 700,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -157,4 +159,4 @@ Keep it concise — 2-3 sentences per section. Be direct and data-driven. Curren
     console.error("[revenue-copilot] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI" }, { status: 500 });
   }
-}
+});

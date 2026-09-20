@@ -1,478 +1,751 @@
 "use client";
-import { useEffect } from "react";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Wrench, ArrowRight, Play, Check, Star, Zap, BarChart3, Users, Calendar } from "lucide-react";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  Wrench,
+  Check,
+  Plus,
+  Menu,
+  X,
+  Search,
+  CalendarDays,
+  Package,
+  Users,
+  ChartNoAxesCombined,
+  MessageCircle,
+  Sparkles,
+  ShieldCheck,
+  ChevronDown,
+  Laptop,
+  Smartphone,
+} from "lucide-react";
 
-const NAV_LINKS = ["Features", "AI", "Pricing", "FAQ"];
-
-const COUNTRIES = [
-  "🇬🇧 United Kingdom",
-  "🇫🇷 France",
-  "🇩🇪 Germany",
-  "🇸🇦 Saudi Arabia",
-  "🇲🇦 Morocco",
-  "🇺🇸 United States",
-  "🇦🇪 UAE",
-];
-
-const PROBLEMS = [
-  { icon: "😤", title: "Lost repair history", body: "Customer brings back a phone. You have no record of what was done or who did it." },
-  { icon: "💸", title: "Missed payments", body: "Someone owes money. No system to track it. You realize 3 months later." },
-  { icon: "📱", title: "Customers calling nonstop", body: "They want updates. You're repairing. WhatsApp is chaos. Customers get angry." },
-];
-
-const COMPARISON_ROWS = [
-  { label: "AI Repair Assistant", fixflow: "✓", rd: "✗", rs: "✗", fb: "✗" },
-  { label: "Arabic + French support", fixflow: "✓", rd: "✗", rs: "✗", fb: "✗" },
-  { label: "Customer chat messaging", fixflow: "✓", rd: "✗", rs: "✗", fb: "✗" },
-  { label: "Industry benchmarking", fixflow: "✓", rd: "✗", rs: "✗", fb: "✗" },
-  { label: "Starting price/month", fixflow: "$29", rd: "$75", rs: "$50", fb: "$99" },
-  { label: "Free trial", fixflow: "14 days", rd: "14 days", rs: "14 days", fb: "14 days" },
-];
-
-const STATS = [
-  { value: "122+", label: "Features" },
-  { value: "30+", label: "Countries" },
-  { value: "$0", label: "Setup" },
-  { value: "14", label: "Day trial" },
-];
-
-const PLANS = [
+const features = [
   {
-    name: "Starter",
-    price: "$29",
-    desc: "For solo shops just getting started.",
-    popular: false,
-    features: ["50 work orders/month", "3 engineers", "Customer portal", "Basic analytics"],
+    icon: Wrench,
+    title: "Every repair, accounted for.",
+    text: "From the first diagnosis to the final handover. Keep photos, parts, notes and payments attached to the work order.",
+    tag: "WORK ORDERS",
   },
   {
-    name: "Pro",
-    price: "$59",
-    desc: "For growing shops that need it all.",
-    popular: true,
-    features: ["Unlimited work orders", "Unlimited engineers", "AI Repair Assistant", "Advanced analytics", "Commission tracking", "Priority support"],
+    icon: MessageCircle,
+    title: "Less chasing. More clarity.",
+    text: "Give customers a repair tracking link and a direct line to your shop. Keep updates where everyone can find them.",
+    tag: "CUSTOMER EXPERIENCE",
   },
   {
-    name: "Business",
-    price: "$99",
-    desc: "For multi-branch repair operations.",
-    popular: false,
-    features: ["Everything in Pro", "Multiple branches", "White label", "API access", "Dedicated support"],
+    icon: Package,
+    title: "Know what’s on the shelf.",
+    text: "Manage spare parts, suppliers and stock levels alongside the repairs that need them.",
+    tag: "INVENTORY",
+  },
+  {
+    icon: CalendarDays,
+    title: "Make room for what’s next.",
+    text: "Let customers book online, manage appointments and keep your team’s day organized.",
+    tag: "APPOINTMENTS",
   },
 ];
-
-const FOOTER_LINKS = ["Features", "Pricing", "FAQ", "Track Repair", "Privacy", "Terms"];
-
-const TABLE_ROWS: { order: string; customer: string; device: string; status: string; bg: string; color: string }[] = [
-  { order: "#1042", customer: "Ahmed K.", device: "iPhone 14 Pro", status: "REPAIRING", bg: "bg-orange-500/15", color: "text-orange-400" },
-  { order: "#1041", customer: "Sara M.", device: "Samsung S23", status: "DONE", bg: "bg-green-500/15", color: "text-green-400" },
-  { order: "#1040", customer: "Omar B.", device: "MacBook Air", status: "DIAGNOSING", bg: "bg-yellow-500/15", color: "text-yellow-400" },
-  { order: "#1039", customer: "Nadia R.", device: "iPhone 13", status: "DELIVERED", bg: "bg-slate-500/15", color: "text-slate-400" },
+const faqs = [
+  [
+    "What is FixFlow?",
+    "FixFlow is a workspace for repair shops. It brings work orders, customer updates, spare parts, appointments and reporting into one application.",
+  ],
+  [
+    "Can I start for free?",
+    "Yes. The Starter plan includes up to 50 work orders per month and one user account. You can create an account without a credit card.",
+  ],
+  [
+    "Do my customers need to install an app?",
+    "No. Customers can open their repair tracking link in a browser to see progress and message your shop.",
+  ],
+  [
+    "How does the AI assistant work?",
+    "The assistant helps draft repair guidance from the device and fault information you provide. AI availability depends on the configured provider and its credits. Always verify suggestions before working on a device.",
+  ],
+  [
+    "Does it work on a phone?",
+    "FixFlow runs in a web browser on desktop, tablet and mobile. Customers can also track repairs and book appointments from their phones.",
+  ],
+];
+const navigation = [
+  ["Product", "#product"],
+  ["How it works", "#workflow"],
+  ["Pricing", "#pricing"],
+  ["FAQ", "#faq"],
 ];
 
-export default function LandingPage() {
-  // Scroll-reveal animations
-  useEffect(() => {
-    const els = document.querySelectorAll(".reveal");
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) e.target.classList.add("revealed");
-        });
-      },
-      { threshold: 0.15 }
-    );
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-
+function Brand() {
   return (
-    <div className="bg-[#050914] text-white min-h-screen" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-        .anim-blob1 { animation: blob 8s infinite; }
-        .anim-blob2 { animation: blob 10s infinite 2s; }
-        .anim-blob3 { animation: blob 12s infinite 4s; }
-        .anim-float { animation: float 6s ease-in-out infinite; }
-        .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
-        .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s ease-out, transform 0.7s ease-out; }
-        .reveal.revealed { opacity: 1; transform: translateY(0); }
-        .hover-card { transition: all 0.2s ease; }
-        .hover-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.1); }
-      `}</style>
+    <Link
+      href="/"
+      aria-label="FixFlow home"
+      className="inline-flex items-center gap-2.5 font-bold text-xl tracking-tight"
+    >
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+        <Wrench size={17} strokeWidth={2.5} />
+      </span>
+      FixFlow<span className="text-blue-500">.</span>
+    </Link>
+  );
+}
 
-      {/* ── NAVBAR ─────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 h-14 backdrop-blur-xl bg-[#050914]/80 border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between relative">
-          <div className="flex items-center gap-2">
-            <div className="w-[30px] h-[30px] bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Wrench size={14} color="white" />
-            </div>
-            <span className="font-bold text-white text-base">FixFlow</span>
+function ProductPreview() {
+  const [view, setView] = useState("Repairs");
+  return (
+    <div className="ff-preview">
+      <div className="ff-window">
+        <div className="flex gap-1.5" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </div>
+        <span>YOUR SHOP, IN SYNC</span>
+        <span className="ff-demo-label">Interactive preview · sample data</span>
+      </div>
+      <div className="ff-app">
+        <aside className="ff-app-sidebar">
+          <div className="mb-8 flex items-center gap-2 text-sm font-semibold">
+            <Wrench size={17} className="text-blue-400" /> FixFlow
           </div>
-
-          <div className="hidden md:flex" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", gap: 32, alignItems: "center" }}>
-            {NAV_LINKS.map((l) => (
-              <a key={l} href={`#${l.toLowerCase()}`} className="text-sm text-white/40 hover:text-white transition-colors no-underline">
-                {l}
-              </a>
+          <p className="mb-3 text-[9px] tracking-[.18em] text-slate-500">
+            WORKSPACE
+          </p>
+          {[
+            [Wrench, "Repairs"],
+            [MessageCircle, "Updates"],
+            [ChartNoAxesCombined, "Overview"],
+          ].map(([Icon, label]) => {
+            const I = Icon as typeof Wrench;
+            return (
+              <button
+                key={String(label)}
+                onClick={() => setView(String(label))}
+                aria-pressed={view === label}
+                className={`ff-app-nav ${view === label ? "selected" : ""}`}
+              >
+                <I size={14} />
+                {String(label)}
+              </button>
+            );
+          })}
+          <div className="mt-auto border-t border-white/10 pt-4 text-xs text-slate-400">
+            <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/20 text-blue-300">
+              S
+            </span>{" "}
+            Your repair shop
+          </div>
+        </aside>
+        <div className="ff-app-main">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="mb-1 text-[10px] text-slate-500">
+                WORKSPACE / {view.toUpperCase()}
+              </p>
+              <h3 className="text-xl font-semibold tracking-tight">
+                {view === "Repairs"
+                  ? "A good day to fix things."
+                  : view === "Updates"
+                    ? "Keep everyone in the loop."
+                    : "Your shop at a glance."}
+              </h3>
+            </div>
+            <span className="hidden rounded-lg border border-white/10 px-3 py-2 text-[10px] text-slate-400 sm:block">
+              Today <ChevronDown className="ml-3 inline" size={10} />
+            </span>
+          </div>
+          <div
+            className="ff-preview-tabs"
+            role="group"
+            aria-label="Preview views"
+          >
+            {["Repairs", "Updates", "Overview"].map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={view === v ? "selected" : ""}
+              >
+                {v}
+              </button>
             ))}
-            <a href="/track" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Track Repair</a>
           </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Sign in</Link>
-            <Link href="/register" className="text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg transition-colors no-underline">
-              Get started free
-            </Link>
+          <div className="ff-metrics">
+            {[
+              ["Active repairs", "24", "Across your team"],
+              ["Ready for pickup", "08", "Ready for a new day"],
+              ["Completed today", "12", "Progress you can see"],
+            ].map(([label, value, sub]) => (
+              <div key={label}>
+                <span className="text-[10px] text-slate-400">{label}</span>
+                <strong>
+                  {value}
+                  <span className="text-blue-400">
+                    <ArrowUpRight size={17} />
+                  </span>
+                </strong>
+                <span className="text-[9px] text-slate-500">{sub}</span>
+              </div>
+            ))}
           </div>
-        </div>
-      </nav>
-
-      {/* ── HERO ───────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden min-h-screen flex items-center pt-14">
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-          <div className="anim-blob1" style={{ position: "absolute", top: "25%", left: "25%", width: 384, height: 384, borderRadius: "50%", background: "rgba(37,99,235,0.08)", filter: "blur(64px)" }} />
-          <div className="anim-blob2" style={{ position: "absolute", top: "33%", right: "25%", width: 320, height: 320, borderRadius: "50%", background: "rgba(124,58,237,0.06)", filter: "blur(64px)" }} />
-          <div className="anim-blob3" style={{ position: "absolute", bottom: "25%", left: "33%", width: 288, height: 288, borderRadius: "50%", background: "rgba(96,165,250,0.05)", filter: "blur(64px)" }} />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full relative">
-          {/* Left column */}
-          <div>
-            <div className="inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/8 rounded-full px-3 py-1 text-xs text-blue-400 mb-6">
-              <span className="pulse-dot w-1.5 h-1.5 bg-blue-400 rounded-full inline-block" />
-              AI-Powered · Now available
-            </div>
-
-            <h1 className="text-white mb-5" style={{ fontSize: "clamp(38px, 8vw, 64px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
-              <span style={{ display: "block" }}>The repair shop</span>
-              <span style={{ display: "block" }}>OS for <span className="text-blue-400">2026</span>.</span>
-            </h1>
-
-            <p className="text-lg text-white/40 leading-relaxed mb-8" style={{ maxWidth: 420 }}>
-              Replace WhatsApp groups and paper receipts with one AI-powered platform. Work orders, inventory, payments, and customer chat — built for repair professionals.
-            </p>
-
-            <div className="flex flex-wrap gap-3 mb-8">
-              <Link href="/register" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-6 py-3 rounded-xl transition-all hover:scale-105 active:scale-95 no-underline" style={{ boxShadow: "0 10px 30px rgba(59,130,246,0.2)" }}>
-                Start free trial <ArrowRight size={14} />
-              </Link>
-              <a href="#features" className="inline-flex items-center gap-2 border border-white/10 hover:border-white/20 text-white/60 hover:text-white text-sm px-5 py-3 rounded-xl transition-all no-underline">
-                Watch demo <Play size={14} />
-              </a>
-            </div>
-
-            <div className="flex flex-wrap gap-6 text-xs text-white/30 mb-8">
-              {["No credit card", "Cancel anytime", "14-day free trial"].map((t) => (
-                <span key={t} className="inline-flex items-center gap-1.5">
-                  <Check size={11} className="text-green-500" /> {t}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-8 pt-8 border-t border-white/5 flex items-center gap-3">
-              <div className="flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={12} className="fill-yellow-400 text-yellow-400" />
+          {view === "Repairs" ? (
+            <>
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-xs font-semibold">
+                  Repair queue <span className="ml-2 text-slate-500">24</span>
+                </h4>
+                <Search size={14} className="text-slate-500" />
+              </div>
+              <div className="ff-repair-list">
+                {[
+                  ["iPhone 14 Pro", "Screen replacement", "In repair", "AK"],
+                  ["MacBook Air", "Battery replacement", "Diagnosing", "SM"],
+                  ["Samsung S23", "Charging port", "Ready for pickup", "OB"],
+                ].map(([device, fault, status, initials], i) => (
+                  <div key={device} className="ff-repair-row">
+                    <span className="ff-device">
+                      {i === 1 ? (
+                        <Laptop size={19} />
+                      ) : (
+                        <Smartphone size={19} />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium">{device}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">{fault}</p>
+                    </div>
+                    <span className={`ff-status ${i === 2 ? "ready" : ""}`}>
+                      <span />
+                      {status}
+                    </span>
+                    <span className="ff-avatar">{initials}</span>
+                  </div>
                 ))}
               </div>
-              <span className="text-sm text-white/40">
-                Trusted by <span className="text-white font-medium">1,200+</span> repair shops
-              </span>
-            </div>
-          </div>
-
-          {/* Right column — dashboard mockup (hidden on mobile: its fixed-width sidebar + table
-              need ~450px+ and would otherwise force horizontal page scroll on phones) */}
-          <div className="anim-float hidden md:block">
-            <div className="rounded-2xl overflow-hidden border border-white/8" style={{ background: "#0d1117", boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 80px rgba(37,99,235,0.07)" }}>
-              {/* Browser bar */}
-              <div className="h-9 flex items-center px-3 gap-2 border-b border-white/5" style={{ background: "#161b22" }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff5f57", display: "inline-block" }} />
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#febc2e", display: "inline-block" }} />
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#28c840", display: "inline-block" }} />
-                <span className="flex-1 text-center text-xs text-white/20" style={{ fontFamily: "monospace" }}>app.fixflow.io/dashboard</span>
+              <div className="mt-4 flex items-center gap-2 text-[10px] text-slate-500">
+                <ShieldCheck size={13} /> Every detail stays with the repair.
               </div>
-
-              {/* Dashboard body */}
-              <div className="flex" style={{ height: 380 }}>
-                {/* Sidebar */}
-                <div className="w-40 border-r border-white/5 p-3 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-4 px-2">
-                    <Wrench size={12} className="text-blue-400" />
-                    <span className="text-xs font-semibold text-white">FixFlow</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs mb-0.5 bg-blue-500/15 text-blue-400">
-                    <Wrench size={11} /> Work Orders
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs mb-0.5 text-white/25">
-                    <Users size={11} /> Customers
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs mb-0.5 text-white/25">
-                    <Zap size={11} /> Parts
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs mb-0.5 text-white/25">
-                    <BarChart3 size={11} /> Analytics
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs mb-0.5 text-white/25">
-                    <Calendar size={11} /> Appointments
-                  </div>
-                </div>
-
-                {/* Main */}
-                <div className="flex-1 p-4 min-w-0">
-                  <div className="grid grid-cols-4 gap-2 mb-3">
-                    {[
-                      { label: "Revenue", value: "$8,420", color: "text-green-400" },
-                      { label: "Active", value: "24", color: "text-blue-400" },
-                      { label: "Done", value: "38", color: "text-violet-400" },
-                      { label: "Rating", value: "4.9★", color: "text-yellow-400" },
-                    ].map((s) => (
-                      <div key={s.label} className="rounded-lg p-2.5 bg-white/3 border border-white/5">
-                        <div className="text-[10px] text-white/30 mb-1">{s.label}</div>
-                        <div className={`text-sm font-bold ${s.color}`}>{s.value}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="rounded-xl border border-white/5 overflow-hidden">
-                    <div className="grid px-3 py-1.5 text-[10px] text-white/20 border-b border-white/5" style={{ gridTemplateColumns: "70px 1fr 110px 85px" }}>
-                      <span>ORDER</span><span>CUSTOMER</span><span>DEVICE</span><span>STATUS</span>
-                    </div>
-                    {TABLE_ROWS.map((r) => (
-                      <div key={r.order} className="grid px-3 py-2 text-xs border-b border-white/3 items-center" style={{ gridTemplateColumns: "70px 1fr 110px 85px" }}>
-                        <span className="text-white/25" style={{ fontFamily: "monospace" }}>{r.order}</span>
-                        <span className="font-medium truncate">{r.customer}</span>
-                        <span className="text-white/40 truncate">{r.device}</span>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.bg} ${r.color}`} style={{ width: "fit-content" }}>{r.status}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            </>
+          ) : view === "Updates" ? (
+            <div className="ff-message">
+              <span className="ff-eyebrow">CUSTOMER PORTAL</span>
+              <h4 className="mb-4 mt-3 font-semibold">
+                Your device is ready for pickup.
+              </h4>
+              <p className="rounded-xl bg-blue-600/15 p-4 text-sm leading-relaxed text-blue-100">
+                Hi Alex, your screen replacement is complete. Your device has
+                passed its final checks and is ready to collect.
+              </p>
+              <p className="mt-4 text-xs text-slate-400">
+                Delivered to the repair tracking portal{" "}
+                <Check size={13} className="inline text-blue-400" />
+              </p>
+            </div>
+          ) : (
+            <div
+              className="ff-chart"
+              aria-label="Illustrative weekly repair volume"
+            >
+              <div className="mb-5 flex justify-between text-xs">
+                <span>Repairs completed this week</span>
+                <span className="text-slate-500">Sample activity</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SOCIAL PROOF TICKER ───────────────────────────────────────── */}
-      <section className="border-y border-white/5 py-4 overflow-hidden">
-        <p className="text-center text-xs text-white/20 uppercase tracking-widest">Trusted by repair shops across</p>
-        <div className="flex flex-wrap justify-center gap-8 mt-2 text-sm text-white/30 font-medium">
-          {COUNTRIES.map((c) => (
-            <span key={c}>{c}</span>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PROBLEM ────────────────────────────────────────────────────── */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto text-center mb-14">
-          <h2 className="text-4xl font-bold tracking-tight text-white mb-4">Still running your shop on WhatsApp?</h2>
-          <p className="text-lg text-white/40">Repair shops lose 2+ hours every day to tools that weren't built for them.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-          {PROBLEMS.map((p) => (
-            <div key={p.title} className="reveal hover-card p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
-              <div className="text-2xl mb-3">{p.icon}</div>
-              <h3 className="text-base font-semibold mb-2">{p.title}</h3>
-              <p className="text-sm text-white/40">{p.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FEATURES ───────────────────────────────────────────────────── */}
-      <section id="features" className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-xs text-blue-400 font-semibold tracking-widest uppercase block mb-3">Features</span>
-            <h2 className="text-5xl font-bold tracking-tight text-white mb-4">One platform. Zero chaos.</h2>
-            <p className="text-lg text-white/40 max-w-md mx-auto">Replace scattered tools with one system built specifically for repair shops.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="reveal hover-card md:col-span-2 p-8 rounded-2xl border border-white/5 bg-white/[0.02] relative overflow-hidden">
-              <div style={{ position: "absolute", top: -80, right: -80, width: 240, height: 240, borderRadius: "50%", background: "rgba(59,130,246,0.05)", filter: "blur(64px)" }} />
-              <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center mb-5 relative"><Wrench size={20} className="text-blue-400" /></div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight relative">Smart work orders</h3>
-              <p className="text-sm text-white/40 leading-relaxed relative">Complete lifecycle from intake to delivery. Photos, diagnosis checklist, parts, customer chat, payments, repair timer, and SLA tracking — everything in one place.</p>
-            </div>
-
-            <div className="reveal hover-card md:col-span-1 p-8 rounded-2xl border border-violet-500/15 relative" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))" }}>
-              <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center mb-5"><Zap size={20} className="text-violet-400" /></div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">AI assistant</h3>
-              <p className="text-sm text-white/40 leading-relaxed mb-4">Describe the fault. Get repair steps, parts list, and price suggestion in seconds.</p>
-              <span className="text-[11px] font-semibold text-violet-400 bg-violet-500/15 px-3 py-1 rounded-full">Only on FixFlow</span>
-            </div>
-
-            <div className="reveal hover-card md:col-span-1 p-8 rounded-2xl border border-white/5 bg-white/[0.02]">
-              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-5"><BarChart3 size={20} className="text-green-400" /></div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Analytics</h3>
-              <p className="text-sm text-white/40 leading-relaxed">Revenue charts, engineer leaderboards, parts profitability, and industry benchmarks.</p>
-            </div>
-
-            <div className="reveal hover-card md:col-span-2 p-8 rounded-2xl border border-white/5 bg-white/[0.02] relative overflow-hidden">
-              <div style={{ position: "absolute", bottom: -80, left: -80, width: 240, height: 240, borderRadius: "50%", background: "rgba(34,197,94,0.04)", filter: "blur(64px)" }} />
-              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-5 relative"><Users size={20} className="text-green-400" /></div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight relative">Customer portal</h3>
-              <p className="text-sm text-white/40 leading-relaxed relative">Customers track repairs in real time, chat with your shop, see photos, and leave ratings. No app download. No login required.</p>
-            </div>
-
-            <div className="reveal hover-card md:col-span-1 p-8 rounded-2xl border border-white/5 bg-white/[0.02]">
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/15 flex items-center justify-center mb-5"><Calendar size={20} className="text-yellow-400" /></div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Appointments</h3>
-              <p className="text-sm text-white/40 leading-relaxed">Capacity-based booking slots. Customers book online. You confirm.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── COMPETITOR COMPARISON ─────────────────────────────────────── */}
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-4xl mx-auto text-center mb-12">
-          <h2 className="text-4xl font-bold tracking-tight">Half the price. Twice the features.</h2>
-          <p className="text-lg text-white/40 mt-4">RepairDesk charges $75-150/month. RepairShopr $50-150/month. FixFlow starts at $29.</p>
-        </div>
-        <div className="reveal max-w-4xl mx-auto rounded-2xl border border-white/8 overflow-hidden overflow-x-auto">
-          <div className="grid grid-cols-5 bg-white/3 px-6 py-4 text-xs text-white/40 font-semibold uppercase tracking-wider" style={{ minWidth: 640 }}>
-            <span>Feature</span><span>FixFlow</span><span>RepairDesk</span><span>RepairShopr</span><span>Fixably</span>
-          </div>
-          {COMPARISON_ROWS.map((r) => (
-            <div key={r.label} className="grid grid-cols-5 px-6 py-4 border-t border-white/5 text-sm items-center" style={{ minWidth: 640 }}>
-              <span className="text-white/60">{r.label}</span>
-              <span className="text-blue-400 font-semibold">{r.fixflow}</span>
-              <span className="text-white/30">{r.rd}</span>
-              <span className="text-white/30">{r.rs}</span>
-              <span className="text-white/30">{r.fb}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STATS ──────────────────────────────────────────────────────── */}
-      <section className="reveal py-24 px-6 border-t border-white/5">
-        <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {STATS.map((s) => (
-            <div key={s.label}>
-              <div className="text-5xl font-bold text-white mb-2" style={{ letterSpacing: "-3px" }}>{s.value}</div>
-              <p className="text-sm text-white/30">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PRICING ────────────────────────────────────────────────────── */}
-      <section id="pricing" className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-4xl font-bold tracking-tight">Simple pricing</h2>
-            <p className="text-lg text-white/40 mt-3">Start free. No credit card required.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className={`reveal hover-card p-7 rounded-2xl relative ${
-                  plan.popular
-                    ? "border border-blue-500/30 bg-blue-500/5"
-                    : "border border-white/7 bg-white/[0.02]"
-                }`}
-                style={plan.popular ? { boxShadow: "0 0 60px rgba(37,99,235,0.08)" } : undefined}
-              >
-                {plan.popular && (
-                  <span
-                    className="bg-blue-600 text-white text-[10px] font-bold px-4 py-1 rounded-b-lg tracking-widest"
-                    style={{ position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)" }}
+              <div className="flex h-32 items-end gap-3">
+                {[35, 58, 45, 78, 63, 92, 72].map((n, i) => (
+                  <div
+                    key={i}
+                    className="flex h-full flex-1 flex-col justify-end gap-2 text-center"
                   >
-                    MOST POPULAR
-                  </span>
-                )}
-                <p className="text-sm text-white/40 mb-2 mt-3">{plan.name}</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-5xl font-bold" style={{ letterSpacing: "-2px" }}>{plan.price}</span>
-                  <span className="text-white/30 text-sm">/mo</span>
-                </div>
-                <p className="text-xs text-white/30 mb-6">{plan.desc}</p>
-                <Link
-                  href="/register"
-                  className={`block text-center font-semibold text-sm py-2.5 rounded-xl mb-6 transition-colors no-underline ${
-                    plan.popular ? "bg-blue-600 hover:bg-blue-500 text-white" : "bg-white/5 hover:bg-white/10 text-white border border-white/8"
-                  }`}
-                >
-                  Get started
-                </Link>
-                <div className="flex flex-col gap-3">
-                  {plan.features.map((f) => (
-                    <span key={f} className="flex items-center gap-2 text-sm text-white/50">
-                      <Check size={12} className={plan.popular ? "text-blue-400" : "text-green-400"} /> {f}
+                    <div
+                      style={{ height: `${n}%` }}
+                      className="rounded-t bg-blue-500/60"
+                    />
+                    <span className="text-[9px] text-slate-500">
+                      {["M", "T", "W", "T", "F", "S", "S"][i]}
                     </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LandingPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [tracking, setTracking] = useState("");
+  return (
+    <main className="ff-landing">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+      .ff-landing{background:#050914;color:#f8fafc;font-family:inherit;overflow-x:clip;--muted:#94a3b8} .ff-landing *{box-sizing:border-box} .ff-landing a{display:inline-flex;align-items:center;text-decoration:none} .ff-landing button,.ff-landing a{transition:background .18s,color .18s,transform .18s} .ff-landing a:focus-visible,.ff-landing button:focus-visible,.ff-landing summary:focus-visible,.ff-landing input:focus-visible{outline:2px solid #60a5fa;outline-offset:5px} .ff-landing section[id]{scroll-margin-top:95px} .ff-wrap{max-width:1160px;margin:auto;padding:0 28px} .ff-nav{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px} .ff-nav-links{display:flex;gap:28px;font-size:12px;color:#94a3b8} .ff-nav-links a:hover{color:white}.ff-button{justify-content:center;gap:9px;border-radius:9px;padding:13px 20px;font-size:13px;font-weight:600;background:#2563eb;color:white;min-height:46px}.ff-button:hover{background:#3b82f6;transform:translateY(-2px)}.ff-button.secondary{background:#ffffff05;border:1px solid #ffffff20;color:#cbd5e1}.ff-eyebrow{font-size:10px;letter-spacing:.16em;font-weight:600;color:#60a5fa}.ff-hero{padding:75px 0 0;position:relative;background:radial-gradient(ellipse at 70% 43%,#2563eb15,transparent 58%)}.ff-hero:before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(#ffffff02 1px,transparent 1px),linear-gradient(90deg,#ffffff02 1px,transparent 1px);background-size:64px 64px;mask-image:linear-gradient(black,transparent)}.ff-hero-intro{position:relative;display:grid;grid-template-columns:1.1fr 1fr;gap:70px;align-items:end;margin-bottom:46px}.ff-hero h1{font-size:clamp(46px,5.9vw,76px);line-height:1.04;letter-spacing:-.058em;font-weight:600;margin:24px 0 0}.ff-hero h1 em{font-style:normal;color:#60a5fa}.ff-lead{font-size:16px;line-height:1.8;color:#94a3b8;max-width:410px}.ff-preview{position:relative;border:1px solid #ffffff1c;border-radius:14px 14px 0 0;overflow:hidden;background:#0b1120;box-shadow:0 0 90px #2563eb0d,0 20px 80px #0005}.ff-window{height:38px;border-bottom:1px solid #ffffff0d;background:#ffffff02;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:8px;letter-spacing:.15em;color:#64748b}.ff-window i{width:7px;height:7px;background:#334155;border-radius:50%}.ff-demo-label{letter-spacing:0}.ff-app{display:flex;min-height:380px}.ff-app-sidebar{width:190px;flex-shrink:0;border-right:1px solid #ffffff0d;padding:24px 16px;display:flex;flex-direction:column}.ff-app-nav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:11px;text-align:left;color:#94a3b8;margin-bottom:5px}.ff-app-nav.selected,.ff-preview-tabs .selected{background:#2563eb24;color:#93c5fd}.ff-app-main{flex:1;min-width:0;padding:26px 30px}.ff-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}.ff-metrics>div{border:1px solid #ffffff0a;border-radius:8px;padding:12px 15px;background:#ffffff02}.ff-metrics strong{display:flex;align-items:center;justify-content:space-between;font-size:28px;letter-spacing:-1px;font-weight:500;margin:5px 0}.ff-repair-list{border:1px solid #ffffff0b;border-radius:8px}.ff-repair-row{display:flex;align-items:center;gap:14px;padding:13px 15px}.ff-repair-row+.ff-repair-row{border-top:1px solid #ffffff08}.ff-device{display:flex;align-items:center;justify-content:center;width:32px;height:36px;border-radius:7px;background:#ffffff05;color:#94a3b8}.ff-status{font-size:9px;border:1px solid #ffffff0e;padding:4px 8px;border-radius:5px;color:#94a3b8;white-space:nowrap}.ff-status>span{display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;margin-right:5px}.ff-status.ready{color:#93c5fd;background:#2563eb14}.ff-avatar{font-size:9px;padding:6px;border-radius:50%;background:#ffffff08;color:#94a3b8;margin-left:15px}.ff-preview-tabs{display:none}.ff-message,.ff-chart{min-height:182px;padding:16px;border:1px solid #ffffff0b;border-radius:8px}.ff-section{padding:100px 0;border-top:1px solid #ffffff0c}.ff-heading{font-size:clamp(32px,4vw,48px);line-height:1.12;letter-spacing:-.045em;font-weight:500}.ff-feature-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:42px}.ff-card{padding:32px;border:1px solid #ffffff0e;border-radius:14px;background:linear-gradient(130deg,#ffffff04,#ffffff01);transition:transform .2s,border-color .2s}.ff-card:hover{transform:translateY(-4px);border-color:#ffffff25}.ff-feature-icon{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:1px solid #3b82f633;border-radius:10px;background:#2563eb0d;color:#60a5fa}.ff-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:50px}.ff-step-number{font-family:monospace;font-size:12px;color:#60a5fa;border-top:1px solid #ffffff20;padding-top:18px;margin-bottom:24px}.ff-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}.ff-plan{display:flex;flex-direction:column}.ff-plan.featured{border-color:#3b82f655;background:linear-gradient(145deg,#2563eb14,#ffffff02)}.ff-faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:80px}.ff-faq details{border-bottom:1px solid #ffffff10;padding:20px 0}.ff-faq summary{display:flex;justify-content:space-between;align-items:center;gap:20px;cursor:pointer;font-size:14px;font-weight:500;list-style:none;min-height:44px}.ff-faq summary::-webkit-details-marker{display:none}.ff-faq details[open] summary svg{transform:rotate(45deg)}.ff-faq details p{font-size:14px;line-height:1.8;color:#94a3b8;padding:14px 25px 0 0}.ff-tracking{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;padding:32px;border:1px solid #ffffff12;border-radius:14px;background:#ffffff02}.ff-footer{display:flex;justify-content:space-between;align-items:center;gap:24px;padding-top:32px;padding-bottom:32px}.ff-mobile-menu-button{display:none}.ff-enter{animation:ff-rise .7s ease-out both}@keyframes ff-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+      @media(max-width:900px){.ff-nav-links{gap:16px}.ff-hero-intro{gap:35px}.ff-app-sidebar{width:150px}.ff-app-main{padding:22px}.ff-card{padding:25px}.ff-faq{gap:40px}.ff-avatar{display:none}}
+      @media(max-width:700px){.ff-wrap{padding-left:20px;padding-right:20px}.ff-nav{height:66px}.ff-nav-links,.ff-signin{display:none!important}.ff-mobile-menu-button{display:flex;align-items:center;justify-content:center;width:44px;height:44px}.ff-hero{padding-top:45px}.ff-hero-intro{grid-template-columns:1fr;gap:24px;margin-bottom:32px}.ff-hero h1{font-size:54px}.ff-lead{font-size:15px;max-width:none}.ff-app-sidebar{display:none}.ff-app-main{padding:18px 14px}.ff-preview-tabs{display:flex;gap:6px;margin-bottom:16px}.ff-preview-tabs button{padding:5px 12px;border-radius:5px;font-size:11px;color:#94a3b8}.ff-metrics{gap:6px}.ff-metrics>div{padding:9px}.ff-metrics strong{font-size:24px}.ff-metrics>div>span:last-child{display:none}.ff-window>span:not(.ff-demo-label){display:none}.ff-repair-row{gap:8px;padding:12px 8px}.ff-status{font-size:8px;padding:4px}.ff-section{padding:65px 0}.ff-feature-grid,.ff-plans,.ff-faq,.ff-tracking{grid-template-columns:1fr}.ff-steps{grid-template-columns:1fr;gap:28px;margin-top:32px}.ff-step-number{margin-bottom:15px}.ff-faq{gap:24px}.ff-tracking{padding:24px;gap:24px}.ff-footer{flex-wrap:wrap}.ff-footer nav{flex-wrap:wrap;gap:18px!important}.ff-heading{font-size:36px}.ff-app{min-height:375px}}
+      @media(max-width:360px){.ff-hero h1{font-size:46px}.ff-wrap{padding-left:16px;padding-right:16px}.ff-device{display:none}.ff-nav .ff-button{font-size:11px;padding:10px}.ff-metrics strong svg{display:none}}
+      @media(prefers-reduced-motion:reduce){.ff-landing *{animation:none!important;transition:none!important;scroll-behavior:auto!important}.ff-card:hover,.ff-button:hover{transform:none}}
+    `,
+        }}
+      />
+      <header className="sticky top-0 z-50 border-b border-white/[.07] bg-[#050914]/90 backdrop-blur-xl">
+        <div className="ff-wrap ff-nav">
+          <Brand />
+          <nav className="ff-nav-links" aria-label="Main navigation">
+            {navigation.map(([label, href]) => (
+              <a key={href} href={href}>
+                {label}
+              </a>
+            ))}
+          </nav>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="ff-signin text-xs text-slate-400 hover:text-white"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className="ff-button"
+              style={{ padding: "9px 15px", minHeight: 40 }}
+            >
+              Get started <ArrowUpRight size={14} />
+            </Link>
+            <button
+              className="ff-mobile-menu-button"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <X size={21} /> : <Menu size={21} />}
+            </button>
+          </div>
+        </div>
+        {menuOpen && (
+          <nav
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
+            className="border-t border-white/10 px-6 py-4 md:hidden"
+          >
+            {[
+              ...navigation,
+              ["Track a repair", "#track"],
+              ["Sign in", "/login"],
+            ].map(([label, href]) => (
+              <a
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                className="!flex py-2 text-sm text-slate-300"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
+      </header>
+      <section className="ff-hero">
+        <div className="ff-wrap">
+          <div className="ff-hero-intro ff-enter">
+            <div>
+              <span className="ff-eyebrow inline-flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> THE
+                WORKSPACE FOR REPAIR SHOPS
+              </span>
+              <h1>
+                Great repairs.
+                <br />
+                <em>Without the chaos.</em>
+              </h1>
+            </div>
+            <div>
+              <p className="ff-lead">
+                Your craft deserves better than scattered notes.
+                <br className="hidden lg:block" /> Bring every repair, customer
+                and spare part into one beautifully organized workspace.
+              </p>
+              <div className="mb-4 mt-6 flex flex-wrap gap-3">
+                <Link href="/register" className="ff-button">
+                  Start for free <ArrowRight size={15} />
+                </Link>
+                <a href="#product" className="ff-button secondary">
+                  Explore the workspace <ArrowDownIcon />
+                </a>
+              </div>
+              <p className="flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500">
+                <span>
+                  <Check size={12} className="mr-1 inline text-blue-400" /> No
+                  credit card
+                </span>
+                <span>
+                  <Check size={12} className="mr-1 inline text-blue-400" /> Free
+                  Starter plan
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="ff-enter" style={{ animationDelay: ".12s" }}>
+            <ProductPreview />
+          </div>
+        </div>
+      </section>
+      <div className="border-y border-white/[.07]">
+        <div className="ff-wrap flex flex-wrap items-center justify-between gap-5 py-6 text-xs text-slate-500">
+          <span className="text-[10px] tracking-[.15em]">
+            BUILT AROUND YOUR BENCH
+          </span>
+          {[
+            [Smartphone, "Phone repairs"],
+            [Laptop, "Computer repairs"],
+            [Wrench, "Independent shops"],
+            [Users, "Growing teams"],
+          ].map(([Icon, text]) => {
+            const I = Icon as typeof Wrench;
+            return (
+              <span key={String(text)} className="flex items-center gap-2">
+                <I size={15} />
+                {String(text)}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+      <section id="product" className="ff-section">
+        <div className="ff-wrap">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <p className="ff-eyebrow mb-4">LESS ADMIN. MORE REPAIRING.</p>
+              <h2 className="ff-heading">
+                Everything in its place.
+                <br />
+                <span className="text-slate-500">Finally.</span>
+              </h2>
+            </div>
+            <p className="max-w-sm text-sm leading-7 text-slate-400">
+              A connected workspace for the real work of running a repair shop.
+              From “Can you fix this?” to “Thanks, it’s perfect.”
+            </p>
+          </div>
+          <div className="ff-feature-grid">
+            {features.map(({ icon: Icon, title, text, tag }) => (
+              <article className="ff-card" key={tag}>
+                <div className="mb-7 flex items-center justify-between">
+                  <div className="ff-feature-icon">
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-[9px] tracking-[.15em] text-slate-500">
+                    {tag}
+                  </span>
+                </div>
+                <h3 className="mb-3 text-xl font-medium tracking-tight">
+                  {title}
+                </h3>
+                <p className="max-w-md text-sm leading-7 text-slate-400">
+                  {text}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section id="workflow" className="ff-section">
+        <div className="ff-wrap">
+          <p className="ff-eyebrow mb-4">A BETTER EVERYDAY</p>
+          <h2 className="ff-heading">One repair. One clear path.</h2>
+          <div className="ff-steps">
+            {[
+              [
+                "01 / TAKE IT IN",
+                "Start with the whole story.",
+                "Capture the device, the fault and the customer’s details. Assign a technician and keep the intake organized.",
+              ],
+              [
+                "02 / KEEP IT MOVING",
+                "Focus on the fix.",
+                "Record diagnosis, parts and progress in one place. Your team knows what’s next, and customers can follow along.",
+              ],
+              [
+                "03 / HAND IT OVER",
+                "Finish with confidence.",
+                "Record the payment, mark the device ready and close the repair with its history intact.",
+              ],
+            ].map(([number, title, text]) => (
+              <article key={number}>
+                <p className="ff-step-number">{number}</p>
+                <h3 className="mb-3 text-lg font-medium">{title}</h3>
+                <p className="text-sm leading-7 text-slate-400">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section id="ai" className="ff-section">
+        <div className="ff-wrap">
+          <div
+            className="ff-card grid items-center gap-10 md:grid-cols-2"
+            style={{
+              background:
+                "radial-gradient(ellipse at 95% 0%,#2563eb18,transparent 70%)",
+            }}
+          >
+            <div>
+              <span className="ff-eyebrow flex items-center gap-2">
+                <Sparkles size={14} /> AN EXTRA PAIR OF HANDS
+              </span>
+              <h2 className="ff-heading mb-5 mt-5">
+                Your expertise.
+                <br />A little extra assistance.
+              </h2>
+              <p className="text-sm leading-7 text-slate-400">
+                Turn a fault description into a starting point for diagnosis.
+                Use AI to help with repair guidance, then apply the judgment
+                only you bring to the bench.
+              </p>
+              <p className="mt-4 text-xs leading-6 text-slate-500">
+                Requires an available AI provider and credits. Suggestions
+                should always be checked by a technician.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-[#080e1c] p-6">
+              <div className="mb-5 flex items-center gap-2 text-xs text-slate-400">
+                <Sparkles size={15} className="text-blue-400" /> ASSISTANT ·
+                ILLUSTRATIVE EXAMPLE
+              </div>
+              <p className="mb-5 rounded-lg border border-white/5 bg-white/[.03] p-4 text-sm text-slate-300">
+                Phone won’t charge. Where should I start?
+              </p>
+              <div className="space-y-4">
+                {[
+                  "Confirm the cable and power source.",
+                  "Inspect the port for debris or damage.",
+                  "Record your findings before replacing parts.",
+                ].map((line, i) => (
+                  <p
+                    key={line}
+                    className="flex gap-3 text-xs leading-6 text-slate-400"
+                  >
+                    <span className="text-blue-400">0{i + 1}</span>
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="pricing" className="ff-section">
+        <div className="ff-wrap">
+          <div className="text-center">
+            <p className="ff-eyebrow mb-4">ROOM TO GROW</p>
+            <h2 className="ff-heading">Start small. Build your shop.</h2>
+            <p className="mt-4 text-sm text-slate-400">
+              A free starting point, with plans for the team you’re building.
+            </p>
+          </div>
+          <div className="ff-plans">
+            {[
+              {
+                name: "Starter",
+                price: "0",
+                desc: "For your first organized repair.",
+                items: [
+                  "50 work orders per month",
+                  "1 user account",
+                  "Customer tracking portal",
+                ],
+              },
+              {
+                name: "Pro",
+                price: "29",
+                desc: "For a growing repair team.",
+                items: [
+                  "Unlimited work orders",
+                  "Up to 10 users",
+                  "Advanced analytics & reports",
+                ],
+              },
+              {
+                name: "Enterprise",
+                price: "79",
+                desc: "For a larger repair operation.",
+                items: [
+                  "Unlimited users & branches",
+                  "Everything in Pro",
+                  "Custom integration options",
+                ],
+              },
+            ].map((plan, i) => (
+              <article
+                key={plan.name}
+                className={`ff-card ff-plan ${i === 1 ? "featured" : ""}`}
+              >
+                <div className="mb-5 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">{plan.name}</h3>
+                  {i === 1 && (
+                    <span className="text-[9px] tracking-widest text-blue-400">
+                      FOR GROWING TEAMS
+                    </span>
+                  )}
+                </div>
+                <p>
+                  <span className="text-5xl font-medium tracking-tighter">
+                    ${plan.price}
+                  </span>
+                  <span className="ml-2 text-xs text-slate-500">
+                    {i === 0 ? "forever" : "USD / month"}
+                  </span>
+                </p>
+                <p className="mb-7 mt-4 text-xs text-slate-400">{plan.desc}</p>
+                <Link
+                  href={i === 0 ? "/register" : "/pricing"}
+                  className={`ff-button ${i === 1 ? "" : "secondary"}`}
+                >
+                  {i === 0 ? "Start for free" : "View plan details"}
+                  <ArrowUpRight size={14} />
+                </Link>
+                <div className="mt-7 space-y-3 border-t border-white/10 pt-6">
+                  {plan.items.map((item) => (
+                    <p
+                      key={item}
+                      className="flex items-center gap-2 text-xs text-slate-400"
+                    >
+                      <Check size={13} className="text-blue-400" />
+                      {item}
+                    </p>
                   ))}
                 </div>
-              </div>
+              </article>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-xs leading-6 text-slate-500">
+            Paid-plan checkout is not yet available. See plan details for
+            current availability.
+          </p>
+        </div>
+      </section>
+      <section id="faq" className="ff-section">
+        <div className="ff-wrap ff-faq">
+          <div>
+            <p className="ff-eyebrow mb-4">GOOD QUESTIONS</p>
+            <h2 className="ff-heading">
+              A few things
+              <br />
+              you might wonder.
+            </h2>
+            <Link
+              href="/directory"
+              className="mt-6 gap-2 text-sm text-slate-400 hover:text-white"
+            >
+              Looking for a repair shop? <ArrowUpRight size={14} />
+            </Link>
+          </div>
+          <div>
+            {faqs.map(([q, a]) => (
+              <details key={q}>
+                <summary>
+                  {q}
+                  <Plus size={17} className="shrink-0 text-slate-500" />
+                </summary>
+                <p>{a}</p>
+              </details>
             ))}
           </div>
         </div>
       </section>
-
-      {/* ── FINAL CTA ──────────────────────────────────────────────────── */}
-      <section className="reveal py-24 px-6 text-center border-t border-white/5">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex justify-center gap-1 mb-6">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} size={14} className="fill-yellow-400 text-yellow-400" />
-            ))}
+      <section id="track" className="ff-wrap pb-20">
+        <div className="ff-tracking">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-lg font-medium">
+              <Search size={18} className="text-blue-400" /> Here to check on a
+              repair?
+            </div>
+            <p className="text-sm leading-6 text-slate-400">
+              Enter the complete tracking reference provided by your shop.
+            </p>
           </div>
-          <h2 className="text-4xl font-bold tracking-tight mb-4">Join 1,200+ repair shops already using FixFlow</h2>
-          <p className="text-lg text-white/40 mb-10">14-day free trial. No credit card. Cancel anytime.</p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base px-10 py-4 rounded-xl transition-all hover:scale-105 active:scale-95 no-underline"
-            style={{ boxShadow: "0 20px 50px rgba(59,130,246,0.2)" }}
+          <form
+            className="flex flex-wrap gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (tracking.trim())
+                window.location.assign(
+                  `/track/${encodeURIComponent(tracking.trim().toLowerCase())}`,
+                );
+            }}
           >
-            Get started free <ArrowRight size={16} />
+            <label htmlFor="repair-reference" className="sr-only">
+              Repair tracking reference
+            </label>
+            <input
+              id="repair-reference"
+              name="reference"
+              value={tracking}
+              onChange={(e) => setTracking(e.target.value)}
+              required
+              maxLength={100}
+              placeholder="Your repair reference"
+              className="min-w-0 flex-[1_1_180px] rounded-lg border border-white/15 bg-[#050914] px-4 py-3 text-sm text-white placeholder:text-slate-500"
+            />
+            <button className="ff-button" type="submit">
+              Track repair <ArrowRight size={14} />
+            </button>
+          </form>
+        </div>
+      </section>
+      <section
+        className="ff-section text-center"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 100%,#2563eb20,transparent 70%)",
+        }}
+      >
+        <div className="ff-wrap">
+          <div className="mb-6 inline-flex rounded-xl border border-blue-500/20 bg-blue-500/10 p-3 text-blue-400">
+            <Wrench size={25} />
+          </div>
+          <h2 className="ff-heading">Back to what you do best.</h2>
+          <p className="mb-8 mt-5 text-sm text-slate-400">
+            You fix the devices. Let FixFlow help organize the rest.
+          </p>
+          <Link href="/register" className="ff-button">
+            Build a better repair day <ArrowRight size={16} />
           </Link>
         </div>
       </section>
-
-      {/* ── FOOTER ─────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-              <Wrench size={14} color="white" />
-            </div>
-            <span className="font-bold">FixFlow</span>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6 text-xs text-white/25">
-            {FOOTER_LINKS.map((l) => {
-              const href = l === "Track Repair" ? "/track" : l === "Privacy" ? "/privacy" : l === "Terms" ? "/terms" : `#${l.toLowerCase()}`;
-              return (
-                <a key={l} href={href} className="hover:text-white/50 transition-colors no-underline">{l}</a>
-              );
-            })}
-          </div>
-          <p className="text-xs text-white/20">© 2026 FixFlow</p>
+      <footer className="border-t border-white/10">
+        <div className="ff-wrap ff-footer">
+          <Brand />
+          <nav
+            aria-label="Footer navigation"
+            className="flex gap-6 text-xs text-slate-400"
+          >
+            {[
+              ["Find a shop", "/directory"],
+              ["Track repair", "#track"],
+              ["Privacy", "/privacy"],
+              ["Terms", "/terms"],
+            ].map(([label, href]) => (
+              <Link href={href} key={href}>
+                {label}
+              </Link>
+            ))}
+          </nav>
+          <p className="text-[11px] text-slate-500">
+            © {new Date().getFullYear()} FixFlow
+          </p>
         </div>
       </footer>
-    </div>
+    </main>
   );
+}
+
+function ArrowDownIcon() {
+  return <ArrowRight size={14} style={{ transform: "rotate(90deg)" }} />;
 }

@@ -14,7 +14,8 @@ const DEFAULTS = Array.from({ length: 7 }, (_, i) => ({
   maxConcurrent: 2,
 }));
 
-export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.shopId !== params.id && !user.isSuperAdmin)
@@ -32,7 +33,8 @@ export const GET = withApiError(async (req: Request, { params }: { params: { id:
   return Response.json(DEFAULTS.map(d => byDay[d.dayOfWeek] ?? { ...d, id: null, shopId: params.id, createdAt: null }));
 });
 
-export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });

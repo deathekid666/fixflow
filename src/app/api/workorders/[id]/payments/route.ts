@@ -6,7 +6,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -23,7 +24,8 @@ export const GET = withApiError(async (req: Request, { params }: { params: { id:
   return Response.json(payments);
 });
 
-export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -86,7 +88,8 @@ export const POST = withApiError(async (req: Request, { params }: { params: { id
   return Response.json(payment, { status: 201 });
 });
 
-export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const DELETE = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });

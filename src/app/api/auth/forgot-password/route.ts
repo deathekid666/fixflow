@@ -1,9 +1,10 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const { email } = await req.json();
   if (!email) return Response.json({ error: "Email required" }, { status: 400 });
 
@@ -44,4 +45,4 @@ export async function POST(req: Request) {
   }
 
   return Response.json({ success: true });
-}
+});

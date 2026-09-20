@@ -24,6 +24,7 @@ export const GET = withApiError(async (req: Request) => {
           name: true,
           onboardingComplete: true,
           currency: true,
+          trialEndsAt: true,
           certification: true,
         }
       }

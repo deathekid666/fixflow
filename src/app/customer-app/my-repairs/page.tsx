@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -427,9 +428,9 @@ export default function MyRepairsPage() {
               </div>
 
               <div className="text-center text-xs text-slate-400 pt-2">
-                <a href="/customer-app" className="hover:text-slate-600 transition-colors">FixFlow Customer App</a>
+                <Link href="/customer-app" className="hover:text-slate-600 transition-colors">FixFlow Customer App</Link>
                 <span className="mx-2">·</span>
-                <a href="/" className="hover:text-slate-600 transition-colors">For Shops</a>
+                <Link href="/" className="hover:text-slate-600 transition-colors">For Shops</Link>
               </div>
             </div>
           </div>

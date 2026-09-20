@@ -15,7 +15,7 @@ export default function UpgradeModal({ onClose, feature, limit, current }: Upgra
         <div>
           <h2 className="text-xl font-bold text-white mb-2">Upgrade to PRO</h2>
           <p className="text-slate-400 text-sm">
-            You've reached the FREE plan limit of <span className="text-white font-medium">{limit} {feature}</span>.
+            You&apos;ve reached the FREE plan limit of <span className="text-white font-medium">{limit} {feature}</span>.
             You currently have <span className="text-white font-medium">{current}</span>.
           </p>
         </div>

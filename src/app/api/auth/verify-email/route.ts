@@ -1,10 +1,11 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export const GET = withApiError(async(req: Request) => {
   const url = new URL(req.url);
   const token = url.searchParams.get("token");
 
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
     { expiresIn: "7d" }
   );
 
-  cookies().set("token", jwtToken, {
+  (await cookies()).set("token", jwtToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -53,4 +54,4 @@ export async function GET(req: Request) {
   });
 
   return Response.redirect(new URL("/dashboard?verified=1", req.url));
-}
+});

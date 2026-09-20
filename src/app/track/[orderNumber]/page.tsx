@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, use } from "react";
 import { buildWaUrl } from "@/lib/whatsapp";
 
 type TrackData = {
@@ -33,7 +33,8 @@ const STATUS_CONFIG: Record<string, { label: string; icon: string; color: string
   CANCELLED: { label: "Cancelled",        icon: "❌", color: "#dc2626", bg: "#fee2e2", message: "This repair order has been cancelled. Please contact us for more information." },
 };
 
-export default function TrackPage({ params }: { params: { orderNumber: string } }) {
+export default function TrackPage(props: { params: Promise<{ orderNumber: string }> }) {
+  const params = use(props.params);
   const [data, setData]               = useState<TrackData | null>(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
@@ -47,37 +48,39 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   const [chatMessages, setChatMessages] = useState<{ id: string; message: string; senderType: string; createdAt: string }[]>([]);
   const [newMsg, setNewMsg]           = useState("");
   const [sendingMsg, setSendingMsg]   = useState(false);
+  const [chatError, setChatError] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const prevMsgCountRef  = useRef(0);
 
   // Initial load: fetch status then messages in sequence
   useEffect(() => {
-    fetch(`/api/track?orderNumber=${params.orderNumber.toLowerCase()}`)
+    fetch(`/api/track?orderNumber=${encodeURIComponent(params.orderNumber.toLowerCase())}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) { setError(d.error); return; }
         setData(d);
-        return fetch(`/api/workorders/${d.id}/messages`)
+        return fetch(`/api/workorders/${d.id}/messages`, { headers: { "x-repair-reference": d.orderNumber } })
           .then(r => r.json())
           .then(msgs => { if (Array.isArray(msgs)) setChatMessages(msgs); });
       })
+      .catch(() => setError("Unable to load your repair. Please refresh to try again."))
       .finally(() => setLoading(false));
   }, []);
 
-  // Single combined poll: status + messages every 3 seconds
+  // Single combined poll: status + messages every 15 seconds
   useEffect(() => {
     if (!data?.id) return;
     const orderId      = data.id;
     const orderNumber  = params.orderNumber.toLowerCase();
     const id = setInterval(() => {
       Promise.all([
-        fetch(`/api/track?orderNumber=${orderNumber}`).then(r => r.json()),
-        fetch(`/api/workorders/${orderId}/messages`).then(r => r.json()),
+        fetch(`/api/track?orderNumber=${encodeURIComponent(orderNumber)}`).then(r => r.json()),
+        fetch(`/api/workorders/${orderId}/messages`, { headers: { "x-repair-reference": data.orderNumber } }).then(r => r.json()),
       ]).then(([statusData, msgs]) => {
         if (!statusData.error) setData(statusData);
         if (Array.isArray(msgs)) setChatMessages(msgs);
       }).catch(() => { /* ignore transient poll errors */ });
-    }, 3000);
+    }, 15000);
     return () => clearInterval(id);
   }, [data?.id]);
 
@@ -91,20 +94,22 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
   }, [chatMessages]);
 
   async function sendChat() {
-    if (!newMsg.trim() || !data?.id) return;
+    if (sendingMsg || !newMsg.trim() || !data?.id) return;
+    setChatError("");
     setSendingMsg(true);
     try {
-      await fetch(`/api/workorders/${data.id}/messages`, {
+      const sent = await fetch(`/api/workorders/${data.id}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-repair-reference": data.orderNumber },
         body: JSON.stringify({ message: newMsg }),
       });
+      if (!sent.ok) throw new Error("Message could not be sent");
       setNewMsg("");
-      const res  = await fetch(`/api/workorders/${data.id}/messages`);
+      const res  = await fetch(`/api/workorders/${data.id}/messages`, { headers: { "x-repair-reference": data.orderNumber } });
       const msgs = await res.json();
       if (Array.isArray(msgs)) setChatMessages(msgs);
     } catch {
-      // send failed — input preserved so the customer can retry
+      setChatError("Message not sent. Please try again.");
     } finally {
       setSendingMsg(false);
     }
@@ -115,7 +120,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
     setSubmitting(true);
     setRatingError("");
     try {
-      await fetch("/api/ratings", {
+      const rated = await fetch("/api/ratings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,6 +129,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
           comment: comment.trim() || null,
         }),
       });
+      if (!rated.ok) throw new Error("Rating could not be saved");
       setSubmitted(true);
       setData(prev => prev ? { ...prev, rating: { rating: selectedStar, comment: comment.trim() || null } } : prev);
     } catch {
@@ -377,7 +383,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                 <p style={{ fontSize: 28, margin: "0 0 6px" }}>{"★".repeat(selectedStar || data.rating?.rating || 0)}</p>
                 <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#86efac" }}>Thank you for your feedback!</p>
                 {(comment || data.rating?.comment) && (
-                  <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>"{comment || data.rating?.comment}"</p>
+                  <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>&quot;{comment || data.rating?.comment}&quot;</p>
                 )}
               </div>
             )}
@@ -427,9 +433,12 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                 })}
               </div>
 
+              {chatError && <p role="alert" style={{ color: "#fca5a5", padding: "8px 12px", fontSize: 13 }}>{chatError}</p>}
               {/* Input */}
               <div style={{ padding: "10px 12px", paddingBottom: "max(10px, env(safe-area-inset-bottom))", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8, alignItems: "center", background: "rgba(0,0,0,0.15)" }}>
                 <input
+                  aria-label="Message to the shop"
+                  maxLength={5000}
                   value={newMsg}
                   onChange={e => setNewMsg(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
@@ -446,6 +455,7 @@ export default function TrackPage({ params }: { params: { orderNumber: string } 
                   }}
                 />
                 <button
+                  aria-label="Send message"
                   onClick={sendChat}
                   disabled={sendingMsg || !newMsg.trim()}
                   style={{

@@ -4,7 +4,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withApiError(async (_req: Request, { params }: { params: { code: string } }) => {
+export const GET = withApiError(async (_req: Request, context: { params: Promise<{ code: string }> }) => {
+  const params = await context.params;
   const cert = await prisma.academyCertificate.findUnique({
     where: { certificateCode: params.code },
     include: {

@@ -1,8 +1,9 @@
+import { withApiError } from "@/lib/apiError";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -13,13 +14,14 @@ export async function POST(req: Request) {
   if (!body) return Response.json({ error: "Invalid request" }, { status: 400 });
 
   const { brand, model, faultDescription } = body as Record<string, string>;
-  if (!brand?.trim() || !model?.trim() || !faultDescription?.trim()) {
+  if (![brand, model, faultDescription].every(value => typeof value === "string" && value.trim().length > 0 && value.length <= 5000)) {
     return Response.json({ error: "Missing fields" }, { status: 400 });
   }
 
   let res: Response;
   try {
     res = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 300,
         system:
           "You are a mobile device repair expert. Respond ONLY with a valid JSON object — no markdown, no code blocks, no explanation.",
@@ -83,4 +85,4 @@ successRate is an integer 0-100. Be realistic and concise.`,
   } catch {
     return Response.json({ error: "Could not parse AI response" }, { status: 500 });
   }
-}
+});

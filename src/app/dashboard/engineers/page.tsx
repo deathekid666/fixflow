@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { formatCurrency } from "@/lib/currency";
 import { useLanguage } from "@/context/LanguageContext";
 
+type EngineerOrder = { assignee?: { id: string }; creator?: { id: string }; status: string; isBounce: boolean; total?: number; tatDays: number };
+
 type Engineer = {
   id: string;
   name: string;
@@ -57,20 +59,20 @@ export default function EngineersPage() {
       const orders = await ordersRes.json();
 
       const withStats: EngineerWithStats[] = users.map((u) => {
-        const mine = Array.isArray(orders) ? orders.filter((o: any) => o.assignee?.id === u.id || o.creator?.id === u.id) : [];
-        const delivered = mine.filter((o: any) => o.status === "DELIVERED");
-        const bounces = mine.filter((o: any) => o.isBounce);
-        const revenue = delivered.reduce((s: number, o: any) => s + (o.total ?? 0), 0);
-        const tats = mine.filter((o: any) => o.tatDays != null).map((o: any) => o.tatDays);
+        const mine = Array.isArray(orders) ? orders.filter((o: EngineerOrder) => o.assignee?.id === u.id || o.creator?.id === u.id) : [];
+        const delivered = mine.filter((o: EngineerOrder) => o.status === "DELIVERED");
+        const bounces = mine.filter((o: EngineerOrder) => o.isBounce);
+        const revenue = delivered.reduce((s: number, o: EngineerOrder) => s + (o.total ?? 0), 0);
+        const tats = mine.filter((o: EngineerOrder) => o.tatDays != null).map((o: EngineerOrder) => o.tatDays);
         const avgTat = tats.length > 0 ? Math.round(tats.reduce((a: number, b: number) => a + b, 0) / tats.length) : 0;
 
         return {
           ...u,
           stats: {
             total: mine.length,
-            completed: mine.filter((o: any) => ["DONE", "DELIVERED"].includes(o.status)).length,
+            completed: mine.filter((o: EngineerOrder) => ["DONE", "DELIVERED"].includes(o.status)).length,
             delivered: delivered.length,
-            cancelled: mine.filter((o: any) => o.status === "CANCELLED").length,
+            cancelled: mine.filter((o: EngineerOrder) => o.status === "CANCELLED").length,
             bounces: bounces.length,
             revenue,
             avgTat,
@@ -170,7 +172,7 @@ export default function EngineersPage() {
                   type={f.type || "text"}
                   className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   placeholder={f.placeholder}
-                  value={(form as any)[f.field]}
+                  value={form[f.field as keyof typeof form]}
                   onChange={(e) => setForm((prev) => ({ ...prev, [f.field]: e.target.value }))}
                 />
               </div>

@@ -5,7 +5,8 @@ import { withApiError } from "@/lib/apiError";
 export const dynamic = "force-dynamic";
 
 // Public endpoint — no auth required. The cuid work order ID is unguessable.
-export const GET = withApiError(async (_req: Request, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (_req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const order = await prisma.workOrder.findUnique({
     where: { id: params.id },
     include: {

@@ -410,7 +410,7 @@ export default function SparePartsPage() {
               <div key={f.field}>
                 <label className="text-xs text-slate-400 mb-1 block">{f.label}</label>
                 <input className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                  placeholder={f.placeholder} value={(form as any)[f.field]}
+                  placeholder={f.placeholder} value={form[f.field as keyof typeof form]}
                   onChange={e => setForm(prev => ({ ...prev, [f.field]: e.target.value }))} />
               </div>
             ))}
@@ -441,7 +441,7 @@ export default function SparePartsPage() {
             { key: "low", label: `Low Stock (${lowStock.length})`, color: lowStock.length > 0 ? "text-yellow-600 dark:text-yellow-400" : "" },
             { key: "out", label: `Out of Stock (${outOfStock.length})`, color: outOfStock.length > 0 ? "text-red-600 dark:text-red-400" : "" },
           ].map(f => (
-            <button key={f.key} onClick={() => setStockFilter(f.key as any)}
+            <button key={f.key} onClick={() => setStockFilter(f.key as "all" | "low" | "out")}
               className={`px-3 py-2 text-xs rounded-lg border font-medium transition-colors ${
                 stockFilter === f.key ? "bg-blue-600 text-white border-blue-600" : `bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 ${f.color || "text-slate-500 dark:text-slate-400"}`
               }`}>

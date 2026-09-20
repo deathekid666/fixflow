@@ -5,7 +5,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const apiKeyData = await requireApiKey(req);
   if (!apiKeyData) return Response.json({ error: "Invalid or missing API key" }, { status: 401 });
 
@@ -27,6 +28,6 @@ export const GET = withApiError(async (req: Request, { params }: { params: { id:
 
   return Response.json({
     ...order,
-    trackingUrl: `https://fixflow-ruddy.vercel.app/track/${order.id}`,
+    trackingUrl: `https://fixflow-ruddy.vercel.app/track/${order.orderNumber}`,
   });
 });

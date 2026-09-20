@@ -9,9 +9,10 @@ export default function ShopMap({ lat, lng, name }: Props) {
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
+    let cancelled = false;
 
     import("leaflet").then((L) => {
-      if (!mapRef.current || mapInstanceRef.current) return;
+      if (cancelled || !mapRef.current || mapInstanceRef.current) return;
 
       // Fix default icon URLs broken by webpack
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,13 +31,16 @@ export default function ShopMap({ lat, lng, name }: Props) {
         maxZoom: 19,
       }).addTo(map);
 
+      const label = document.createElement("b");
+      label.textContent = name;
       L.marker([lat, lng])
         .addTo(map)
-        .bindPopup(`<b>${name}</b>`)
+        .bindPopup(label)
         .openPopup();
     });
 
     return () => {
+      cancelled = true;
       if (mapInstanceRef.current) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (mapInstanceRef.current as any).remove();

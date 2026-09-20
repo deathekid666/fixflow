@@ -1,3 +1,4 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -26,7 +27,7 @@ function verifyStripeSignature(body: string, header: string, secret: string): bo
   }
 }
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const stripeSecret = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -91,4 +92,4 @@ export async function POST(req: Request) {
   }
 
   return new Response("ok", { status: 200 });
-}
+});

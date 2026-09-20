@@ -1,3 +1,4 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
@@ -12,7 +13,7 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "cancelled",
 };
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -67,6 +68,7 @@ Write only the message text, nothing else.`;
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -74,7 +76,7 @@ Write only the message text, nothing else.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 200,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -93,4 +95,4 @@ Write only the message text, nothing else.`;
     console.error("[draft-message] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI" }, { status: 500 });
   }
-}
+});

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import RatingModal from "@/components/RatingModal";
 import SocialShareModal from "@/components/SocialShareModal";
@@ -64,7 +64,8 @@ const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dar
 const INPUT_INNER = "w-full bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none";
 const INPUT_INNER_FOCUS_GREEN = "w-full bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-green-500";
 
-export default function WorkOrderDetailPage({ params }: { params: { id: string } }) {
+export default function WorkOrderDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -699,7 +700,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <button onClick={() => setShowSocialShare(true)} className="text-xs px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/35 text-pink-600 dark:text-pink-400 rounded-lg transition-colors font-medium">📱 {t("share")}</button>
           )}
           {order.customerPhone && (() => {
-            const trackingLink = `${APP_URL}/track/${order.orderNumber.slice(0, 6)}`;
+            const trackingLink = `${APP_URL}/track/${order.orderNumber}`;
             const msg = fillTemplate(DEFAULT_TEMPLATES.statusUpdate, {
               customerName: order.customerName,
               deviceBrand: order.deviceBrand,
@@ -1129,7 +1130,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               )}
             </div>
             {order.checklist.length === 0 ? (
-              <p className="text-sm text-slate-500">Click "Load Checklist" to start diagnosis.</p>
+              <p className="text-sm text-slate-500">Click &quot;Load Checklist&quot; to start diagnosis.</p>
             ) : (
               <div className="space-y-2">
                 {order.checklist.map(check => (
@@ -1448,7 +1449,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
               {order.rating ? (
                 <div>
                   <div className="text-yellow-500 dark:text-yellow-400 text-xl mb-1">{"★".repeat(order.rating.rating)}<span className="text-slate-300 dark:text-slate-600">{"★".repeat(5 - order.rating.rating)}</span></div>
-                  {order.rating.comment && <p className="text-xs text-slate-500 italic">"{order.rating.comment}"</p>}
+                  {order.rating.comment && <p className="text-xs text-slate-500 italic">&quot;{order.rating.comment}&quot;</p>}
                 </div>
               ) : (
                 <div>
@@ -1734,8 +1735,8 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
             <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Customer Tracking</h2>
             <p className="text-xs text-slate-500 mb-3">Share this link with the customer:</p>
             <div className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-              <span className="text-xs text-blue-600 dark:text-blue-400 font-mono truncate">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.orderNumber.slice(0, 6)}` : ""}</span>
-              <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/track/${order.orderNumber.slice(0, 6)}`)} className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white flex-shrink-0">Copy</button>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-mono truncate">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.orderNumber}` : ""}</span>
+              <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/track/${order.orderNumber}`)} className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white flex-shrink-0">Copy</button>
             </div>
           </section>
 

@@ -26,6 +26,7 @@ export const GET = withApiError(async (req: Request) => {
   }
 
   const dayStart = new Date(`${date}T00:00:00.000Z`);
+  if (Number.isNaN(dayStart.getTime()) || dayStart.toISOString().slice(0, 10) !== date) return Response.json({ error: "Invalid calendar date" }, { status: 400 });
   const dayEnd = new Date(dayStart);
   dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
   const dayOfWeek = dayStart.getUTCDay(); // 0=Sunday
@@ -75,6 +76,8 @@ export const GET = withApiError(async (req: Request) => {
   const closeMin = timeToMinutes(avail.closeTime);
   const { slotDurationMinutes, maxConcurrent } = avail;
 
+  if (!Number.isInteger(slotDurationMinutes) || slotDurationMinutes < 1 || maxConcurrent < 1) return Response.json({ error: "Invalid shop availability" }, { status: 503 });
+
   const slots: { time: string; available: boolean; remaining: number }[] = [];
 
   for (let slotStart = openMin; slotStart + slotDurationMinutes <= closeMin; slotStart += slotDurationMinutes) {
@@ -87,7 +90,7 @@ export const GET = withApiError(async (req: Request) => {
       return apptStart < slotEnd && apptEnd > slotStart;
     }).length;
 
-    const remaining = Math.max(0, maxConcurrent - booked);
+    const remaining = dayStart.getTime() + slotStart * 60000 <= Date.now() ? 0 : Math.max(0, maxConcurrent - booked);
     slots.push({ time: minutesToTime(slotStart), available: remaining > 0, remaining });
   }
 

@@ -1,9 +1,10 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user || user.role !== "ADMIN") return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -114,6 +115,7 @@ Keep each section to 2–3 sentences. Tone: direct, data-driven, helpful. No flu
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -121,7 +123,7 @@ Keep each section to 2–3 sentences. Tone: direct, data-driven, helpful. No flu
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 500,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -140,4 +142,4 @@ Keep each section to 2–3 sentences. Tone: direct, data-driven, helpful. No flu
     console.error("[morning-briefing] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to reach AI — check network" }, { status: 500 });
   }
-}
+});

@@ -7,7 +7,8 @@ import { withApiError } from "@/lib/apiError";
 export const dynamic = "force-dynamic";
 
 // PATCH /api/shifts/[id] — clock out
-export const PATCH = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const PATCH = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -41,7 +42,8 @@ export const PATCH = withApiError(async (req: Request, { params }: { params: { i
 });
 
 // DELETE /api/shifts/[id] — admin only
-export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const DELETE = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });

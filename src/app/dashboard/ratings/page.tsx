@@ -93,7 +93,7 @@ export default function RatingsPage() {
                 </div>
                 <div className="flex items-center gap-2"><Stars n={r.rating} /><span className="text-xs text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</span></div>
               </div>
-              {r.comment && <p className="text-sm text-slate-400 italic">"{r.comment}"</p>}
+              {r.comment && <p className="text-sm text-slate-400 italic">&quot;{r.comment}&quot;</p>}
             </div>
           ))}
         </div>

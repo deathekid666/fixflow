@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment, use } from "react";
 
 type ShopInfo = {
   id: string;
@@ -40,7 +40,8 @@ function formatTime(t: string): string {
   return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
-export default function BookPage({ params }: { params: { shopId: string } }) {
+export default function BookPage(props: { params: Promise<{ shopId: string }> }) {
+  const params = use(props.params);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [loadingShop, setLoadingShop] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -65,6 +66,7 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
     fetch(`/api/public/shops/${params.shopId}`)
       .then(r => { if (!r.ok) { setNotFound(true); return null; } return r.json(); })
       .then(d => { if (d) setShop(d); })
+      .catch(() => setNotFound(true))
       .finally(() => setLoadingShop(false));
   }, []);
 
@@ -96,11 +98,14 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
     setSlots([]);
     setStep(2);
     setLoadingSlots(true);
+    try {
     const res = await fetch(`/api/appointments/slots?shopId=${params.shopId}&date=${dateStr}`);
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Unable to load available times");
     if (data.closed) setClosedMsg(data.reason ?? "Closed");
     else setSlots(data.slots ?? []);
-    setLoadingSlots(false);
+    } catch { setClosedMsg("Unable to load available times. Please select the date to retry."); }
+    finally { setLoadingSlots(false); }
   }
 
   async function submit(e: React.FormEvent) {
@@ -108,6 +113,7 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
     if (!selectedDate || !selectedTime) return;
     setSubmitting(true);
     setSubmitError("");
+    try {
     const res = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -119,7 +125,8 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
     });
     if (res.ok) { setBooked(await res.json()); setStep(4); }
     else { const d = await res.json(); setSubmitError(d.error ?? "Failed to book. Please try again."); }
-    setSubmitting(false);
+    } catch { setSubmitError("Unable to book right now. Please try again."); }
+    finally { setSubmitting(false); }
   }
 
   // ─── shared style helpers ───────────────────────────────────────────────────
@@ -228,14 +235,14 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
             </p>
 
             {/* Day-of-week headers */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 4 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 4, marginBottom: 4 }}>
               {DAY_SHORT.map(d => (
                 <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#334155", fontWeight: 600, paddingBottom: 2 }}>{d}</div>
               ))}
             </div>
 
             {/* Calendar grid with leading spacers */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 4 }}>
               {Array.from({ length: firstDayOfWeek }, (_, i) => <div key={`sp-${i}`} />)}
               {next14.map(date => {
                 const ds = toDateStr(date);
@@ -248,6 +255,8 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
                     disabled={disabled}
                     style={{
                       aspectRatio: "1",
+                      minWidth: 0,
+                      width: "100%",
                       borderRadius: 10,
                       border: `1px solid ${disabled ? "rgba(255,255,255,0.04)" : isToday ? "#3b82f6" : "rgba(255,255,255,0.1)"}`,
                       background: disabled ? "transparent" : "rgba(255,255,255,0.05)",
@@ -403,7 +412,7 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
             <div style={{ background: "linear-gradient(135deg,#14532d,#166534)", border: "2px solid #22c55e", borderRadius: 20, padding: "28px 20px", textAlign: "center", boxShadow: "0 0 40px rgba(34,197,94,0.2)" }}>
               <div style={{ fontSize: 52, marginBottom: 10 }}>✅</div>
               <p style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 900, color: "#bbf7d0", letterSpacing: "-0.02em" }}>Appointment Booked!</p>
-              <p style={{ margin: 0, fontSize: 14, color: "#86efac" }}>We'll contact you to confirm.</p>
+              <p style={{ margin: 0, fontSize: 14, color: "#86efac" }}>We&apos;ll contact you to confirm.</p>
             </div>
 
             {/* Details card */}
@@ -431,7 +440,7 @@ export default function BookPage({ params }: { params: { shopId: string } }) {
               <p style={{ fontSize: 24, margin: "0 0 8px" }}>🔍</p>
               <p style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "#93c5fd" }}>Track Your Repair</p>
               <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.6 }}>
-                Once your device is checked in, you'll receive a repair order number via the shop — use it at{" "}
+                Once your device is checked in, you&apos;ll receive a repair order number via the shop — use it at{" "}
                 <span style={{ color: "#60a5fa" }}>fixflow.ma/track</span>{" "}
                 to follow your repair progress in real time.
               </p>

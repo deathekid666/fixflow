@@ -15,7 +15,8 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-export const POST = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 

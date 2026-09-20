@@ -5,7 +5,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -22,7 +23,8 @@ export const GET = withApiError(async (req: Request, { params }: { params: { id:
   return Response.json(order);
 });
 
-export const PATCH = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const PATCH = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -98,7 +100,8 @@ export const PATCH = withApiError(async (req: Request, { params }: { params: { i
   return Response.json(updated);
 });
 
-export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const DELETE = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user || !user.shopId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 

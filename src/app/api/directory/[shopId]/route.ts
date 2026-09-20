@@ -4,7 +4,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withApiError(async (_req: Request, { params }: { params: { shopId: string } }) => {
+export const GET = withApiError(async (_req: Request, context: { params: Promise<{ shopId: string }> }) => {
+  const params = await context.params;
   const shop = await prisma.shop.findFirst({
     where: { id: params.shopId, status: "ACTIVE" },
     select: {
@@ -22,6 +23,7 @@ export const GET = withApiError(async (_req: Request, { params }: { params: { sh
       googleMapsUrl: true,
       workOrders: {
         where: { status: "DELIVERED", deletedAt: null },
+        orderBy: { deliveredAt: "asc" },
         select: {
           id: true,
           rating: { select: { rating: true, comment: true } },

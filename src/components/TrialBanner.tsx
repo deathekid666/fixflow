@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link";
+
 
 export default function TrialBanner() {
   const { user } = useAuth();
@@ -9,7 +9,7 @@ export default function TrialBanner() {
   if (!user.shop) return null;
   if (user.shop.onboardingComplete === false) return null; // Don't show during onboarding
 
-  const trialEndsAt = (user as any).trialEndsAt;
+  const trialEndsAt = user.shop.trialEndsAt;
   if (!trialEndsAt) return null;
 
   const daysLeft = Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000));

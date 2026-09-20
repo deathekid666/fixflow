@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/currency";
 
@@ -25,7 +25,8 @@ function formatWO(raw: string, date: string) {
   return `WO-${new Date(date).getFullYear()}-${raw.slice(0, 6).toUpperCase()}`;
 }
 
-export default function PrintWorkOrderPage({ params }: { params: { id: string } }) {
+export default function PrintWorkOrderPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,9 +1,10 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -81,6 +82,7 @@ priceSuggestion should be a number based on past similar orders, or null if insu
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +90,7 @@ priceSuggestion should be a number based on past similar orders, or null if insu
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 400,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -108,4 +110,4 @@ priceSuggestion should be a number based on past similar orders, or null if insu
     console.error("[order-insights] Failed to reach Claude API:", err);
     return Response.json({ error: "Failed to parse AI response — please retry" }, { status: 500 });
   }
-}
+});

@@ -189,7 +189,7 @@ export const POST = withApiError(async (req: Request) => {
   }
 
   // Build tracking link from the first 6 chars of orderNumber (the sequential part)
-  const trackingToken = orderNumber.split("-")[2]; // e.g. "0001" from "wo-2026-0001-abc1"
+  const trackingToken = orderNumber; // e.g. "0001" from "wo-2026-0001-abc1"
   const trackingLink = `https://fixflow-ruddy.vercel.app/track/${trackingToken}`;
 
   return Response.json({

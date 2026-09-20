@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
             <>
               <div>
                 <h2 className="text-xl font-bold text-white">Forgot password?</h2>
-                <p className="text-slate-400 text-sm mt-1">Enter your email and we'll send you a reset link.</p>
+                <p className="text-slate-400 text-sm mt-1">Enter your email and we&apos;ll send you a reset link.</p>
               </div>
               {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{error}</div>}
               <div>

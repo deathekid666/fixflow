@@ -20,6 +20,7 @@ type User = {
     name: string;
     onboardingComplete: boolean;
     currency: string;
+    trialEndsAt: string | null;
     certification: string | null;
   } | null;
 };
@@ -44,11 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadUser() {
     setLoading(true);
-    const res = await fetch("/api/me", { credentials: "include" });
-    if (!res.ok) { setUser(null); setLoading(false); return; }
-    const data = await res.json();
-    setUser(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/me", { credentials: "include" });
+      setUser(res.ok ? await res.json() : null);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { loadUser(); }, []);

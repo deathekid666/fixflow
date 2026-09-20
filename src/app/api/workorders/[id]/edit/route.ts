@@ -26,7 +26,8 @@ const ADMIN_ONLY_FIELDS = [
   "shopId", "userId",
 ] as const;
 
-export const PATCH = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const PATCH = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -85,7 +86,8 @@ export const PATCH = withApiError(async (req: Request, { params }: { params: { i
 });
 
 // DELETE — requires DELETE_ORDERS permission (admin always has it, engineers need it granted)
-export const DELETE = withApiError(async (req: Request, { params }: { params: { id: string } }) => {
+export const DELETE = withApiError(async (req: Request, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!await checkPerm(user.shopId, user.role, "DELETE_ORDERS")) {

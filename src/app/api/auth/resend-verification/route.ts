@@ -1,9 +1,10 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const { email } = await req.json().catch(() => ({}));
 
   if (!email || typeof email !== "string") {
@@ -32,4 +33,4 @@ export async function POST(req: Request) {
   }
 
   return Response.json({ ok: true });
-}
+});

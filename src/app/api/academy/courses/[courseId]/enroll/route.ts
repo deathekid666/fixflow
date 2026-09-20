@@ -5,7 +5,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const POST = withApiError(async (req: Request, { params }: { params: { courseId: string } }) => {
+export const POST = withApiError(async (req: Request, context: { params: Promise<{ courseId: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 

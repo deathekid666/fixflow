@@ -4,7 +4,8 @@ import { withApiError } from "@/lib/apiError";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withApiError(async (_req: Request, { params }: { params: { shopId: string } }) => {
+export const GET = withApiError(async (_req: Request, context: { params: Promise<{ shopId: string }> }) => {
+  const params = await context.params;
   const shop = await prisma.shop.findUnique({
     where: { id: params.shopId },
     select: { id: true, name: true, logoUrl: true, phone: true, address: true, googleMapsUrl: true },
@@ -19,8 +20,8 @@ export const GET = withApiError(async (_req: Request, { params }: { params: { sh
 
   // Fall back to Mon–Fri open if availability not configured
   const availability =
-    availRows.length === 7
-      ? availRows
+    availRows.length > 0
+      ? Array.from({ length: 7 }, (_, dayOfWeek) => availRows.find(row => row.dayOfWeek === dayOfWeek) ?? { dayOfWeek, isOpen: false })
       : Array.from({ length: 7 }, (_, i) => ({
           dayOfWeek: i,
           isOpen: i >= 1 && i <= 5,

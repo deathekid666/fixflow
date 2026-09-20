@@ -1,3 +1,4 @@
+import { verifySession } from "@/lib/verifySession";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -49,6 +50,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // API handlers validate their own credentials and return JSON errors.
+  // Public endpoints must also work when the browser has a stale session cookie.
+  if (path.startsWith("/api/")) return NextResponse.next();
+
   const token = req.cookies.get("token")?.value;
   const isDashboard = path.startsWith("/dashboard");
   const isAdminRoute = path.startsWith("/admin");
@@ -62,16 +67,7 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) throw new Error("Invalid token");
-
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
-    const payload = JSON.parse(atob(padded));
-
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+    const payload = await verifySession(token, process.env.JWT_SECRET ?? "");
 
     // Super admin bypass — never block super admins
     if (!payload.isSuperAdmin) {

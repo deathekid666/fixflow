@@ -103,9 +103,9 @@ function EmptyState({ tab }: { tab: Tab }) {
       <p className="text-slate-700 dark:text-slate-200 font-semibold text-base">{title}</p>
       <p className="text-slate-400 text-sm text-center max-w-xs">{desc}</p>
       {tab === "active" && (
-        <a href="/dashboard/workorders/new" className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+        <Link href="/dashboard/workorders/new" className="mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
           + New Work Order
-        </a>
+        </Link>
       )}
     </div>
   );

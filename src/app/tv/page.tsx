@@ -118,7 +118,7 @@ function ActiveRepairCard({ order, index }: { order: ActiveOrder; index: number 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-blue-400 font-mono font-bold" style={{ fontSize: 22 }}>
+            <span className="text-blue-400 font-mono font-bold break-all" style={{ fontSize: 22 }}>
               {order.orderNumber}
             </span>
             {overdue && (
@@ -152,7 +152,7 @@ function ReadyCard({ order, index }: { order: ReadyOrder; index: number }) {
       style={{ animationDelay: `${(index % 3) * 400}ms` }}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-green-300 font-mono font-bold" style={{ fontSize: 26 }}>
+          <p className="text-green-300 font-mono font-bold break-all" style={{ fontSize: 26 }}>
             {order.orderNumber}
           </p>
           <p className="text-white font-bold mt-1" style={{ fontSize: 22 }}>
@@ -270,13 +270,31 @@ function TvDashboardContent() {
         }
         .live-dot { animation: dotPulse 1.5s ease-in-out infinite; }
         ::-webkit-scrollbar { display: none; }
+        @media (max-width: 1023px) {
+          html, body { height: auto; overflow: auto; }
+          .tv-shell { position: relative; min-height: 100svh; overflow: visible; }
+          .tv-topbar { display: grid; grid-template-columns: 1fr; gap: 18px; padding: 20px; }
+          .tv-topbar h1 { font-size: 24px !important; overflow-wrap: anywhere; }
+          .tv-topbar .text-center, .tv-topbar .text-right { text-align: left; }
+          .tv-clock { font-size: 36px !important; }
+          .tv-columns { flex-direction: column; flex: none; overflow: visible; }
+          .tv-column { width: 100% !important; min-width: 0; overflow: visible; border-right: 0; border-bottom: 1px solid #1e293b; }
+          .tv-column > div { min-width: 0; }
+          .tv-column .overflow-hidden, .tv-column .overflow-y-auto { overflow: visible; }
+          .tv-column .grid-cols-3 > div { min-width: 0; padding: 10px 6px; }
+          .tv-column .grid-cols-3 .leading-none { font-size: 24px !important; overflow-wrap: anywhere; }
+          .tv-column .text-xs { overflow-wrap: anywhere; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ready-pulse, .ticker-track, .fade-in, .live-dot { animation: none; }
+        }
       `}</style>
 
-      <div className="fixed inset-0 flex flex-col bg-[#0a0c10] text-white overflow-hidden select-none"
+      <div className="tv-shell fixed inset-0 flex flex-col bg-[#0a0c10] text-white overflow-hidden select-none"
         style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
         {/* ── TOP BAR ─────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-8 py-4 bg-slate-900/80 border-b border-slate-800 flex-shrink-0">
+        <div className="tv-topbar flex items-center justify-between px-8 py-4 bg-slate-900/80 border-b border-slate-800 flex-shrink-0">
           <div className="flex items-center gap-4">
             {shop.logoUrl && (
               <img src={shop.logoUrl} alt="Logo" className="w-12 h-12 rounded-xl object-cover border border-slate-700" />
@@ -291,7 +309,7 @@ function TvDashboardContent() {
           </div>
 
           <div className="text-center">
-            <div className="text-white font-bold tabular-nums leading-none" style={{ fontSize: 56 }}>
+            <div className="tv-clock text-white font-bold tabular-nums leading-none" style={{ fontSize: 56 }}>
               {clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>
             <div className="text-slate-400 text-base mt-0.5">
@@ -316,10 +334,10 @@ function TvDashboardContent() {
         </div>
 
         {/* ── MAIN COLUMNS ─────────────────────────────────────────────── */}
-        <div className="flex flex-1 gap-0 overflow-hidden">
+        <div className="tv-columns flex flex-1 gap-0 overflow-hidden">
 
           {/* LEFT — Active Repairs (40%) */}
-          <div className="flex flex-col border-r border-slate-800" style={{ width: "40%" }}>
+          <div className="tv-column flex flex-col border-r border-slate-800" style={{ width: "40%" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/40 flex-shrink-0">
               <div>
                 <h2 className="font-bold text-slate-100" style={{ fontSize: 22 }}>Active Repairs</h2>
@@ -356,7 +374,7 @@ function TvDashboardContent() {
           </div>
 
           {/* CENTER — Ready for Pickup (30%) */}
-          <div className="flex flex-col border-r border-slate-800" style={{ width: "30%" }}>
+          <div className="tv-column flex flex-col border-r border-slate-800" style={{ width: "30%" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-green-950/20 flex-shrink-0">
               <div>
                 <h2 className="font-bold text-green-300" style={{ fontSize: 22 }}>Ready for Pickup</h2>
@@ -388,7 +406,7 @@ function TvDashboardContent() {
           </div>
 
           {/* RIGHT — Stats + Appointments + Engineers + Stock (30%) */}
-          <div className="flex flex-col overflow-y-auto" style={{ width: "30%" }}>
+          <div className="tv-column flex flex-col overflow-y-auto" style={{ width: "30%" }}>
 
             {/* Today's Stats */}
             <div className="px-5 py-4 border-b border-slate-800">

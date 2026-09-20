@@ -10,9 +10,14 @@ export const dynamic = "force-dynamic";
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB now that we use Blob
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf", "text/plain"];
 
-export const GET = withApiError(async (req: NextRequest, { params }: { params: { id: string } }) => {
+export const GET = withApiError(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.isSuperAdmin && !user.shopId) return NextResponse.json({ error: "Shop required" }, { status: 403 });
+  const ownedOrder = await prisma.workOrder.findFirst({ where: { id: params.id, deletedAt: null, ...(user.isSuperAdmin ? {} : { shopId: user.shopId! }) }, select: { id: true } });
+  if (!ownedOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
 
   const attachments = await prisma.workOrderAttachment.findMany({
     where: { workOrderId: params.id },
@@ -23,9 +28,14 @@ export const GET = withApiError(async (req: NextRequest, { params }: { params: {
   return NextResponse.json(attachments);
 });
 
-export const POST = withApiError(async (req: NextRequest, { params }: { params: { id: string } }) => {
+export const POST = withApiError(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.isSuperAdmin && !user.shopId) return NextResponse.json({ error: "Shop required" }, { status: 403 });
+  const ownedOrder = await prisma.workOrder.findFirst({ where: { id: params.id, deletedAt: null, ...(user.isSuperAdmin ? {} : { shopId: user.shopId! }) }, select: { id: true } });
+  if (!ownedOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
 
   const order = await prisma.workOrder.findFirst({
     where: { id: params.id, shopId: user.shopId ?? undefined },
@@ -82,9 +92,14 @@ export const POST = withApiError(async (req: NextRequest, { params }: { params: 
   }, { status: 201 });
 });
 
-export const DELETE = withApiError(async (req: NextRequest, { params }: { params: { id: string } }) => {
+export const DELETE = withApiError(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.isSuperAdmin && !user.shopId) return NextResponse.json({ error: "Shop required" }, { status: 403 });
+  const ownedOrder = await prisma.workOrder.findFirst({ where: { id: params.id, deletedAt: null, ...(user.isSuperAdmin ? {} : { shopId: user.shopId! }) }, select: { id: true } });
+  if (!ownedOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
 
   const { attachmentId } = await req.json();
   if (!attachmentId) return NextResponse.json({ error: "attachmentId required" }, { status: 400 });

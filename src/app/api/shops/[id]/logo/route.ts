@@ -1,3 +1,4 @@
+import { withApiError } from "@/lib/apiError";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
@@ -5,7 +6,8 @@ import { put } from "@vercel/blob";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export const POST = withApiError(async(req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const user = requireAuth(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -31,4 +33,4 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
 
   return NextResponse.json({ url });
-}
+});

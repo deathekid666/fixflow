@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { formatCurrency } from "@/lib/currency";
 
 type WorkOrder = {
@@ -42,7 +42,8 @@ type WorkOrder = {
   lineItems: { id: string; label: string; amount: number }[];
 };
 
-export default function PrintPage({ params }: { params: { id: string } }) {
+export default function PrintPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -90,7 +91,7 @@ export default function PrintPage({ params }: { params: { id: string } }) {
   const totalWithTax = grandTotal + taxAmount;
   const remaining = totalWithTax - order.collected;
   const woNumber = `WO-${new Date(order.createdAt).getFullYear()}-${order.orderNumber.slice(0, 6).toUpperCase()}`;
-  const trackUrl = `${origin}/track/${order.orderNumber.slice(0, 6)}`;
+  const trackUrl = `${origin}/track/${order.orderNumber}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(trackUrl)}`;
 
   return (

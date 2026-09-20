@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import CertBadge from "@/components/CertBadge";
@@ -40,7 +40,8 @@ function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg" }) 
   );
 }
 
-export default function ShopProfilePage({ params }: { params: { shopId: string } }) {
+export default function ShopProfilePage(props: { params: Promise<{ shopId: string }> }) {
+  const params = use(props.params);
   const [shop, setShop] = useState<ShopProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -69,7 +70,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
       <div className="max-w-4xl mx-auto px-5 py-10">
         {loading && (
           <div className="space-y-6 animate-pulse">
-            <div className="flex items-start gap-5">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
               <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl flex-shrink-0" />
               <div className="flex-1 space-y-3 pt-2">
                 <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
@@ -95,7 +96,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
           <div className="space-y-6">
             {/* Header card */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
-              <div className="flex items-start gap-5">
+              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
                 <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
                   {shop.logoUrl
                     ? <img src={shop.logoUrl} alt={shop.name} className="w-full h-full object-cover" />
@@ -103,7 +104,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-3 flex-wrap">
-                    <h1 className="text-2xl font-bold">{shop.name}</h1>
+                    <h1 className="text-2xl font-bold break-words">{shop.name}</h1>
                     {shop.certification && <CertBadge level={shop.certification} size="sm" />}
                   </div>
                   {(shop.city || shop.country) && (
@@ -114,7 +115,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
                   )}
                   <div className="flex items-center gap-4 mt-3 flex-wrap">
                     {shop.avgRating !== null ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Stars rating={shop.avgRating} size="lg" />
                         <span className="text-lg font-bold">{shop.avgRating.toFixed(1)}</span>
                         <span className="text-slate-500 text-sm">({shop.ratingCount} review{shop.ratingCount !== 1 ? "s" : ""})</span>
@@ -188,7 +189,7 @@ export default function ShopProfilePage({ params }: { params: { shopId: string }
                           {r.date && <span>{new Date(r.date).toLocaleDateString()}</span>}
                         </div>
                       </div>
-                      {r.comment && <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">"{r.comment}"</p>}
+                      {r.comment && <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">&quot;{r.comment}&quot;</p>}
                     </div>
                   ))}
                 </div>

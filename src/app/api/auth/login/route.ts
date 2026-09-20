@@ -55,7 +55,7 @@ export const POST = withApiError(async (req: Request) => {
     { expiresIn: "7d" }
   );
 
-  cookies().set("token", token, {
+  (await cookies()).set("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",

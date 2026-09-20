@@ -70,7 +70,7 @@ export default function CustomerLandingPage() {
             <span className="text-blue-400">Anywhere, anytime.</span>
           </h1>
           <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto mb-10">
-            Track every device repair from every FixFlow shop you've visited — no account, no password. Just your phone number.
+            Track every device repair from every FixFlow shop you&apos;ve visited — no account, no password. Just your phone number.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -40,7 +40,8 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "bg-red-500/20 text-red-600 dark:text-red-400",
 };
 
-export default function CustomerDetailPage({ params }: { params: { phone: string } }) {
+export default function CustomerDetailPage(props: { params: Promise<{ phone: string }> }) {
+  const params = use(props.params);
   const { t } = useLanguage();
   const router = useRouter();
   const { user } = useAuth();

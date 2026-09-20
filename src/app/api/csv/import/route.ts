@@ -1,3 +1,4 @@
+import { withApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
@@ -197,7 +198,7 @@ async function importCustomers(
   return result;
 }
 
-export async function POST(req: Request) {
+export const POST = withApiError(async(req: Request) => {
   const user = requireAuth(req);
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!user.shopId) return Response.json({ error: "No shop assigned" }, { status: 400 });
@@ -238,4 +239,4 @@ export async function POST(req: Request) {
     : await importCustomers(rows, user.shopId);
 
   return Response.json(result);
-}
+});

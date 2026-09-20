@@ -37,7 +37,7 @@ export default function DirectoryPage() {
 
   useEffect(() => {
     fetch("/api/directory")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error("Directory unavailable"); return r.json(); })
       .then((d) => { setShops(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => { setLoadError(true); setLoading(false); });
   }, []);
@@ -55,10 +55,10 @@ export default function DirectoryPage() {
       <nav className="border-b border-slate-800/60 bg-slate-950/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <Link href="/" className="text-lg font-bold text-white tracking-tight">FixFlow</Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5">Sign in</Link>
             <Link href="/register" className="text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors">
-              Start Free Trial
+              Start free
             </Link>
           </div>
         </div>

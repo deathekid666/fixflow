@@ -1,7 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import "./globals.css";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const metadata: Metadata = {
+  title: "FixFlow — Repair shop management",
+  description: "Keep repairs, customer updates, inventory and appointments organized in one workspace with FixFlow.",
+};
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -20,12 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Apply theme + language direction before first paint to avoid flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');var l=localStorage.getItem('lang')||'en';document.documentElement.dir=l==='ar'?'rtl':'ltr';document.documentElement.lang=l;})();`,
+            __html: `(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');var l=localStorage.getItem('lang')||'en';document.documentElement.dir=l==='ar'?'rtl':'ltr';document.documentElement.lang=l;}catch{}})();`,
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
