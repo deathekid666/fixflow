@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -30,6 +31,7 @@ type EngineerWithStats = Engineer & { stats: Stats };
 
 export default function EngineersPage() {
   const { t } = useLanguage();
+  const { visible } = useWorkspace();
   const { user } = useAuth();
   const currency = user?.shop?.currency ?? "MAD";
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -145,10 +147,10 @@ export default function EngineersPage() {
           <p className="text-sm text-slate-500 mt-0.5">{t("teamPerformance")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/dashboard/engineers/commissions"
+          {visible.commissions && (<Link href="/dashboard/engineers/commissions"
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg transition-colors font-medium">
             {t("commissionsLink")}
-          </Link>
+          </Link>)}
           <button onClick={() => setShowForm(!showForm)}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors font-medium">
             + {t("addEngineer")}
@@ -245,12 +247,12 @@ export default function EngineersPage() {
                     <p className="text-xs text-slate-500">{t("totalRevenueStat")}</p>
                     <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{fmt(e.stats.revenue)}</p>
                   </div>
-                  <div className="text-right">
+                  {visible.commissions && (<div className="text-right">
                     <p className="text-xs text-slate-500">{t("commissionStat")} ({e.commissionRate}%)</p>
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                       {fmt((e.stats.revenue * e.commissionRate) / 100)}
                     </p>
-                  </div>
+                  </div>)}
                 </div>
               </div>
 
@@ -275,12 +277,12 @@ export default function EngineersPage() {
                         placeholder="••••••••"
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500" />
                     </div>
-                    <div>
+                    {visible.commissions && (<div>
                       <label className="text-xs text-slate-400 mb-1 block">{t("commissionRatePct")}</label>
                       <input type="number" min={0} max={100} step={0.5} value={editForm.commissionRate}
                         onChange={ev => setEditForm(p => ({ ...p, commissionRate: ev.target.value }))}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500" />
-                    </div>
+                    </div>)}
                   </div>
                   <div className="flex gap-2">
                     <button onClick={saveEdit} disabled={savingEdit || !editForm.name.trim()}

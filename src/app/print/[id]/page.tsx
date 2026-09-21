@@ -1,4 +1,5 @@
 "use client";
+import { LAUNCH_VISIBILITY } from "@/lib/workspace";
 
 import { useEffect, useState, use } from "react";
 import { formatCurrency } from "@/lib/currency";
@@ -186,9 +187,9 @@ export default function PrintPage(props: { params: Promise<{ id: string }> }) {
             <div className="shop-name">{order.shop?.name ?? "FixFlow"}</div>
             <div className="shop-sub" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               Repair Work Order Receipt
-              {order.shop?.certification === "GOLD" && <span style={{ background: "#fef9c3", color: "#713f12", border: "1px solid #ca8a04", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥇 Gold Certified</span>}
-              {order.shop?.certification === "SILVER" && <span style={{ background: "#f1f5f9", color: "#374151", border: "1px solid #94a3b8", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥈 Silver Certified</span>}
-              {order.shop?.certification === "BRONZE" && <span style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #d97706", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥉 Bronze Certified</span>}
+              {LAUNCH_VISIBILITY.publicCertification && order.shop?.certification === "GOLD" && <span style={{ background: "#fef9c3", color: "#713f12", border: "1px solid #ca8a04", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥇 Gold Certified</span>}
+              {LAUNCH_VISIBILITY.publicCertification && order.shop?.certification === "SILVER" && <span style={{ background: "#f1f5f9", color: "#374151", border: "1px solid #94a3b8", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥈 Silver Certified</span>}
+              {LAUNCH_VISIBILITY.publicCertification && order.shop?.certification === "BRONZE" && <span style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #d97706", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🥉 Bronze Certified</span>}
             </div>
             {order.shop?.address && <div className="shop-contact">📍 {order.shop.address}</div>}
             {order.shop?.phone && <div className="shop-contact">📞 {order.shop.phone}</div>}

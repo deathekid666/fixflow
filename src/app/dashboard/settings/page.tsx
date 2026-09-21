@@ -1,5 +1,8 @@
 "use client";
 import Link from "next/link";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import WorkspaceSettings from "@/components/WorkspaceSettings";
+import { WORKSPACE_LABELS, isLaunchPlanVisible } from "@/lib/workspace";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -16,7 +19,7 @@ import {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "shop" | "appearance" | "billing" | "notifications" | "appointments" | "integrations" | "permissions";
+type Tab = "workspace" | "profile" | "shop" | "appearance" | "billing" | "notifications" | "appointments" | "integrations" | "permissions";
 
 type ApiKey = { id: string; name: string; key: string; lastUsed: string | null; createdAt: string; isActive: boolean };
 
@@ -124,11 +127,19 @@ function SocialSharingSettings() {
 // ─── Main page ─────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const { visible } = useWorkspace();
   const { user, refresh } = useAuth();
   const { theme, toggle } = useTheme();
   const { lang, setLang } = useLanguage();
   const logoRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("profile");
+
+  useEffect(() => {
+    const onHashChange = () => { if (window.location.hash === "#workspace") setTab("workspace"); };
+    onHashChange();
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   // Profile
   const [name, setName] = useState(user?.name ?? "");
@@ -594,6 +605,7 @@ export default function SettingsPage() {
     { key: "permissions",   label: "Permissions",    Icon: Shield,    adminOnly: true },
   ];
 
+  tabs.unshift({ key: "workspace", label: WORKSPACE_LABELS[lang].workspace, Icon: Puzzle, adminOnly: false });
   const visibleTabs = tabs.filter(t => !t.adminOnly || user?.role === "ADMIN");
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -622,13 +634,15 @@ export default function SettingsPage() {
       {/* Tab navigation */}
       <div className="flex gap-1 flex-wrap bg-slate-100 dark:bg-slate-800/60 rounded-xl p-1">
         {visibleTabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
+          <button key={t.key} aria-label={t.label} title={t.label} onClick={() => setTab(t.key)}
             className={`flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium rounded-lg transition-colors ${tab === t.key ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"}`}>
             <t.Icon className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="hidden sm:inline">{t.label}</span>
+            <span>{t.label}</span>
           </button>
         ))}
       </div>
+
+      {tab === "workspace" && <WorkspaceSettings />}
 
       {/* ── Profile ────────────────────────────────────────────────────── */}
       {tab === "profile" && (
@@ -868,7 +882,7 @@ export default function SettingsPage() {
                 ["orderOverdue",   "🕐", "Order overdue",         "Open order older than 7 days"],
                 ["certification",  "🏆", "Certification update",  "Shop earns or upgrades a certification level"],
                 ["newRating",      "⭐", "New rating received",   "Customer submits a satisfaction rating"],
-              ] as [string, string, string, string][]).map(([key, icon, label, desc]) => (
+              ] as [string, string, string, string][]).filter(([key]) => key !== "certification" || visible.certification).map(([key, icon, label, desc]) => (
                 <RowToggle key={key} label={`${icon} ${label}`} description={desc} value={notifPrefs[key] ?? true} onChange={v => setNotifPrefs(p => ({ ...p, [key]: v }))} />
               ))}
             </div>
@@ -904,7 +918,7 @@ export default function SettingsPage() {
           </div>
 
           <div className={`${CARD} p-5 space-y-4`}>
-            <SectionHeader title="Current Plan" description="Your active subscription. Upgrade to unlock more users, branches, email notifications, and API access." />
+            <SectionHeader title="Current Plan" description="Your current plan. Paid checkout is not available yet; contact us to discuss an upgrade." />
             {billingData ? (
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
@@ -928,9 +942,9 @@ export default function SettingsPage() {
             <div className="space-y-2">
               {[
                 { key: "FREE",       name: "Starter",    price: "Free",    features: "50 orders/mo · 1 user · Basic reports" },
-                { key: "PRO",        name: "Pro",         price: "$29/mo",  features: "Unlimited · 10 users · Email + SMS · Multi-branch · API", highlight: true },
+                { key: "PRO",        name: "Pro",         price: "$29/mo",  features: "Unlimited work orders · Up to 10 users · Reports", highlight: true },
                 { key: "ENTERPRISE", name: "Enterprise", price: "$79/mo",  features: "Unlimited everything · White-label · Dedicated support" },
-              ].map(plan => (
+              ].filter(plan => isLaunchPlanVisible(plan.key)).map(plan => (
                 <div key={plan.key} className={`flex items-center justify-between p-3 rounded-xl border ${(plan as { highlight?: boolean }).highlight ? "border-blue-400/50 bg-blue-50/50 dark:bg-blue-950/20" : billingData?.currentPlan === plan.key ? "border-green-400/50 bg-green-50/50 dark:bg-green-950/20" : "border-slate-200 dark:border-slate-700"}`}>
                   <div>
                     <div className="flex items-center gap-2">
@@ -949,8 +963,9 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
+            <p className="text-xs text-slate-500">Need more users or locations? <a className="text-blue-500 hover:underline" href="mailto:hello@fixflow.ma?subject=FixFlow%20shop%20requirements">Contact us</a></p>
             <Link href="/pricing" target="_blank" className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">
-              View full pricing page <ExternalLink className="w-3 h-3" />
+              View plan details <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
         </div>
@@ -1460,11 +1475,11 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
             <div className="text-5xl mb-4">🚀</div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Payments Launching Soon</h3>
-            <p className="text-slate-500 text-sm mb-2">You&apos;ve selected the <strong className="text-slate-700 dark:text-slate-200">{upgradePlanKey}</strong> plan. We&apos;ve noted your intent and will notify you when billing goes live.</p>
-            <p className="text-slate-400 text-xs mb-6">Continue using all features in the meantime.</p>
+            <p className="text-slate-500 text-sm mb-2">You&apos;ve selected the <strong className="text-slate-700 dark:text-slate-200">{upgradePlanKey}</strong> plan. Contact us to discuss access after your trial.</p>
+            <p className="text-slate-400 text-xs mb-6">Your current plan and trial dates still apply.</p>
             <div className="flex gap-3">
               <button onClick={() => setShowUpgradeModal(false)} className={BTN_SECONDARY + " flex-1"}>Close</button>
-              <a href={`mailto:hello@fixflow.ma?subject=Interested in ${upgradePlanKey} plan`} className={BTN_PRIMARY + " flex-1"}>Notify Me</a>
+              <a href={`mailto:hello@fixflow.ma?subject=Interested in ${upgradePlanKey} plan`} className={BTN_PRIMARY + " flex-1"}>Contact us</a>
             </div>
           </div>
         </div>

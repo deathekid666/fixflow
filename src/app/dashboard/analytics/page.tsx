@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 import { useEffect, useState } from "react";
 import {
@@ -74,6 +75,7 @@ function downloadChartSVG(containerId: string, filename: string) {
 }
 
 export default function AnalyticsPage() {
+  const { visible } = useWorkspace();
   const { user } = useAuth();
   const { t } = useLanguage();
   const currency = user?.shop?.currency ?? "MAD";
@@ -92,6 +94,10 @@ export default function AnalyticsPage() {
   const [copilotAnalysis, setCopilotAnalysis] = useState<string | null>(null);
   const [copilotLoading, setCopilotLoading] = useState(false);
   const [copilotError, setCopilotError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if ((tab === "benchmarks" && !visible.benchmarks) || (tab === "copilot" && !visible.advancedAI)) setTab("overview");
+  }, [tab, visible.benchmarks, visible.advancedAI]);
 
   useEffect(() => { loadAll(); }, [period, dateRange]);
 
@@ -258,7 +264,7 @@ export default function AnalyticsPage() {
 
       {/* Tab nav */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
-        {([["overview", `📊 ${t("tabOverview")}`], ["benchmarks", `🏆 ${t("tabBenchmarks")}`], ["copilot", `✨ ${t("tabCopilot")}`]] as const).map(([id, label]) => (
+        {([["overview", `📊 ${t("tabOverview")}`], ["benchmarks", `🏆 ${t("tabBenchmarks")}`], ["copilot", `✨ ${t("tabCopilot")}`]] as const).filter(([id]) => id === "overview" || (id === "benchmarks" ? visible.benchmarks : visible.advancedAI)).map(([id, label]) => (
           <button
             key={id}
             onClick={() => {

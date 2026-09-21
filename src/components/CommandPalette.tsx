@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/context/AuthContext";
+import { OPTIONAL_TOOLS, isWorkspaceRouteVisible } from "@/lib/workspace";
 import { useRouter } from "next/navigation";
 
 const PAGES = [
-  { label: "Work Orders", path: "/dashboard", icon: "📋" },
+  { label: "Repairs", path: "/dashboard", icon: "📋" },
   { label: "New Work Order", path: "/dashboard/workorders/new", icon: "➕" },
   { label: "Customers", path: "/dashboard/customers", icon: "👥" },
   { label: "Spare Parts", path: "/dashboard/spareparts", icon: "🔧" },
@@ -12,6 +15,9 @@ const PAGES = [
   { label: "Analytics", path: "/dashboard/analytics", icon: "📊" },
   { label: "Engineers", path: "/dashboard/engineers", icon: "👷" },
   { label: "Messages", path: "/dashboard/messages", icon: "💬" },
+  ...OPTIONAL_TOOLS.filter(tool => "href" in tool).map(tool => ({ label: tool.label, path: "href" in tool ? tool.href : "/dashboard", icon: "◇" })),
+  { label: "Workspace settings", path: "/dashboard/settings#workspace", icon: "⚙️" },
+  { label: "Reports", path: "/dashboard/reports", icon: "📊" },
   { label: "Settings", path: "/dashboard/settings", icon: "⚙️" },
 ];
 
@@ -39,6 +45,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function CommandPalette() {
+  const { visible } = useWorkspace();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [pageResults, setPageResults] = useState<typeof PAGES>(PAGES);
@@ -85,13 +93,13 @@ export function CommandPalette() {
     const filtered = query
       ? PAGES.filter((p) => p.label.toLowerCase().includes(query.toLowerCase()))
       : PAGES;
-    setPageResults(filtered);
+    setPageResults(filtered.filter(page => isWorkspaceRouteVisible(page.path, visible) && (user?.role === "ADMIN" || !["/dashboard/analytics", "/dashboard/reports", "/dashboard/engineers", "/dashboard/engineers/commissions"].includes(page.path))));
     setSelected(0);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => searchOrders(query), 250);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, searchOrders]);
+  }, [query, searchOrders, visible, user?.role]);
 
   const items: Item[] = [
     ...pageResults.map((p) => ({ kind: "page" as const, ...p })),

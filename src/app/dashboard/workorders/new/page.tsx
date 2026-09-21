@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 import UpgradeModal from "@/components/UpgradeModal";
 import { useState, useEffect, useRef } from "react";
@@ -30,6 +31,7 @@ type Template = {
 const INPUT = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
 
 export default function NewWorkOrderPage() {
+  const { visible } = useWorkspace();
   const { user } = useAuth();
   const { t } = useLanguage();
   const currency = user?.shop?.currency ?? "MAD";
@@ -113,7 +115,7 @@ export default function NewWorkOrderPage() {
 
   useEffect(() => {
     if (aiTimer.current) clearTimeout(aiTimer.current);
-    if (!form.deviceBrand.trim() || !form.deviceModel.trim() || form.faultDescription.trim().length < 10) {
+    if (!visible.advancedAI || !form.deviceBrand.trim() || !form.deviceModel.trim() || form.faultDescription.trim().length < 10) {
       setAiEstimate(null); setAiLoading(false); setAiError(""); return;
     }
     setAiEstimate(null); setAiLoading(true); setAiError("");
@@ -132,7 +134,7 @@ export default function NewWorkOrderPage() {
       finally { setAiLoading(false); }
     }, 900);
     return () => { if (aiTimer.current) clearTimeout(aiTimer.current); };
-  }, [form.deviceBrand, form.deviceModel, form.faultDescription]);
+  }, [form.deviceBrand, form.deviceModel, form.faultDescription, visible.advancedAI]);
 
   async function lookupCustomer(phone: string) {
     setLookingUp(true);
@@ -558,7 +560,7 @@ export default function NewWorkOrderPage() {
         </div>
 
         {/* AI Repair Estimate */}
-        {(aiLoading || aiEstimate || aiError) && (
+        {visible.advancedAI && (aiLoading || aiEstimate || aiError) && (
           <div className="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50/60 dark:bg-blue-950/20 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -632,7 +634,7 @@ export default function NewWorkOrderPage() {
             <div className="flex gap-2">
               <input type="text" placeholder="e.g. Screen Replacement" value={form.repairType} onChange={e => set("repairType", e.target.value)}
                 className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
-              {form.repairType.trim() && (
+              {visible.advancedAI && form.repairType.trim() && (
                 <button type="button" onClick={getPriceSuggestion} disabled={priceLoading}
                   className="px-3 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5">
                   {priceLoading ? <span className="w-3 h-3 border-2 border-amber-400/40 border-t-amber-500 rounded-full animate-spin" /> : "💡"}

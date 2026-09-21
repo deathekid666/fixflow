@@ -1,4 +1,5 @@
 "use client";
+import { LAUNCH_VISIBILITY } from "@/lib/workspace";
 
 import { useEffect, useRef, useState, use } from "react";
 import { buildWaUrl } from "@/lib/whatsapp";
@@ -166,7 +167,7 @@ export default function TrackPage(props: { params: Promise<{ orderNumber: string
             )}
             <span style={{ color: "white", fontWeight: 700, fontSize: 18 }}>{data?.shop?.name ?? "FixFlow"}</span>
           </div>
-          {data?.shop?.certification && (
+          {LAUNCH_VISIBILITY.publicCertification && data?.shop?.certification && (
             <div style={{ marginBottom: 8 }}>
               {data.shop.certification === "GOLD" && <span style={{ background: "#fef9c3", color: "#713f12", border: "1px solid #ca8a04", borderRadius: 99, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>🥇 Gold Certified</span>}
               {data.shop.certification === "SILVER" && <span style={{ background: "#f1f5f9", color: "#374151", border: "1px solid #94a3b8", borderRadius: 99, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>🥈 Silver Certified</span>}

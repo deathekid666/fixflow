@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -66,6 +67,7 @@ const REPAIR_TYPES: RepairType[] = [
 const STEPS = ["Welcome", "Shop Setup", "Repair Types", "Invite Engineer", "Done"];
 
 export default function OnboardingWizard({ shopId, shopName }: { shopId: string; shopName: string }) {
+  const { visible } = useWorkspace();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -226,11 +228,11 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
             <div className="p-8 space-y-5">
               <div>
                 <h2 className="text-xl font-bold text-white mb-1">Tell us about your shop</h2>
-                <p className="text-slate-400 text-sm">Describe your shop and our AI will fill in the details automatically.</p>
+                <p className="text-slate-400 text-sm">Add your shop details, then create your first repair.</p>
               </div>
 
               {/* AI input */}
-              <div className="bg-blue-950/30 border border-blue-800/50 rounded-xl p-4 space-y-3">
+              {visible.advancedAI && <><div className="bg-blue-950/30 border border-blue-800/50 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-blue-400 text-lg">✨</span>
                   <p className="text-sm font-medium text-blue-300">AI Auto-fill</p>
@@ -249,7 +251,7 @@ export default function OnboardingWizard({ shopId, shopName }: { shopId: string;
                 </button>
               </div>
 
-              <div className="text-xs text-slate-500 text-center">— or fill manually —</div>
+              <div className="text-xs text-slate-500 text-center">— or fill manually —</div></>}
 
               <div className="space-y-3">
                 <div>

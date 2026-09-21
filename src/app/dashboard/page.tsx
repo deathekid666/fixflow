@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -60,6 +61,7 @@ function SortableTh({ label, sortField, sortKey, sortDir, onSort }: {
 }
 
 export default function DashboardPage() {
+  const { visible } = useWorkspace();
   const { user } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
@@ -180,7 +182,7 @@ export default function DashboardPage() {
 
   // Auto-load morning briefing once per day for admins
   useEffect(() => {
-    if (!user || user.role !== "ADMIN" || user.isSuperAdmin) return;
+    if (!visible.advancedAI || !user || user.role !== "ADMIN" || user.isSuperAdmin) return;
     const today = new Date().toISOString().slice(0, 10);
     try {
       const cached = localStorage.getItem(`fixflow_briefing_${today}`);
@@ -188,7 +190,7 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
     fetchBriefing();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, visible.advancedAI]);
 
   async function loadUnread() {
     const res = await fetch("/api/messages/unread", { credentials: "include" });
@@ -467,7 +469,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Copilot Morning Briefing ─────────────────────────────────── */}
-      {user?.role === "ADMIN" && !user?.isSuperAdmin && !briefingDismissed && (briefing || briefingLoading || briefingError) && (
+      {visible.advancedAI && user?.role === "ADMIN" && !user?.isSuperAdmin && !briefingDismissed && (briefing || briefingLoading || briefingError) && (
         <CopilotPanel
           title={t("morningBriefing")}
           description={`Generated for ${new Date().toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}`}
@@ -555,7 +557,7 @@ export default function DashboardPage() {
             className={`px-3.5 py-1.5 text-xs rounded-full border font-medium transition-colors whitespace-nowrap flex-shrink-0 ${noContactFilter ? "bg-amber-600 text-white border-amber-600" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"}`}>
             {t("noContact3d")}
           </button>
-          {branches.length > 0 && (
+          {(visible.branches || branches.length > 1) && branches.length > 0 && (
             <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
               className="px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors whitespace-nowrap flex-shrink-0 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 focus:outline-none focus:border-blue-500">
               <option value="">🏢 {t("allBranches")}</option>

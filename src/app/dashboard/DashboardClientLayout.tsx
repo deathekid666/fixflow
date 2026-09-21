@@ -6,6 +6,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { OPTIONAL_TOOLS, WORKSPACE_LABELS, LAUNCH_VISIBILITY } from "@/lib/workspace";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import TrialBanner from "@/components/TrialBanner";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -32,6 +34,8 @@ type Notification = {
 export default function DashboardClientLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, refresh } = useAuth();
   const { lang, t } = useLanguage();
+  const { visible } = useWorkspace();
+  const workspaceCopy = WORKSPACE_LABELS[lang];
   const router = useRouter();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -158,12 +162,13 @@ export default function DashboardClientLayout({ children }: { children: React.Re
     "/dashboard": "tour-step-workorders",
     "/dashboard/spareparts": "tour-step-spareparts",
     "/dashboard/analytics": "tour-step-analytics",
+    "/dashboard/reports": "tour-step-reports",
     "/dashboard/engineers": "tour-step-engineers",
     "/dashboard/settings": "tour-step-settings",
   };
 
   const IC = "w-[18px] h-[18px] flex-shrink-0";
-  const nav = [
+  const allNav = [
     { href: "/dashboard", label: t("workOrders"), icon: <ClipboardList className={IC} /> },
     { href: "/dashboard/appointments", label: t("appointments"), icon: <CalendarDays className={IC} /> },
     { href: "/dashboard/spareparts", label: t("spareParts"), icon: <Wrench className={IC} /> },
@@ -193,26 +198,21 @@ export default function DashboardClientLayout({ children }: { children: React.Re
     { href: "/dashboard/settings", label: t("settings"), icon: <Settings2 className={IC} /> },
   ];
 
-  const NAV_GROUPS: { label: string; hrefs: string[] }[] = [
-    { label: "MAIN", hrefs: ["/dashboard", "/dashboard/appointments"] },
-    { label: "INVENTORY", hrefs: ["/dashboard/spareparts", "/dashboard/suppliers"] },
-    { label: "CUSTOMERS", hrefs: ["/dashboard/customers", "/dashboard/warranties"] },
-    { label: "INSIGHTS", hrefs: ["/dashboard/analytics", "/dashboard/reports"] },
-  ];
-  const groupedHrefs = new Set(NAV_GROUPS.flatMap((g) => g.hrefs));
+  const primary = ["/dashboard", "/dashboard/customers", "/dashboard/spareparts", "/dashboard/appointments", "/dashboard/reports"];
+  const labels: Record<string, string> = { "/dashboard": workspaceCopy.repairs, "/dashboard/customers": workspaceCopy.customers, "/dashboard/spareparts": workspaceCopy.inventory, "/dashboard/appointments": workspaceCopy.calendar };
+  const extras = OPTIONAL_TOOLS.filter(tool => "href" in tool && visible[tool.key] && (!("adminOnly" in tool) || user.role === "ADMIN"));
+  const nav = allNav.filter(item => primary.includes(item.href) || item.href === "/dashboard/settings" || item.href === "/dashboard/shops" || extras.some(tool => "href" in tool && tool.href === item.href)).map(item => ({ ...item, label: labels[item.href] ?? item.label }));
+  if (visible.commissions && user.role === "ADMIN") nav.push({ href: "/dashboard/engineers/commissions", label: "Commissions", icon: <TrendingUp className={IC} /> });
+
   const navGroups = [
-    ...NAV_GROUPS.map((g) => ({ label: g.label, items: nav.filter((i) => g.hrefs.includes(i.href)) })),
-    { label: "MORE", items: nav.filter((i) => !groupedHrefs.has(i.href)) },
-  ].filter((g) => g.items.length > 0);
-
+    { label: workspaceCopy.workspace, items: primary.flatMap(href => nav.filter(item => item.href === href)) },
+    { label: workspaceCopy.optional, items: nav.filter(item => !primary.includes(item.href) && item.href !== "/dashboard/settings" && item.href !== "/dashboard/shops") },
+    { label: t("settings"), items: nav.filter(item => item.href === "/dashboard/settings" || item.href === "/dashboard/shops") },
+  ].filter(group => group.items.length > 0);
   const bottomNav = [
-    { href: "/dashboard", label: t("orders"), icon: <ClipboardList className={IC} /> },
-    { href: "/dashboard/spareparts", label: t("parts"), icon: <Wrench className={IC} /> },
-    { href: "/dashboard/customers", label: t("customers"), icon: <Users className={IC} /> },
-    { href: "/dashboard/analytics", label: t("analytics"), icon: <BarChart3 className={IC} /> },
-    { href: "/dashboard/settings", label: t("settings"), icon: <Settings2 className={IC} /> },
+    ...primary.slice(0, 4).flatMap(href => nav.filter(item => item.href === href)),
+    ...nav.filter(item => item.href === "/dashboard/settings"),
   ];
-
   const panelUnread = notifications.filter(n => !n.read).length;
 
   const slideClass = sidebarOpen
@@ -273,7 +273,7 @@ export default function DashboardClientLayout({ children }: { children: React.Re
               </>
             )}
           </button>
-            {!collapsed && user.shop?.certification && (
+            {visible.certification && !collapsed && user.shop?.certification && (
               <div className="mt-1.5">
                 <CertBadge level={user.shop.certification} size="xs" />
               </div>
@@ -281,7 +281,7 @@ export default function DashboardClientLayout({ children }: { children: React.Re
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><X className="w-5 h-5" /></button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+        <nav aria-label="Workspace navigation" className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
           {navGroups.map((group, gi) => (
             <div key={group.label}>
               {gi > 0 && <div className="my-2 border-t border-slate-200 dark:border-slate-800" />}
@@ -291,7 +291,7 @@ export default function DashboardClientLayout({ children }: { children: React.Re
                 </div>
               )}
               {group.items.map((item) => {
-                const active = pathname === item.href;
+                const active = pathname === item.href || (item.href === "/dashboard" ? pathname.startsWith("/dashboard/workorders/") : pathname.startsWith(`${item.href}/`));
                 return (
                   <Link key={item.href} href={item.href}
                     id={TOUR_IDS[item.href]}
@@ -370,7 +370,7 @@ export default function DashboardClientLayout({ children }: { children: React.Re
               {globalScanActive ? "Scan ON" : "Scan"}
             </button>
           )}
-          {user?.role === "ADMIN" && !user?.isSuperAdmin && (
+          {LAUNCH_VISIBILITY.tvHeaderShortcut && user?.role === "ADMIN" && !user?.isSuperAdmin && (
             <button
               onClick={async () => {
                 const res = await fetch("/api/tv/token", { method: "POST", credentials: "include" });
@@ -386,12 +386,13 @@ export default function DashboardClientLayout({ children }: { children: React.Re
               TV Mode
             </button>
           )}
+          <Link href="/dashboard/messages" aria-label={t("messages")} className="relative p-2 text-slate-500 hover:text-blue-500"><MessageSquare className="w-5 h-5" />{unreadMessages > 0 && <span className="absolute -top-1 -right-1 text-[10px] rounded-full bg-blue-600 text-white px-1">{unreadMessages > 9 ? "9+" : unreadMessages}</span>}</Link>
           <NotificationBell unreadCount={unreadCount} />
         </header>
 
         {/* Mobile header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-2 -ml-2">
+          <button aria-label="Open navigation" onClick={() => setSidebarOpen(true)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-2 -ml-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>

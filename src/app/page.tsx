@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LAUNCH_VISIBILITY, isLaunchPlanVisible } from "@/lib/workspace";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -56,7 +57,7 @@ const faqs = [
   ],
   [
     "Can I start for free?",
-    "Yes. The Starter plan includes up to 50 work orders per month and one user account. You can create an account without a credit card.",
+    "Yes. New shops start with a 14-day trial, without a credit card. Paid checkout is not available yet; contact us about continuing after your trial.",
   ],
   [
     "Do my customers need to install an app?",
@@ -546,12 +547,13 @@ export default function LandingPage() {
             <p className="ff-eyebrow mb-4">ROOM TO GROW</p>
             <h2 className="ff-heading">Start small. Build your shop.</h2>
             <p className="mt-4 text-sm text-slate-400">
-              A free starting point, with plans for the team you’re building.
+              One clear plan for your repair team. Start with a 14-day trial.
             </p>
           </div>
-          <div className="ff-plans">
+          <div className="ff-plans" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", maxWidth: 680, marginInline: "auto" }}>
             {[
               {
+                key: "FREE",
                 name: "Starter",
                 price: "0",
                 desc: "For your first organized repair.",
@@ -562,6 +564,7 @@ export default function LandingPage() {
                 ],
               },
               {
+                key: "PRO",
                 name: "Pro",
                 price: "29",
                 desc: "For a growing repair team.",
@@ -572,6 +575,7 @@ export default function LandingPage() {
                 ],
               },
               {
+                key: "ENTERPRISE",
                 name: "Enterprise",
                 price: "79",
                 desc: "For a larger repair operation.",
@@ -581,14 +585,14 @@ export default function LandingPage() {
                   "Custom integration options",
                 ],
               },
-            ].map((plan, i) => (
+            ].filter(plan => isLaunchPlanVisible(plan.key)).map((plan) => (
               <article
                 key={plan.name}
-                className={`ff-card ff-plan ${i === 1 ? "featured" : ""}`}
+                className={`ff-card ff-plan ${plan.key === "PRO" ? "featured" : ""}`}
               >
                 <div className="mb-5 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">{plan.name}</h3>
-                  {i === 1 && (
+                  {plan.key === "PRO" && (
                     <span className="text-[9px] tracking-widest text-blue-400">
                       FOR GROWING TEAMS
                     </span>
@@ -599,15 +603,15 @@ export default function LandingPage() {
                     ${plan.price}
                   </span>
                   <span className="ml-2 text-xs text-slate-500">
-                    {i === 0 ? "forever" : "USD / month"}
+                    {plan.key === "FREE" ? "forever" : "USD / month"}
                   </span>
                 </p>
                 <p className="mb-7 mt-4 text-xs text-slate-400">{plan.desc}</p>
                 <Link
-                  href={i === 0 ? "/register" : "/pricing"}
-                  className={`ff-button ${i === 1 ? "" : "secondary"}`}
+                  href={plan.key === "FREE" ? "/register" : "/pricing"}
+                  className={`ff-button ${plan.key === "PRO" ? "" : "secondary"}`}
                 >
-                  {i === 0 ? "Start for free" : "View plan details"}
+                  {plan.key === "FREE" ? "Start for free" : "View plan details"}
                   <ArrowUpRight size={14} />
                 </Link>
                 <div className="mt-7 space-y-3 border-t border-white/10 pt-6">
@@ -625,11 +629,11 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="mt-5 text-center text-xs leading-6 text-slate-500">
-            Paid-plan checkout is not yet available. See plan details for
-            current availability.
+            Paid-plan checkout is not yet available. AI and automated messaging require configured providers and usage credit.
           </p>
         </div>
       </section>
+      <p className="ff-wrap pb-12 text-center text-sm text-slate-400">Need more users or locations? <a className="text-blue-400 hover:text-blue-300" href="mailto:hello@fixflow.ma?subject=FixFlow%20shop%20requirements">Contact us →</a></p>
       <section id="faq" className="ff-section">
         <div className="ff-wrap ff-faq">
           <div>
@@ -639,12 +643,12 @@ export default function LandingPage() {
               <br />
               you might wonder.
             </h2>
-            <Link
+            {LAUNCH_VISIBILITY.directoryPromotion && (<Link
               href="/directory"
               className="mt-6 gap-2 text-sm text-slate-400 hover:text-white"
             >
               Looking for a repair shop? <ArrowUpRight size={14} />
-            </Link>
+            </Link>)}
           </div>
           <div>
             {faqs.map(([q, a]) => (
@@ -731,7 +735,7 @@ export default function LandingPage() {
               ["Track repair", "#track"],
               ["Privacy", "/privacy"],
               ["Terms", "/terms"],
-            ].map(([label, href]) => (
+            ].filter(([, href]) => href !== "/directory" || LAUNCH_VISIBILITY.directoryPromotion).map(([label, href]) => (
               <Link href={href} key={href}>
                 {label}
               </Link>

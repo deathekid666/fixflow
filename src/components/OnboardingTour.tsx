@@ -63,9 +63,9 @@ export default function OnboardingTour({ userId, userRole }: Props) {
       ...(isAdmin
         ? [
             {
-              element: "#tour-step-analytics",
+              element: "#tour-step-reports",
               popover: {
-                title: "📊 See your analytics",
+                title: "📊 See your reports",
                 description:
                   "Revenue charts, profit margins, engineer performance, and expense tracking. Know exactly how your shop is doing at a glance.",
                 side: "right" as const,
@@ -115,7 +115,7 @@ export default function OnboardingTour({ userId, userRole }: Props) {
     ]);
 
     const isAdmin = userRole === "ADMIN";
-    const steps = buildSteps(isAdmin);
+    const steps = buildSteps(isAdmin).filter(step => !("element" in step) || !step.element || document.querySelector(step.element));
     const totalSteps = steps.length;
 
     const driverObj = driver({

@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import RatingModal from "@/components/RatingModal";
@@ -67,6 +68,7 @@ const INPUT_INNER_FOCUS_GREEN = "w-full bg-slate-200 dark:bg-slate-700 border bo
 export default function WorkOrderDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const router = useRouter();
+  const { visible } = useWorkspace();
   const { user } = useAuth();
   const { t } = useLanguage();
   const isAdmin = user?.role === "ADMIN";
@@ -893,7 +895,7 @@ export default function WorkOrderDetailPage(props: { params: Promise<{ id: strin
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-l-4 border-l-purple-500 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{t("customerInformation")}</h2>
-              <button
+              {visible.advancedAI && (<button
                 onClick={openDraftModal}
                 className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-800/40 text-violet-700 dark:text-violet-300 rounded-lg font-medium transition-colors"
               >
@@ -901,7 +903,7 @@ export default function WorkOrderDetailPage(props: { params: Promise<{ id: strin
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
                 {t("draftMessage")}
-              </button>
+              </button>)}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
@@ -1188,7 +1190,7 @@ export default function WorkOrderDetailPage(props: { params: Promise<{ id: strin
           </section>
 
           {/* AI Copilot Insights */}
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+          {visible.advancedAI && <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
             <button
               className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
               onClick={() => { setInsightsOpen(o => !o); if (!insightsOpen && !insightsData && !insightsLoading) loadInsights(); }}
@@ -1285,7 +1287,7 @@ export default function WorkOrderDetailPage(props: { params: Promise<{ id: strin
                 )}
               </div>
             )}
-          </section>
+          </section>}
 
           {/* Customer Messages */}
           {(() => {
@@ -1472,14 +1474,14 @@ export default function WorkOrderDetailPage(props: { params: Promise<{ id: strin
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Quotation</h2>
               <div className="flex items-center gap-2">
-                <button
+                {visible.advancedAI && (<button
                   onClick={fetchPriceSuggestion}
                   disabled={loadingPrice}
                   className="text-xs px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {loadingPrice ? <span className="w-3 h-3 border-2 border-amber-400/40 border-t-amber-500 rounded-full animate-spin inline-block" /> : "💡"}
                   {loadingPrice ? "Thinking…" : "Price Suggestion"}
-                </button>
+                </button>)}
                 <button onClick={() => setEditingQuotation(!editingQuotation)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">{editingQuotation ? "Cancel" : "Edit"}</button>
               </div>
             </div>

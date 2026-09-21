@@ -1,5 +1,9 @@
 "use client";
 
+import { PLANS } from "@/lib/plans";
+
+const proPlan = PLANS.find(plan => plan.key === "PRO")!;
+
 type UpgradeModalProps = {
   onClose: () => void;
   feature: string;
@@ -24,9 +28,9 @@ export default function UpgradeModal({ onClose, feature, limit, current }: Upgra
           <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">PRO includes:</p>
           {[
             "Unlimited work orders",
-            "Unlimited engineers",
+            "Up to 10 users",
             "Unlimited spare parts",
-            "Priority support",
+            "Customer tracking portal",
             "Advanced analytics",
           ].map(f => (
             <div key={f} className="flex items-center gap-2 text-sm text-slate-300">
@@ -38,8 +42,9 @@ export default function UpgradeModal({ onClose, feature, limit, current }: Upgra
         <div className="space-y-2">
           <a href="mailto:support@fixflow.ma?subject=Upgrade to PRO"
             className="block w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors">
-            Contact us to upgrade — 299 MAD/month
+            Ask about Pro — ${proPlan.price} {proPlan.currency}/month
           </a>
+          <p className="text-xs text-slate-400">Paid checkout is not available yet. Contact us to discuss access.</p>
           <button onClick={onClose}
             className="block w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors">
             Maybe later

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { isLaunchPlanVisible } from "@/lib/workspace";
 
 const PLANS = [
   {
@@ -75,15 +76,15 @@ const PLANS = [
 const FAQ = [
   {
     q: "Can I switch plans at any time?",
-    a: "Yes — you can upgrade or downgrade your plan at any time. Upgrades take effect immediately, downgrades at the next billing cycle.",
+    a: "Paid checkout is not available yet. Contact us to discuss your plan; existing accounts and records remain unchanged.",
   },
   {
     q: "Is there a free trial?",
-    a: "All new shops start on a 14-day trial with full Pro features unlocked, no credit card required.",
+    a: "New shops start with a 14-day trial. No credit card is required.",
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept all major credit and debit cards via Stripe. Bank transfers available for Enterprise.",
+    a: "Online payments for FixFlow subscriptions are not available yet. Contact us before the end of your trial to discuss access.",
   },
   {
     q: "What happens when I hit the 50 order limit on Starter?",
@@ -91,7 +92,7 @@ const FAQ = [
   },
   {
     q: "Do you offer discounts for annual billing?",
-    a: "Yes — pay annually and get 2 months free (equivalent to ~17% off). Contact us to switch to annual billing.",
+    a: "Annual billing is not available yet. Contact us to discuss your requirements.",
   },
 ];
 
@@ -127,17 +128,17 @@ export default function PricingPage() {
           Simple, Transparent Pricing
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 tracking-tight">
-          Plans that grow<br className="hidden sm:block"/> with your shop
+          One clear plan<br className="hidden sm:block"/> for your repair team
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-          Start free, upgrade when you need more. No hidden fees. Cancel anytime.
+          Start with a 14-day trial. Paid checkout is not available yet.
         </p>
       </div>
 
       {/* Plans */}
       <div className="max-w-5xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          {PLANS.map(plan => (
+        <div className="grid grid-cols-1 gap-6 items-start max-w-lg mx-auto">
+          {PLANS.filter(plan => isLaunchPlanVisible(plan.key)).map(plan => (
             <div key={plan.key}
               className={`relative rounded-2xl border p-6 flex flex-col gap-6 ${
                 plan.highlight
@@ -175,16 +176,16 @@ export default function PricingPage() {
                     : "bg-slate-800 hover:bg-slate-700 text-white border border-slate-700"
                 }`}
               >
-                {plan.key === "FREE" ? "Get Started Free" : plan.key === "ENTERPRISE" ? "Contact Sales" : `Upgrade to ${plan.name}`}
+                {plan.key === "FREE" ? "Get Started Free" : plan.key === "ENTERPRISE" ? "Contact Sales" : `Ask about ${plan.name}`}
               </button>
 
               <ul className="space-y-3">
-                {plan.features.map((f, i) => (
+                {plan.features.filter(f => f.included && !/Multi-branch|White-label|IMEI|API access|Priority support/.test(f.text)).map((f, i) => (
                   <li key={i} className={`flex items-start gap-2.5 text-sm ${f.included ? (plan.highlight ? "text-blue-100" : "text-slate-300") : "text-slate-600 line-through"}`}>
                     <span className={`mt-0.5 flex-shrink-0 text-base ${f.included ? (plan.highlight ? "text-white" : "text-green-400") : "text-slate-700"}`}>
                       {f.included ? "✓" : "✗"}
                     </span>
-                    {f.text}
+                    {f.text.replace("WhatsApp & SMS notifications", "Optional SMS / WhatsApp integration").replace("Email notifications (Resend)", "Optional email integration")}
                   </li>
                 ))}
               </ul>
@@ -213,11 +214,13 @@ export default function PricingPage() {
           ))}
         </div>
 
+        <p className="mt-8 text-center text-sm text-slate-400">AI and automated messaging require separate provider setup and usage credit.</p>
+        <p className="mt-4 text-center text-sm text-slate-400">Need more users or locations? <a href="mailto:hello@fixflow.ma?subject=FixFlow%20shop%20requirements" className="text-blue-400 hover:underline">Contact us →</a></p>
         {/* FAQ */}
         <div className="mt-20">
           <h2 className="text-2xl font-bold text-white text-center mb-8">Frequently Asked Questions</h2>
           <div className="space-y-3 max-w-2xl mx-auto">
-            {FAQ.map((faq, i) => (
+            {FAQ.filter(faq => !faq.q.includes("50 order")).map((faq, i) => (
               <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -252,11 +255,11 @@ export default function PricingPage() {
             <h3 className="text-xl font-bold text-white mb-2">Payments Launching Soon</h3>
             <p className="text-slate-400 text-sm mb-2">
               You&apos;ve selected the <strong className="text-white">{selectedPlan}</strong> plan.
-              We&apos;ve saved your choice and will reach out when billing goes live.
+              Contact us to discuss this plan and access after your trial.
             </p>
             <p className="text-slate-500 text-xs mb-6">
               In the meantime, continue using FixFlow with your current plan.
-              You&apos;ll be among the first to upgrade when Stripe payments launch.
+              No payment has been collected.
             </p>
             <div className="flex gap-3">
               <button
@@ -268,7 +271,7 @@ export default function PricingPage() {
               <a href={`mailto:hello@fixflow.ma?subject=I want to upgrade to ${selectedPlan}&body=Shop name: %0D%0AEmail: `}
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors"
               >
-                Notify Me
+                Contact us
               </a>
             </div>
           </div>
